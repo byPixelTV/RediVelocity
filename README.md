@@ -1,9 +1,6 @@
 ![GitHub release](https://img.shields.io/github/release/byPixelTV/RediVelocity?style=for-the-badge)
 ![GitHub issues](https://img.shields.io/github/issues-raw/byPixelTV/RediVelocity?style=for-the-badge)
-![GitHub closed issues](https://img.shields.io/github/issues-closed-raw/byPixelTV/RediVelocity.svg?style=for-the-badge)
 ![GitHub All Downloads](https://img.shields.io/github/downloads/byPixelTV/RediVelocity/total?style=for-the-badge)
-[![Discord](https://img.shields.io/discord/425192525091831808.svg?style=for-the-badge)](https://bypixeltv.de)
-![License](https://img.shields.io/github/license/byPixelTV/RediVelocity?style=for-the-badge)
 
 
 
@@ -24,3 +21,19 @@
 ### 🆘 Where can I get help?
 
 * **[Discord](https://bypixeltv.de)**
+  <h2 align="center">💻 Techstack</h2>
+
+###
+
+<br clear="both">
+
+<div align="center">
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/intellij/intellij-original.svg" height="40" alt="intellij logo"  />
+  <img width="12" />
+  <img src="https://cdn.simpleicons.org/gradle/02303A" height="40" alt="gradle logo"  />
+  <img width="12" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/kotlin/kotlin-original.svg" height="40" alt="kotlin logo"  />
+  <img width="12" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg" height="40" alt="java logo"  />
+  <img width="12" />
+</div>
