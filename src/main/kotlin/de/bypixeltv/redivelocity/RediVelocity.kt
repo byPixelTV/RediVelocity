@@ -27,7 +27,6 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val logge
         configLoader.load()
         val config = configLoader.config
         redisController = config?.let { RedisController(this, it) }
-        proxy.eventManager.register(this, this)
         logger.info("RediVelocity has started!")
 
         val redisController: RedisController? = null
