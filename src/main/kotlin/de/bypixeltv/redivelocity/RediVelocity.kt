@@ -20,6 +20,8 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val logge
     private val configLoader: ConfigLoader = ConfigLoader("plugins/redivelocity/config.yml").apply { load() }
     private val miniMessages = MiniMessage.miniMessage()
 
+    private var jsonFormat: String = "false"
+
     @Suppress("UNUSED")
     @Subscribe
     fun onProxyInitialization(event: ProxyInitializeEvent) {
@@ -27,9 +29,9 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val logge
         configLoader.load()
         val config = configLoader.config
         redisController = config?.let { RedisController(this, it) }
-        logger.info("RediVelocity has started!")
 
-        val redisController: RedisController? = null
+        // Set the global variable here
+        jsonFormat = config?.jsonFormat.toString()
     }
 
     fun sendLogs(message: String) {
@@ -52,25 +54,25 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val logge
     @Subscribe
     fun onPostLogin(event: PostLoginEvent) {
         val player = event.player
-        if (config.jsonFormat) {
+        if (jsonFormat.toBoolean()) {
             redisController?.sendJsonMessage(
                 "postLogin",
                 player.username,
                 player.uniqueId.toString(),
                 player.clientBrand.toString(),
                 player.remoteAddress.toString().split(":")[0].substring(1),
-                config.redisChannel ?: "redivelocity-data"
+                config.redisChannel
             )
         } else {
             val msg = config.messageFormat
-                ?.replace("{username}", player.username)
-                ?.replace("{uuid}", player.uniqueId.toString())
-                ?.replace("{clientbrand}", player.clientBrand.toString())
-                ?.replace("{ip}", player.remoteAddress.toString().split(":")[0].substring(1))
-                ?.replace("{timestamp}", System.currentTimeMillis().toString())
+                .replace("{username}", player.username)
+                .replace("{uuid}", player.uniqueId.toString())
+                .replace("{clientbrand}", player.clientBrand.toString())
+                .replace("{ip}", player.remoteAddress.toString().split(":")[0].substring(1))
+                .replace("{timestamp}", System.currentTimeMillis().toString())
             redisController?.sendMessage(
                 "postLogin;$msg",
-                config.redisChannel ?: "redivelocity-data"
+                config.redisChannel
             )
         }
     }
@@ -79,25 +81,25 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val logge
     @Subscribe
     fun onDisconnectEvent(event: DisconnectEvent) {
         val player = event.player
-        if (config.jsonFormat) {
+        if (jsonFormat.toBoolean()) {
             redisController?.sendJsonMessage(
                 "disconnect",
                 player.username,
                 player.uniqueId.toString(),
                 player.clientBrand.toString(),
                 player.remoteAddress.toString().split(":")[0].substring(1),
-                config.redisChannel ?: "redivelocity-data"
+                config.redisChannel
             )
         } else {
             val msg = config.messageFormat
-                ?.replace("{username}", player.username)
-                ?.replace("{uuid}", player.uniqueId.toString())
-                ?.replace("{clientbrand}", player.clientBrand.toString())
-                ?.replace("{ip}", player.remoteAddress.toString().split(":")[0].substring(1))
-                ?.replace("{timestamp}", System.currentTimeMillis().toString())
+                .replace("{username}", player.username)
+                .replace("{uuid}", player.uniqueId.toString())
+                .replace("{clientbrand}", player.clientBrand.toString())
+                .replace("{ip}", player.remoteAddress.toString().split(":")[0].substring(1))
+                .replace("{timestamp}", System.currentTimeMillis().toString())
             redisController?.sendMessage(
                 "disconnect;$msg",
-                config.redisChannel ?: "redivelocity-data"
+                config.redisChannel
             )
         }
     }
@@ -106,25 +108,25 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val logge
     @Subscribe
     fun onServerSwitch(event: ServerConnectedEvent) {
         val player = event.player
-        if (config.jsonFormat) {
+        if (jsonFormat.toBoolean()) {
             redisController?.sendJsonMessage(
                 "serverSwitch",
                 player.username,
                 player.uniqueId.toString(),
                 player.clientBrand.toString(),
                 player.remoteAddress.toString().split(":")[0].substring(1),
-                config.redisChannel ?: "redivelocity-data"
+                config.redisChannel
             )
         } else {
             val msg = config.messageFormat
-                ?.replace("{username}", player.username)
-                ?.replace("{uuid}", player.uniqueId.toString())
-                ?.replace("{clientbrand}", player.clientBrand.toString())
-                ?.replace("{ip}", player.remoteAddress.toString().split(":")[0].substring(1))
-                ?.replace("{timestamp}", System.currentTimeMillis().toString())
+                .replace("{username}", player.username)
+                .replace("{uuid}", player.uniqueId.toString())
+                .replace("{clientbrand}", player.clientBrand.toString())
+                .replace("{ip}", player.remoteAddress.toString().split(":")[0].substring(1))
+                .replace("{timestamp}", System.currentTimeMillis().toString())
             redisController?.sendMessage(
                 "serverSwitch;$msg",
-                config.redisChannel ?: "redivelocity-data"
+                config.redisChannel
             )
         }
     }
