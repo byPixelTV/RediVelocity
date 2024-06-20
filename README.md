@@ -1,8 +1,10 @@
-![GitHub release](https://img.shields.io/github/release/byPixelTV/RediVelocity?style=for-the-badge)
+<div align="center">
+
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/byPixelTV/RediVelocity/gradle.yml?style=for-the-badge)
 ![GitHub issues](https://img.shields.io/github/issues-raw/byPixelTV/RediVelocity?style=for-the-badge)
 ![GitHub All Downloads](https://img.shields.io/github/downloads/byPixelTV/RediVelocity/total?style=for-the-badge)
 
-
+</div>
 
 <br />
 
