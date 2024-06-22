@@ -21,7 +21,7 @@ class UpdateManager @Inject constructor(private val rediVelocity: RediVelocity, 
     fun checkForUpdate(pluginVersion: String) {
         rediVelocity.sendLogs("Checking for updates...")
         getLatestReleaseVersion { version ->
-            val plugVer = proxy.pluginManager.getPlugin("RediVelocity").get().description.version
+            val plugVer = proxy.pluginManager.getPlugin("redivelocity").get().description.version
             if (version <= plugVer.toString()) {
                 proxy.consoleCommandSource.sendMessage(miniMessages.deserialize("<grey>[<aqua>RediVelocity</aqua>]</grey> <green>The plugin is up to date!</green>"))
             } else {
