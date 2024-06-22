@@ -23,6 +23,7 @@ dependencies {
     implementation("redis.clients:jedis:5.2.0-beta4")
     implementation("dev.jorel:commandapi-velocity-shade:9.5.0-SNAPSHOT")
     implementation("org.yaml:snakeyaml:2.2")
+    implementation("org.bstats:bstats-velocity:3.0.2")
     annotationProcessor("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
 }
 
@@ -42,10 +43,15 @@ tasks {
         options.encoding = "UTF-8"
         options.release.set(17)
     }
-    named("compileKotlin", org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask::class.java) {
-        compilerOptions {
-            freeCompilerArgs.add("-Xexport-kdoc")
-        }
+
+    named("compileKotlin", org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask::class.java)
+
+    build {
+        dependsOn(shadowJar)
+    }
+
+    shadowJar {
+        relocate("org.bstats", "de.bypixeltv.redivelocity.metrics")
     }
 }
 

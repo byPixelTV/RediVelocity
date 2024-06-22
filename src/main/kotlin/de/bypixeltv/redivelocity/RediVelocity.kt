@@ -7,7 +7,6 @@ import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
 import com.velocitypowered.api.plugin.Plugin
 import com.velocitypowered.api.proxy.ProxyServer
 import de.bypixeltv.redivelocity.commands.RedisVelocityCommand
-import de.bypixeltv.redivelocity.config.Config
 import de.bypixeltv.redivelocity.config.ConfigLoader
 import de.bypixeltv.redivelocity.listeners.DisconnectListener
 import de.bypixeltv.redivelocity.listeners.PostLoginListener
@@ -19,10 +18,10 @@ import de.bypixeltv.redivelocity.utils.ProxyIdGenerator
 import dev.jorel.commandapi.CommandAPI
 import dev.jorel.commandapi.CommandAPIVelocityConfig
 import net.kyori.adventure.text.minimessage.MiniMessage
-import org.slf4j.Logger
+import org.bstats.velocity.Metrics
 
 @Plugin(id = "redivelocity", name = "RediVelocity", version = "1.0.0", authors = ["byPixelTV"], description = "A Velocity plugin that sends Redis messages if a player joins the network, switches servers, or leaves the network.", url = "https://bypixeltv.de")
-class RediVelocity @Inject constructor(val proxy: ProxyServer, private val logger: Logger, private val config: Config) {
+class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metricsFactory: Metrics.Factory) {
 
     init {
         CommandAPI.onLoad(CommandAPIVelocityConfig(proxy, this).silentLogs(true).verboseOutput(true))
@@ -35,10 +34,6 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val logge
 
     private var jsonFormat: String = "false"
     private var proxyId: String = ""
-
-    fun getJsonFormat(): String {
-        return jsonFormat
-    }
 
     fun getProxyId(): String {
         return proxyId
@@ -55,6 +50,7 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val logge
     @Suppress("UNUSED")
     @Subscribe
     fun onProxyInitialization(event: ProxyInitializeEvent) {
+        metricsFactory.make(this, 22365)
         CommandAPI.onEnable()
         event.toString()
 
