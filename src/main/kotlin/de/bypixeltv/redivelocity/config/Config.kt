@@ -1,4 +1,4 @@
-package de.bypixeltv.redivelocity
+package de.bypixeltv.redivelocity.config
 
 class Config {
     var redisHost: String = "127.0.0.1"
@@ -6,6 +6,5 @@ class Config {
     var redisUsername: String = "default"
     var redisPassword: String = "password"
     var redisChannel: String = "redivelocity-players"
-    var messageFormat: String = "{username};{uuid};{ip};{clientbrand};{timestamp}"
-    var jsonFormat: Boolean = false
+    var jsonFormat: Boolean = true
 }

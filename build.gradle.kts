@@ -12,11 +12,16 @@ repositories {
         name = "papermc"
         url = uri("https://repo.papermc.io/repository/maven-public/")
     }
+
+    maven {
+        url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots")
+    }
 }
 
 dependencies {
     compileOnly("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
     implementation("redis.clients:jedis:5.2.0-beta4")
+    implementation("dev.jorel:commandapi-velocity-shade:9.5.0-SNAPSHOT")
     implementation("org.yaml:snakeyaml:2.2")
     annotationProcessor("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
 }

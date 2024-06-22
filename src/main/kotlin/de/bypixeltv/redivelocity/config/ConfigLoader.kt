@@ -1,4 +1,4 @@
-package de.bypixeltv.redivelocity
+package de.bypixeltv.redivelocity.config
 
 import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
@@ -51,10 +51,6 @@ class ConfigLoader(private val configFilePath: String) {
             writer.write("redisPassword: ${config?.redisPassword}\n")
             writer.write("# Here you can put the channel for the Redis messages\n")
             writer.write("redisChannel: ${config?.redisChannel}\n")
-            writer.write("\n\n# Here you can choose in which format the message should be sent! You can use the following variables: {username} {uuid} {ip} {clientbrand} {timestamp}\n")
-            writer.write("messageFormat: \"${config?.messageFormat}\"\n")
-            writer.write("\n\n# You want that the message should be sent as json? Here you go, just enable this setting for more advanced users\n")
-            writer.write("jsonFormat: ${config?.jsonFormat}\n")
         }
     }
 }

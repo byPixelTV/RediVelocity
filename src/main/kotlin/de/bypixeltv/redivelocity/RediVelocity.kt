@@ -2,36 +2,46 @@ package de.bypixeltv.redivelocity
 
 import com.google.inject.Inject
 import com.velocitypowered.api.event.Subscribe
-import com.velocitypowered.api.event.connection.DisconnectEvent
-import com.velocitypowered.api.event.connection.PostLoginEvent
-import com.velocitypowered.api.event.player.ServerConnectedEvent
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
 import com.velocitypowered.api.plugin.Plugin
 import com.velocitypowered.api.proxy.ProxyServer
+import de.bypixeltv.redivelocity.commands.RedisVelocityCommand
+import de.bypixeltv.redivelocity.config.Config
+import de.bypixeltv.redivelocity.config.ConfigLoader
+import de.bypixeltv.redivelocity.listeners.DisconnectListener
+import de.bypixeltv.redivelocity.listeners.PostLoginListener
+import de.bypixeltv.redivelocity.listeners.ProxyPingListener
+import de.bypixeltv.redivelocity.listeners.ServerSwitchListener
 import de.bypixeltv.redivelocity.managers.RedisController
+import de.bypixeltv.redivelocity.managers.UpdateManager
+import de.bypixeltv.redivelocity.utils.ProxyIdGenerator
+import dev.jorel.commandapi.CommandAPI
+import dev.jorel.commandapi.CommandAPIVelocityConfig
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.slf4j.Logger
 
 @Plugin(id = "redivelocity", name = "RediVelocity", version = "1.0.0", authors = ["byPixelTV"], description = "A Velocity plugin that sends Redis messages if a player joins the network, switches servers, or leaves the network.", url = "https://bypixeltv.de")
 class RediVelocity @Inject constructor(val proxy: ProxyServer, private val logger: Logger, private val config: Config) {
 
+    init {
+        CommandAPI.onLoad(CommandAPIVelocityConfig(proxy, this).silentLogs(true).verboseOutput(true))
+    }
+
     private var redisController: RedisController? = null
     private val configLoader: ConfigLoader = ConfigLoader("plugins/redivelocity/config.yml").apply { load() }
     private val miniMessages = MiniMessage.miniMessage()
 
+
     private var jsonFormat: String = "false"
+    private var proxyId: String = ""
 
-    @Suppress("UNUSED")
-    @Subscribe
-    fun onProxyInitialization(event: ProxyInitializeEvent) {
-        event.toString()
-        configLoader.load()
-        val config = configLoader.config
-        redisController = config?.let { RedisController(this, it) }
+    fun getJsonFormat(): String {
+        return jsonFormat
+    }
 
-        // Set the global variable here
-        jsonFormat = config?.jsonFormat.toString()
+    fun getProxyId(): String {
+        return proxyId
     }
 
     fun sendLogs(message: String) {
@@ -44,90 +54,67 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val logge
 
     @Suppress("UNUSED")
     @Subscribe
+    fun onProxyInitialization(event: ProxyInitializeEvent) {
+        CommandAPI.onEnable()
+        event.toString()
+
+        // Load config and create RedisController
+        configLoader.load()
+        val config = configLoader.config
+        redisController = config?.let { RedisController(this, it) }
+        jsonFormat = config?.jsonFormat.toString()
+
+        // Generate new proxy id
+        do {
+            proxyId = config?.let { ProxyIdGenerator(redisController!!, it).generateProxyId() }.toString()
+            val rvProxiesList = redisController!!.getList("rv-proxies")
+            var rvProxiesListFormatted = rvProxiesList?.joinToString()
+            if (rvProxiesListFormatted?.isEmpty() == true) {
+                rvProxiesListFormatted = "No proxies are connected"
+            }
+            this.sendLogs("Generated proxy ID: $proxyId")
+            this.sendLogs("Connected proxies: ${rvProxiesListFormatted ?: "No proxies are connected"}")// Add logging
+        } while (rvProxiesList?.contains(proxyId) == true)
+
+        redisController!!.addToList("rv-proxies", arrayOf(proxyId))
+        redisController!!.setHashField("rv-proxy-players", proxyId, 0.toString())
+        if (redisController!!.getString("rv-global-playercount") == null) {
+            redisController!!.setString("rv-global-playercount", 0.toString())
+        }
+        this.sendLogs("Creating new Proxy with ID: $proxyId")
+        val version = proxy.pluginManager.getPlugin("redivelocity").get().description.version.toString()
+
+        // Check for updates
+        if (version.contains("-")) {
+            this.sendLogs("This is a BETA build, things may not work as expected, please report any bugs on GitHub")
+            this.sendLogs("https://github.com/byPixelTV/SkCloudnet/issues")
+        }
+
+        UpdateManager(this, proxy).checkForUpdate(version)
+
+        // Register listeners
+        proxy.eventManager.register(this, ServerSwitchListener(this, redisController!!, config!!))
+        proxy.eventManager.register(this, PostLoginListener(this, redisController!!, config, proxyId))
+        proxy.eventManager.register(this, DisconnectListener(this, redisController!!, config, proxyId))
+        proxy.eventManager.register(this, ProxyPingListener(proxy, redisController!!))
+
+        // Register commands
+        RedisVelocityCommand(this, proxy, redisController!!)
+    }
+
+    @Suppress("UNUSED")
+    @Subscribe
     fun onProxyShutdown(event: ProxyShutdownEvent) {
+        event.toString()
+        redisController!!.removeFromListByValue("rv-proxies", proxyId)
+        redisController!!.deleteHashField("rv-proxy-players", proxyId)
+        // Check if any proxies are still connected if not, delete the hash
+        if (redisController!!.getList("proxies")?.isEmpty() == true) {
+            redisController!!.deleteHash("rv-proxy-players")
+            redisController!!.deleteString("rv-global-playercount")
+        }
         if (redisController != null) {
             redisController!!.shutdown()
-        }
-    }
-
-    @Suppress("UNUSED")
-    @Subscribe
-    fun onPostLogin(event: PostLoginEvent) {
-        val player = event.player
-        if (jsonFormat.toBoolean()) {
-            redisController?.sendJsonMessage(
-                "postLogin",
-                player.username,
-                player.uniqueId.toString(),
-                player.clientBrand.toString(),
-                player.remoteAddress.toString().split(":")[0].substring(1),
-                config.redisChannel
-            )
-        } else {
-            val msg = config.messageFormat
-                .replace("{username}", player.username)
-                .replace("{uuid}", player.uniqueId.toString())
-                .replace("{clientbrand}", player.clientBrand.toString())
-                .replace("{ip}", player.remoteAddress.toString().split(":")[0].substring(1))
-                .replace("{timestamp}", System.currentTimeMillis().toString())
-            redisController?.sendMessage(
-                "postLogin;$msg",
-                config.redisChannel
-            )
-        }
-    }
-
-    @Suppress("UNUSED")
-    @Subscribe
-    fun onDisconnectEvent(event: DisconnectEvent) {
-        val player = event.player
-        if (jsonFormat.toBoolean()) {
-            redisController?.sendJsonMessage(
-                "disconnect",
-                player.username,
-                player.uniqueId.toString(),
-                player.clientBrand.toString(),
-                player.remoteAddress.toString().split(":")[0].substring(1),
-                config.redisChannel
-            )
-        } else {
-            val msg = config.messageFormat
-                .replace("{username}", player.username)
-                .replace("{uuid}", player.uniqueId.toString())
-                .replace("{clientbrand}", player.clientBrand.toString())
-                .replace("{ip}", player.remoteAddress.toString().split(":")[0].substring(1))
-                .replace("{timestamp}", System.currentTimeMillis().toString())
-            redisController?.sendMessage(
-                "disconnect;$msg",
-                config.redisChannel
-            )
-        }
-    }
-
-    @Suppress("UNUSED")
-    @Subscribe
-    fun onServerSwitch(event: ServerConnectedEvent) {
-        val player = event.player
-        if (jsonFormat.toBoolean()) {
-            redisController?.sendJsonMessage(
-                "serverSwitch",
-                player.username,
-                player.uniqueId.toString(),
-                player.clientBrand.toString(),
-                player.remoteAddress.toString().split(":")[0].substring(1),
-                config.redisChannel
-            )
-        } else {
-            val msg = config.messageFormat
-                .replace("{username}", player.username)
-                .replace("{uuid}", player.uniqueId.toString())
-                .replace("{clientbrand}", player.clientBrand.toString())
-                .replace("{ip}", player.remoteAddress.toString().split(":")[0].substring(1))
-                .replace("{timestamp}", System.currentTimeMillis().toString())
-            redisController?.sendMessage(
-                "serverSwitch;$msg",
-                config.redisChannel
-            )
         }
     }
 

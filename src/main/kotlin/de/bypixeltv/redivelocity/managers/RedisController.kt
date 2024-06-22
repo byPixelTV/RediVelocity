@@ -2,7 +2,7 @@ package de.bypixeltv.redivelocity.managers
 
 import de.bypixeltv.redivelocity.RediVelocity
 import com.velocitypowered.api.scheduler.ScheduledTask
-import de.bypixeltv.redivelocity.Config
+import de.bypixeltv.redivelocity.config.Config
 import org.json.JSONObject
 import redis.clients.jedis.BinaryJedisPubSub
 import redis.clients.jedis.JedisPool
@@ -86,21 +86,10 @@ class RedisController(private val plugin: RediVelocity, private val config: Conf
         jedisPool.close()
     }
 
-    override fun onMessage(channel: ByteArray, message: ByteArray) {
-        val channelString = String(channel, StandardCharsets.UTF_8)
-        val receivedMessage = String(message, StandardCharsets.UTF_8)
-        try {
-            val j = JSONObject(receivedMessage)
-        } catch (e: Exception) {
-            plugin.sendErrorLogs("I got a message that was empty from channel $channelString please check your code that you used to send the message. Message content:")
-            plugin.sendErrorLogs(receivedMessage)
-            e.printStackTrace()
-        }
-    }
-
-    fun sendJsonMessage(event: String, username: String, useruuid: String, clientbrand: String, userip: String, channel: String) {
+    fun sendJsonMessage(event: String, proxyId: String, username: String, useruuid: String, clientbrand: String, userip: String, channel: String) {
         val jsonObject = JSONObject()
         jsonObject.put("event", event)
+        jsonObject.put("proxyid", proxyId)
         jsonObject.put("username", username)
         jsonObject.put("uuid", useruuid)
         jsonObject.put("clientbrand", clientbrand)
@@ -118,6 +107,12 @@ class RedisController(private val plugin: RediVelocity, private val config: Conf
     fun sendMessage(message: String, channel: String) {
         jedisPool.resource.use { jedis ->
             jedis.publish(channel, message)
+        }
+    }
+
+    fun removeFromListByValue(listName: String, value: String) {
+        jedisPool.resource.use { jedis ->
+            jedis.lrem(listName, 0, value)
         }
     }
 
