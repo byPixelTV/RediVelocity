@@ -5,6 +5,7 @@ import com.google.gson.JsonObject
 import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.util.UuidUtils
 import de.bypixeltv.redivelocity.RediVelocity
+import de.bypixeltv.redivelocity.config.Config
 import de.bypixeltv.redivelocity.managers.RedisController
 import de.bypixeltv.redivelocity.utils.DateUtils.asDateString
 import dev.jorel.commandapi.CommandAPICommand
@@ -18,10 +19,10 @@ import java.io.InputStreamReader
 import java.net.URI
 import kotlin.jvm.optionals.getOrNull
 
-class RedisVelocityCommand(private val rediVelocity: RediVelocity, private val proxy: ProxyServer, private val redisController: RedisController) {
+class RedisVelocityCommand(private val rediVelocity: RediVelocity, private val proxy: ProxyServer, private val redisController: RedisController, private val config: Config) {
 
     private val miniMessage = MiniMessage.miniMessage()
-    private val prefix = "<dark_gray>[<aqua>ℹ</aqua>]</dark_gray> <color:#0079FF>⌞RediVelocity⌝</color> <dark_gray>◘</dark_gray>"
+    private val prefix = config.prefix
 
     private fun getUUID(username: String): String? {
         try {

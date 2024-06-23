@@ -8,4 +8,5 @@ class Config {
     var useSsl: Boolean = false
     var redisChannel: String = "redivelocity-players"
     var jsonFormat: Boolean = true
+    var prefix = "<dark_gray>[<aqua>ℹ</aqua>]</dark_gray> <color:#0079FF>⌞RediVelocity⌝</color> <dark_gray>◘</dark_gray>"
 }

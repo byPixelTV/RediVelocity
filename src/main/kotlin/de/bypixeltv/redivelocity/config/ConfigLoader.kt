@@ -53,6 +53,8 @@ class ConfigLoader(private val configFilePath: String) {
             writer.write("useSsl: ${config?.useSsl}\n")
             writer.write("# Here you can put the channel for the Redis messages\n")
             writer.write("redisChannel: ${config?.redisChannel}\n")
+            writer.write("# Here you can set the prefix for RediVelocity. For colorcodes you have to use minimessages\n")
+            writer.write("prefix: ${config?.prefix}\n")
         }
     }
 }
