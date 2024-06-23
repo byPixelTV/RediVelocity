@@ -95,7 +95,7 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
         proxy.eventManager.register(this, ProxyPingListener(proxy, redisController!!))
 
         // Register commands
-        RedisVelocityCommand(this, proxy, redisController!!)
+        RedisVelocityCommand(this, proxy, redisController!!, config)
     }
 
     @Suppress("UNUSED")
