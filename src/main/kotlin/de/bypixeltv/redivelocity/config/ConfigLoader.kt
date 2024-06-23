@@ -49,6 +49,8 @@ class ConfigLoader(private val configFilePath: String) {
             writer.write("redisUsername: ${config?.redisUsername}\n")
             writer.write("# This is where you have to put the password of your Redis database\n")
             writer.write("redisPassword: ${config?.redisPassword}\n")
+            writer.write("# Here you can enable or disable the SSL connection to the Redis database\n")
+            writer.write("useSsl: ${config?.useSsl}\n")
             writer.write("# Here you can put the channel for the Redis messages\n")
             writer.write("redisChannel: ${config?.redisChannel}\n")
         }

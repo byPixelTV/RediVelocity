@@ -5,6 +5,7 @@ class Config {
     var redisPort: Int = 6379
     var redisUsername: String = "default"
     var redisPassword: String = "password"
+    var useSsl: Boolean = false
     var redisChannel: String = "redivelocity-players"
     var jsonFormat: Boolean = true
 }

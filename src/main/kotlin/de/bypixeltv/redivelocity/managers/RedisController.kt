@@ -33,10 +33,10 @@ class RedisController(private val plugin: RediVelocity, private val config: Conf
         jedisPool = if (password.isEmpty()) {
             JedisPool(
                 jConfig,
-                config.redisHost ?: "0.0.0.0",
+                config.redisHost,
                 config.redisPort,
                 9000,
-                false
+                config.useSsl
             )
         } else {
             JedisPool(
@@ -45,7 +45,7 @@ class RedisController(private val plugin: RediVelocity, private val config: Conf
                 config.redisPort,
                 9000,
                 password,
-                false
+                config.useSsl
             )
         }
 
