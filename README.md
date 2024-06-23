@@ -12,7 +12,7 @@
 <h1 align="center">RediVelocity</h1>
 
 <h3 align="center">Get events from your proxy with ease!</h3>
-<h6 align="center">This Plugin uses Redis to send messages if a player joins, changes the server or leaves the network!</h6>
+<h6 align="center">RediVelocity: communicate between your proxies with ease!</h6>
 <h6 align="center">Get information about your network and players with the build-in commands!</h6>
 <hr>
 
