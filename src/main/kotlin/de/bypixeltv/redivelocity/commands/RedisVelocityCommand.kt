@@ -11,12 +11,13 @@ import de.bypixeltv.redivelocity.utils.DateUtils.asDateString
 import dev.jorel.commandapi.CommandAPICommand
 import dev.jorel.commandapi.arguments.ArgumentSuggestions
 import dev.jorel.commandapi.arguments.StringArgument
-import dev.jorel.commandapi.executors.PlayerCommandExecutor
+import dev.jorel.commandapi.executors.CommandExecutor
 import net.kyori.adventure.text.minimessage.MiniMessage
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 import java.net.URI
+import java.util.*
 import kotlin.jvm.optionals.getOrNull
 
 class RedisVelocityCommand(private val rediVelocity: RediVelocity, private val proxy: ProxyServer, private val redisController: RedisController, private val config: Config) {
@@ -24,16 +25,27 @@ class RedisVelocityCommand(private val rediVelocity: RediVelocity, private val p
     private val miniMessage = MiniMessage.miniMessage()
     private val prefix = config.prefix
 
-    private fun getUUID(username: String): String? {
+    private fun getUUID(username: String): UUID? {
         try {
             val url = URI("https://api.mojang.com/users/profiles/minecraft/$username")
             val reader = BufferedReader(InputStreamReader(url.toURL().openStream()))
             val jsonObject = Gson().fromJson(reader, JsonObject::class.java)
-            var uuid = jsonObject["id"].asString
-            uuid = UuidUtils.fromUndashed(uuid).toString()
-            return uuid
+            val uuid = jsonObject["id"].asString
+            return UuidUtils.fromUndashed(uuid)
         } catch (e: IOException) {
             rediVelocity.sendErrorLogs("Failed to get UUID for $username!")
+        }
+        return null
+    }
+
+    private fun getName(uuid: UUID): String? {
+        try {
+            val url = URI("https://api.mojang.com/user/profile/${UuidUtils.toUndashed(uuid)}")
+            val reader = BufferedReader(InputStreamReader(url.toURL().openStream()))
+            val jsonObject = Gson().fromJson(reader, JsonObject::class.java)
+            return jsonObject["name"].asString
+        } catch (e: IOException) {
+            rediVelocity.sendErrorLogs("Failed to get Name for $uuid!")
         }
         return null
     }
@@ -49,7 +61,7 @@ class RedisVelocityCommand(private val rediVelocity: RediVelocity, private val p
                             redisController.getAllHashValues("rv-players-name")
                         }))
                         .withPermission("redivelocity.admin.player.proxy")
-                        .executesPlayer(PlayerCommandExecutor { sender, args ->
+                        .executes(CommandExecutor { sender, args ->
                             val playerName = args[0] as String
                             val playerProxy = redisController.getHashField("rv-players-proxy",
                                 getUUID(playerName).toString()
@@ -65,7 +77,7 @@ class RedisVelocityCommand(private val rediVelocity: RediVelocity, private val p
                             redisController.getAllHashValues("rv-players-name")
                         }))
                         .withPermission("redivelocity.admin.player.lastseen")
-                        .executesPlayer(PlayerCommandExecutor { sender, args ->
+                        .executes(CommandExecutor { sender, args ->
                             val playerName = args[0] as String
                             val lastSeen = redisController.getHashField("rv-players-lastseen", getUUID(playerName).toString())
                             val isOnline: Boolean =
@@ -85,7 +97,7 @@ class RedisVelocityCommand(private val rediVelocity: RediVelocity, private val p
                             redisController.getAllHashValues("rv-players-name")
                         }))
                         .withPermission("redivelocity.admin.player.ip")
-                        .executesPlayer(PlayerCommandExecutor { sender, args ->
+                        .executes(CommandExecutor { sender, args ->
                             val playerName = args[0] as String
                             val playerIp = redisController.getHashField("rv-players-ip", getUUID(playerName).toString())
                             if (playerIp != null) {
@@ -99,7 +111,7 @@ class RedisVelocityCommand(private val rediVelocity: RediVelocity, private val p
                             redisController.getAllHashValues("rv-players-name")
                         }))
                         .withPermission("redivelocity.admin.player.uuid")
-                        .executesPlayer(PlayerCommandExecutor { sender, args ->
+                        .executes(CommandExecutor { sender, args ->
                             val playerName = args[0] as String
                             val playerUuid = getUUID(playerName).toString()
                             sender.sendMessage(miniMessage.deserialize("$prefix <gray>The player <aqua>$playerName</aqua> has the UUID: <aqua><hover:show_text:'<aqua>Click to copy</aqua>'><click:copy_to_clipboard:$playerUuid>$playerUuid</click></hover></gray>"))
@@ -109,7 +121,7 @@ class RedisVelocityCommand(private val rediVelocity: RediVelocity, private val p
                 .withSubcommands(
                     CommandAPICommand("list")
                         .withPermission("redivelocity.admin.proxy.list")
-                        .executesPlayer(PlayerCommandExecutor { sender, _ ->
+                        .executes(CommandExecutor { sender, _ ->
                             val proxies = redisController.getList("rv-proxies")
                             val proxiesPrettyNames: MutableList<String> = mutableListOf()
                             proxies?.forEach { proxyId ->
@@ -119,13 +131,13 @@ class RedisVelocityCommand(private val rediVelocity: RediVelocity, private val p
                             if (proxies != null) {
                                 if (proxies.isEmpty()) {
                                     sender.sendMessage(miniMessage.deserialize("$prefix <gray>There are currently no connected proxies.</gray>"))
-                                    return@PlayerCommandExecutor
+                                    return@CommandExecutor
                                 } else {
                                     sender.sendMessage(miniMessage.deserialize("$prefix <gray>Currently connected proxies:<br>$proxiesPrettyString</gray>"))
                                 }
                             } else {
                                 sender.sendMessage(miniMessage.deserialize("$prefix <gray>There are currently no connected proxies.</gray>"))
-                                return@PlayerCommandExecutor
+                                return@CommandExecutor
                             }
                         }),
                     CommandAPICommand("players")
@@ -133,7 +145,7 @@ class RedisVelocityCommand(private val rediVelocity: RediVelocity, private val p
                             redisController.getList("rv-proxies")
                         }))
                         .withPermission("redivelocity.admin.proxy.players")
-                        .executesPlayer(PlayerCommandExecutor { sender, args ->
+                        .executes(CommandExecutor { sender, args ->
                             val proxyId = args.getOptional(0).getOrNull() as? String
                             val players = redisController.getAllHashValues("rv-players-name")
                             val playersPrettyNames: MutableList<String> = mutableListOf()
@@ -151,7 +163,7 @@ class RedisVelocityCommand(private val rediVelocity: RediVelocity, private val p
                             if (players != null) {
                                 if (players.isEmpty()) {
                                     sender.sendMessage(miniMessage.deserialize("$prefix <gray>There are currently no players online.</gray>"))
-                                    return@PlayerCommandExecutor
+                                    return@CommandExecutor
                                 } else {
                                     if (proxyId != null) {
                                         sender.sendMessage(miniMessage.deserialize("$prefix <gray>Currently online players on proxy <aqua>$proxyId</aqua>:<br>$playersPrettyString</gray>"))
@@ -167,7 +179,7 @@ class RedisVelocityCommand(private val rediVelocity: RediVelocity, private val p
                             redisController.getList("rv-proxies")
                         }))
                         .withPermission("redivelocity.admin.proxy.playercount")
-                        .executesPlayer(PlayerCommandExecutor { sender, args ->
+                        .executes(CommandExecutor { sender, args ->
                             val proxyId = args.getOptional(0).getOrNull() as? String
                             if (proxyId == null) {
                                 val playerCount = redisController.getString("rv-global-playercount")
@@ -183,6 +195,43 @@ class RedisVelocityCommand(private val rediVelocity: RediVelocity, private val p
                                 } else {
                                     sender.sendMessage(miniMessage.deserialize("$prefix <gray>There are currently no players online on proxy <aqua>$proxyId</aqua>.</gray>"))
                                 }
+                            }
+                        })
+                ),
+            CommandAPICommand("blacklist")
+                .withSubcommands(
+                    CommandAPICommand("add")
+                        .withArguments(StringArgument("proxyBlacklistAdd"))
+                        .withPermission("redivelocity.admin.proxy.blacklist.add")
+                        .executes(CommandExecutor { sender, args ->
+                            val playerName = args[0] as String
+                            val playerUUID = getUUID(playerName).toString()
+                            redisController.setHashField("rv-players-blacklist", playerUUID, redisController.getHashField("rv-players-ip", playerUUID) ?: "unknown-ip")
+                            sender.sendMessage(miniMessage.deserialize("$prefix <gray>Added player <aqua>$playerName</aqua> to the blacklist.</gray>"))
+                        }),
+                    CommandAPICommand("remove")
+                        .withArguments(StringArgument("proxyBlacklistRemove"))
+                        .withPermission("redivelocity.admin.proxy.blacklist.remove")
+                        .executes(CommandExecutor { sender, args ->
+                            val playerName = args[0] as String
+                            val playerUUID = getUUID(playerName).toString()
+                            redisController.deleteHashField("rv-players-blacklist", playerUUID)
+                            sender.sendMessage(miniMessage.deserialize("$prefix <gray>Removed player <aqua>$playerName</aqua> from the blacklist.</gray>"))
+                        }),
+                    CommandAPICommand("list")
+                        .withPermission("redivelocity.admin.proxy.blacklist.list")
+                        .executes(CommandExecutor { sender, _ ->
+                            val blacklistedPlayers = redisController.getHashValuesAsPair("rv-players-blacklist")
+                            val blacklistedPlayersPrettyNames: MutableList<String> = mutableListOf()
+                            blacklistedPlayers.forEach { (playerUUID, ip) ->
+                                val playerName = getName(UUID.fromString(playerUUID)) ?: "unknown-name"
+                                blacklistedPlayersPrettyNames.add("$prefix <aqua><hover:show_text:'<aqua>$playerUUID</aqua>'><click:copy_to_clipboard:$playerUUID>$playerName</click></hover></aqua> <dark_grey>(<aqua>IP: <hover:show_text:'<aqua>Click to copy ip</aqua>'><click:copy_to_clipboard:$ip>$ip</click></hover></aqua>)</dark_grey>")
+                            }
+                            val blacklistedPlayersPrettyString = blacklistedPlayersPrettyNames.joinToString(separator = "<br>")
+                            if (blacklistedPlayers.isEmpty()) {
+                                sender.sendMessage(miniMessage.deserialize("$prefix <gray>There are currently no blacklisted players.</gray>"))
+                            } else {
+                                sender.sendMessage(miniMessage.deserialize("$prefix <gray>Currently blacklisted players:<br>$blacklistedPlayersPrettyString</gray>"))
                             }
                         })
                 )

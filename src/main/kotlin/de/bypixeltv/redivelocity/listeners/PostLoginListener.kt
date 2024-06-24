@@ -6,8 +6,11 @@ import com.velocitypowered.api.event.connection.PostLoginEvent
 import de.bypixeltv.redivelocity.config.Config
 import de.bypixeltv.redivelocity.RediVelocity
 import de.bypixeltv.redivelocity.managers.RedisController
+import net.kyori.adventure.text.minimessage.MiniMessage
 
 class PostLoginListener @Inject constructor(private val rediVelocity: RediVelocity, private val redisController: RedisController, private val config: Config, private val proxyId: String)  {
+
+    private val miniMessage = MiniMessage.miniMessage()
 
     @Suppress("UNUSED")
     @Subscribe
@@ -22,6 +25,11 @@ class PostLoginListener @Inject constructor(private val rediVelocity: RediVeloci
             player.remoteAddress.toString().split(":")[0].substring(1),
             config.redisChannel
         )
+        if (redisController.getHashField("rv-players-blacklist", player.uniqueId.toString()) != null) {
+            redisController.setHashField("rv-players-blacklist", player.uniqueId.toString(), player.remoteAddress.toString().split(":")[0].substring(1))
+            player.disconnect(miniMessage.deserialize(config.kickMessage))
+            return
+        }
         val players = redisController.getHashField("rv-proxy-players", proxyId)?.toInt()
         if (players != null) {
             redisController.setHashField("rv-proxy-players", proxyId, (players + 1).toString())
