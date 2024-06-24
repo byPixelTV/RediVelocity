@@ -1,6 +1,7 @@
 package de.bypixeltv.redivelocity.config
 
 class Config {
+    var configVersion: Int = 2
     var redisHost: String = "127.0.0.1"
     var redisPort: Int = 6379
     var redisUsername: String = "default"

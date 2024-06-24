@@ -162,6 +162,17 @@ class RedisController(private val plugin: RediVelocity, private val config: Conf
         }
     }
 
+    fun getHashValuesAsPair(hashName: String): Map<String, String> {
+        val values = mutableMapOf<String, String>()
+        jedisPool.resource.use { jedis ->
+            val keys = jedis.hkeys(hashName)
+            for (key in keys) {
+                values[key] = jedis.hget(hashName, key)
+            }
+        }
+        return values
+    }
+
     fun removeFromList(listName: String, index: Int) {
         jedisPool.resource.use { jedis ->
             val listLength = jedis.llen(listName)

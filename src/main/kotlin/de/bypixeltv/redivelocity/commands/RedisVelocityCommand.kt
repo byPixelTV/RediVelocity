@@ -201,7 +201,9 @@ class RedisVelocityCommand(private val rediVelocity: RediVelocity, private val p
             CommandAPICommand("blacklist")
                 .withSubcommands(
                     CommandAPICommand("add")
-                        .withArguments(StringArgument("proxyBlacklistAdd"))
+                        .withArguments(StringArgument("proxyBlacklistAdd").replaceSuggestions(ArgumentSuggestions.stringCollection {
+                            redisController.getAllHashValues("rv-players-name")
+                        }))
                         .withPermission("redivelocity.admin.proxy.blacklist.add")
                         .executes(CommandExecutor { sender, args ->
                             val playerName = args[0] as String
@@ -210,7 +212,9 @@ class RedisVelocityCommand(private val rediVelocity: RediVelocity, private val p
                             sender.sendMessage(miniMessage.deserialize("$prefix <gray>Added player <aqua>$playerName</aqua> to the blacklist.</gray>"))
                         }),
                     CommandAPICommand("remove")
-                        .withArguments(StringArgument("proxyBlacklistRemove"))
+                        .withArguments(StringArgument("proxyBlacklistAdd").replaceSuggestions(ArgumentSuggestions.stringCollection {
+                            redisController.getHashValuesAsPair("rv-players-blacklist").map { (uuid) -> getName(UUID.fromString(uuid)) ?: "unknown-name" }
+                        }))
                         .withPermission("redivelocity.admin.proxy.blacklist.remove")
                         .executes(CommandExecutor { sender, args ->
                             val playerName = args[0] as String
