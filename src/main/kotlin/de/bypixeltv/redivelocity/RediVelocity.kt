@@ -6,7 +6,7 @@ import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
 import com.velocitypowered.api.plugin.Plugin
 import com.velocitypowered.api.proxy.ProxyServer
-import de.bypixeltv.redivelocity.commands.RedisVelocityCommand
+import de.bypixeltv.redivelocity.commands.RediVelocityCommand
 import de.bypixeltv.redivelocity.config.ConfigLoader
 import de.bypixeltv.redivelocity.listeners.DisconnectListener
 import de.bypixeltv.redivelocity.listeners.PostLoginListener
@@ -95,7 +95,7 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
         proxy.eventManager.register(this, ProxyPingListener(proxy, redisController!!))
 
         // Register commands
-        RedisVelocityCommand(this, proxy, redisController!!, config)
+        RediVelocityCommand(this, proxy, redisController!!, config)
     }
 
     @Suppress("UNUSED")

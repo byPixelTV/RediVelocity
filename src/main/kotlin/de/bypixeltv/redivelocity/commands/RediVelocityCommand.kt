@@ -20,7 +20,7 @@ import java.net.URI
 import java.util.*
 import kotlin.jvm.optionals.getOrNull
 
-class RedisVelocityCommand(private val rediVelocity: RediVelocity, private val proxy: ProxyServer, private val redisController: RedisController, private val config: Config) {
+class RediVelocityCommand(private val rediVelocity: RediVelocity, private val proxy: ProxyServer, private val redisController: RedisController, private val config: Config) {
 
     private val miniMessage = MiniMessage.miniMessage()
     private val prefix = config.prefix
