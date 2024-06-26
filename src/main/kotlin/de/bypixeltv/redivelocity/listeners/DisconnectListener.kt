@@ -20,6 +20,7 @@ class DisconnectListener @Inject constructor(private val rediVelocity: RediVeloc
             player.uniqueId.toString(),
             player.clientBrand.toString(),
             player.remoteAddress.toString().split(":")[0].substring(1),
+            player.ping.toInt(),
             config.redisChannel
         )
         val players = redisController.getHashField("rv-proxy-players", proxyId)?.toInt()

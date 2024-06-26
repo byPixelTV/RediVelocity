@@ -23,6 +23,7 @@ class PostLoginListener @Inject constructor(private val rediVelocity: RediVeloci
             player.uniqueId.toString(),
             player.clientBrand.toString(),
             player.remoteAddress.toString().split(":")[0].substring(1),
+            player.ping.toInt(),
             config.redisChannel
         )
         if (redisController.getHashField("rv-players-blacklist", player.uniqueId.toString()) != null) {

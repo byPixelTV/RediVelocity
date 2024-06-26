@@ -20,6 +20,7 @@ class ServerSwitchListener @Inject constructor(private val rediVelocity: RediVel
             player.uniqueId.toString(),
             player.clientBrand.toString(),
             player.remoteAddress.toString().split(":")[0].substring(1),
+            player.ping.toInt(),
             config.redisChannel
         )
     }
