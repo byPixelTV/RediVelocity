@@ -86,7 +86,7 @@ class RedisController(private val plugin: RediVelocity, private val config: Conf
         jedisPool.close()
     }
 
-    fun sendJsonMessage(event: String, proxyId: String, username: String, useruuid: String, clientbrand: String, userip: String, ping: Int, channel: String) {
+    fun sendJsonMessage(event: String, proxyId: String, username: String, useruuid: String, clientbrand: String, userip: String, channel: String) {
         val jsonObject = JSONObject()
         jsonObject.put("action", event)
         jsonObject.put("proxyid", proxyId)
@@ -94,7 +94,6 @@ class RedisController(private val plugin: RediVelocity, private val config: Conf
         jsonObject.put("uuid", useruuid)
         jsonObject.put("clientbrand", clientbrand)
         jsonObject.put("ipadress", userip)
-        jsonObject.put("ping", ping)
         jsonObject.put("timestamp", System.currentTimeMillis())
 
         val jsonString = jsonObject.toString()
