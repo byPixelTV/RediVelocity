@@ -116,6 +116,20 @@ class RediVelocityCommand(private val rediVelocity: RediVelocity, private val pr
                             val playerUuid = getUUID(playerName).toString()
                             sender.sendMessage(miniMessage.deserialize("$prefix <gray>The player <aqua>$playerName</aqua> has the UUID: <aqua><hover:show_text:'<aqua>Click to copy</aqua>'><click:copy_to_clipboard:$playerUuid>$playerUuid</click></hover></gray>"))
                         }),
+                    CommandAPICommand("server")
+                        .withArguments(StringArgument("playerUuid").replaceSuggestions(ArgumentSuggestions.stringCollection {
+                            redisController.getAllHashValues("rv-players-name")
+                        }))
+                        .withPermission("redivelocity.admin.player.server")
+                        .executes(CommandExecutor { sender, args ->
+                            val playerName = args[0] as String
+                            val playerServer = redisController.getHashField("rv-players-server", getUUID(playerName).toString())
+                            if (playerServer != null) {
+                                sender.sendMessage(miniMessage.deserialize("$prefix <gray>The player <aqua>$playerName</aqua> is connected to server: <aqua>$playerServer</aqua></gray>"))
+                            } else {
+                                sender.sendMessage(miniMessage.deserialize("$prefix <gray>The player <aqua>$playerName</aqua> is  currently <red>not</red> connected to a server.</gray>"))
+                            }
+                        })
                 ),
             CommandAPICommand("proxy")
                 .withSubcommands(

@@ -22,6 +22,7 @@ class ServerSwitchListener @Inject constructor(private val rediVelocity: RediVel
             player.remoteAddress.toString().split(":")[0].substring(1),
             config.redisChannel
         )
+        redisController.setHashField("rv-players-server", player.uniqueId.toString(), event.server.serverInfo.name)
     }
 
 }

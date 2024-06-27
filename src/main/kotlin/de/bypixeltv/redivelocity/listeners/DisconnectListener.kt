@@ -37,6 +37,7 @@ class DisconnectListener @Inject constructor(private val rediVelocity: RediVeloc
         redisController.deleteHashField("rv-players-proxy", player.uniqueId.toString())
         redisController.deleteHashField("rv-players-name", player.uniqueId.toString())
         redisController.setHashField("rv-players-lastseen", player.uniqueId.toString(), System.currentTimeMillis().toString())
+        redisController.deleteHashField("rv-players-server", player.uniqueId.toString())
     }
 
 }
