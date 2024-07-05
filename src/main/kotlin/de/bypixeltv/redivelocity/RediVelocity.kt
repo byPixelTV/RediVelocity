@@ -20,7 +20,7 @@ import dev.jorel.commandapi.CommandAPIVelocityConfig
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.bstats.velocity.Metrics
 
-@Plugin(id = "redivelocity", name = "RediVelocity", version = "1.0.1", authors = ["byPixelTV"], description = "A Velocity plugin that sends Redis messages if a player joins the network, switches servers, or leaves the network.", url = "https://bypixeltv.de")
+@Plugin(id = "redivelocity", name = "RediVelocity", version = "1.0.2", authors = ["byPixelTV"], description = "A Velocity plugin that sends Redis messages if a player joins the network, switches servers, or leaves the network.", url = "https://bypixeltv.de")
 class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metricsFactory: Metrics.Factory) {
 
     init {
@@ -87,7 +87,7 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
             this.sendLogs("https://github.com/byPixelTV/RediVelocity/issues")
         }
 
-        UpdateManager(this, proxy).checkForUpdate(version)
+        UpdateManager(this, proxy).checkForUpdate()
 
         // Register listeners
         proxy.eventManager.register(this, ServerSwitchListener(this, redisController!!, config!!))
