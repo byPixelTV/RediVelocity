@@ -7,6 +7,9 @@ class ServerCacheScheduler(private val plugin: RediVelocity, private val redisCo
     init {
         val task = Runnable {
             val allServers = plugin.proxy.allServers
+            redisController.deleteHash("rv-$proxyId-servers-servers")
+            redisController.deleteHash("rv-$proxyId-servers-playercount")
+            redisController.deleteHash("rv-$proxyId-servers-address")
             allServers.forEach { server ->
                 redisController.setHashField("rv-$proxyId-servers-servers", server.serverInfo.name, server.serverInfo.address.toString())
                 redisController.setHashField("rv-$proxyId-servers-playercount", server.serverInfo.name, server.playersConnected.size.toString())
