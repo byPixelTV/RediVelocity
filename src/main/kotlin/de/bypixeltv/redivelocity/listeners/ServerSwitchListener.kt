@@ -13,13 +13,16 @@ class ServerSwitchListener @Inject constructor(private val rediVelocity: RediVel
     @Subscribe
     fun onServerSwitch(event: ServerConnectedEvent) {
         val player = event.player
-        redisController.sendJsonMessage(
+        val previousServerName = event.previousServer.map { it.serverInfo.name }.orElse("null")
+        redisController.sendJsonMessageSC(
             "serverSwitch",
             rediVelocity.getProxyId(),
             player.username,
             player.uniqueId.toString(),
             player.clientBrand.toString(),
             player.remoteAddress.toString().split(":")[0].substring(1),
+            event.server.serverInfo.name ?: "null",
+            previousServerName,
             config.redisChannel
         )
         redisController.setHashField("rv-players-server", player.uniqueId.toString(), event.server.serverInfo.name)

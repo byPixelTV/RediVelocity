@@ -57,7 +57,7 @@ class ConfigLoader(private val configFilePath: String) {
     private fun save() {
         FileWriter(configFilePath).use { writer ->
             writer.write("# This is the internal version of the config, DO NOT MODIFY THIS VALUE\n")
-            writer.write("configVersion: ${config?.configVersion}\n\n")
+            writer.write("configVersion: ${config?.configVersion}\n")
             writer.write("# Here you have to put the IP of your Redis database, if the Redis database is on the same Server as the proxy, you can ignore this setting\n")
             writer.write("redisHost: ${config?.redisHost}\n")
             writer.write("# Here you have to put the port of your Redis database, the default port is 6379\n")
@@ -74,6 +74,16 @@ class ConfigLoader(private val configFilePath: String) {
             writer.write("prefix: ${config?.prefix}\n")
             writer.write("# Here you can set the message for the kick message. For colorecodes you have to use minimessages\n")
             writer.write("kickMessage: ${config?.kickMessage}\n")
+            writer.write("\n\n\n# Here you can enable or disable the resourcepack sending over the proxy\n#Not yet implemented, will be implemented in the next update or smth\n")
+            writer.write("sendResourcepackOverProxy: ${config?.sendResourcepackOverProxy}\n")
+            writer.write("# Here you can enable or disable the force of the resourcepack\n")
+            writer.write("forceResourcepack: ${config?.forceResourcepack}\n")
+            writer.write("# Here you can put the URL of the resourcepack\n")
+            writer.write("resourcepackUrl: ${config?.resourcepackUrl}\n")
+            writer.write("# Here you can put the message for the resourcepack. For colorcodes you have to use minimessages\n")
+            writer.write("resourcepackMessage: ${config?.resourcepackMessage}\n")
+            writer.write("# Here you can put the message for the kick message if the player doesn't accept the resourcepack. For colorcodes you have to use minimessages\n")
+            writer.write("resourcepackKickMessage: ${config?.resourcepackKickMessage}\n")
         }
     }
 }

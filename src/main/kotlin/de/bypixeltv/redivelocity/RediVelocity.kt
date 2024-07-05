@@ -28,6 +28,7 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
     }
 
     private var redisController: RedisController? = null
+    private var serverCacheScheduler: ServerCacheScheduler? = null
     private val configLoader: ConfigLoader = ConfigLoader("plugins/redivelocity/config.yml").apply { load() }
     private val miniMessages = MiniMessage.miniMessage()
 
@@ -83,19 +84,22 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
         // Check for updates
         if (version.contains("-")) {
             this.sendLogs("This is a BETA build, things may not work as expected, please report any bugs on GitHub")
-            this.sendLogs("https://github.com/byPixelTV/SkCloudnet/issues")
+            this.sendLogs("https://github.com/byPixelTV/RediVelocity/issues")
         }
 
         UpdateManager(this, proxy).checkForUpdate(version)
 
         // Register listeners
         proxy.eventManager.register(this, ServerSwitchListener(this, redisController!!, config!!))
-        proxy.eventManager.register(this, PostLoginListener(this, redisController!!, config, proxyId))
+        proxy.eventManager.register(this, PostLoginListener(this, redisController!!, config, proxyId, proxy))
         proxy.eventManager.register(this, DisconnectListener(this, redisController!!, config, proxyId))
         proxy.eventManager.register(this, ProxyPingListener(proxy, redisController!!))
 
         // Register commands
         RediVelocityCommand(this, proxy, redisController!!, config)
+
+        // Load ServerCacheScheduler
+        serverCacheScheduler = ServerCacheScheduler(this, redisController!!, proxyId)
     }
 
     @Suppress("UNUSED")
@@ -104,6 +108,11 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
         event.toString()
         redisController!!.removeFromListByValue("rv-proxies", proxyId)
         redisController!!.deleteHashField("rv-proxy-players", proxyId)
+        redisController!!.deleteHash("rv-players-cache")
+        redisController!!.deleteHashField("rv-$proxyId-servers-servers", proxyId)
+        redisController!!.deleteHashField("rv-$proxyId-servers-players", proxyId)
+        redisController!!.deleteHashField("rv-$proxyId-servers-playercount", proxyId)
+        redisController!!.deleteHashField("rv-$proxyId-servers-address", proxyId)
         // Check if any proxies are still connected if not, delete the hash
         if (redisController!!.getList("proxies")?.isEmpty() == true) {
             redisController!!.deleteHash("rv-proxy-players")

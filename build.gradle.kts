@@ -19,6 +19,11 @@ repositories {
 }
 
 dependencies {
+    implementation(kotlin("stdlib"))
+
+    // Kotlinx Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0-RC")
+
     compileOnly("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
     implementation("redis.clients:jedis:5.2.0-beta4")
     implementation("dev.jorel:commandapi-velocity-shade:9.5.0-SNAPSHOT")

@@ -12,7 +12,7 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-class RedisController(private val plugin: RediVelocity, private val config: Config) : BinaryJedisPubSub(), Runnable {
+class RedisController(private val plugin: RediVelocity, config: Config) : BinaryJedisPubSub(), Runnable {
 
     private val jedisPool: JedisPool
     private var channelsInByte: Array<ByteArray>
@@ -95,6 +95,25 @@ class RedisController(private val plugin: RediVelocity, private val config: Conf
         jsonObject.put("clientbrand", clientbrand)
         jsonObject.put("ipadress", userip)
         jsonObject.put("timestamp", System.currentTimeMillis())
+        val jsonString = jsonObject.toString()
+
+        // Publish the JSON string to the specified channel
+        jedisPool.resource.use { jedis ->
+            jedis.publish(channel, jsonString)
+        }
+    }
+
+    fun sendJsonMessageSC(event: String, proxyId: String, username: String, useruuid: String, clientbrand: String, userip: String, serverName: String, previousServer: String, channel: String) {
+        val jsonObject = JSONObject()
+        jsonObject.put("action", event)
+        jsonObject.put("proxyid", proxyId)
+        jsonObject.put("username", username)
+        jsonObject.put("uuid", useruuid)
+        jsonObject.put("clientbrand", clientbrand)
+        jsonObject.put("ipadress", userip)
+        jsonObject.put("timestamp", System.currentTimeMillis())
+        jsonObject.put("servername", serverName)
+        jsonObject.put("previousserver", previousServer)
 
         val jsonString = jsonObject.toString()
 

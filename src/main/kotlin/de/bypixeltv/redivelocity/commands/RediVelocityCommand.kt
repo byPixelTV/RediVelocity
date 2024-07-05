@@ -12,6 +12,7 @@ import dev.jorel.commandapi.CommandAPICommand
 import dev.jorel.commandapi.arguments.ArgumentSuggestions
 import dev.jorel.commandapi.arguments.StringArgument
 import dev.jorel.commandapi.executors.CommandExecutor
+import kotlinx.coroutines.*
 import net.kyori.adventure.text.minimessage.MiniMessage
 import java.io.BufferedReader
 import java.io.IOException
@@ -20,7 +21,7 @@ import java.net.URI
 import java.util.*
 import kotlin.jvm.optionals.getOrNull
 
-class RediVelocityCommand(private val rediVelocity: RediVelocity, private val proxy: ProxyServer, private val redisController: RedisController, private val config: Config) {
+class RediVelocityCommand(private val rediVelocity: RediVelocity, private val proxy: ProxyServer, private val redisController: RedisController, config: Config) {
 
     private val miniMessage = MiniMessage.miniMessage()
     private val prefix = config.prefix
@@ -50,6 +51,7 @@ class RediVelocityCommand(private val rediVelocity: RediVelocity, private val pr
         return null
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     @Suppress("UNUSED")
     val cmd = CommandAPICommand("redivelocity")
         .withAliases("rv", "rediv", "redisvelocity", "redisv")
@@ -210,7 +212,56 @@ class RediVelocityCommand(private val rediVelocity: RediVelocity, private val pr
                                     sender.sendMessage(miniMessage.deserialize("$prefix <gray>There are currently no players online on proxy <aqua>$proxyId</aqua>.</gray>"))
                                 }
                             }
-                        })
+                        }),
+                    CommandAPICommand("servers")
+                        .withSubcommands(
+                            CommandAPICommand("registered")
+                                .withPermission("redivelocity.admin.proxy.servers.registered")
+                                .executes(CommandExecutor { sender, _ ->
+                                    GlobalScope.launch {
+                                        val proxyRegisteredServers = proxy.allServers
+                                        val futures = proxyRegisteredServers.map { server ->
+                                            async {
+                                                try {
+                                                    val result = server.ping().get()
+                                                    "$prefix <color:#0dbf00>●</color> <aqua>${server.serverInfo.name}</aqua> <dark_gray>(<grey>Address: <aqua>${server.serverInfo.address}</aqua>, Playercount: <aqua>${server.playersConnected.size}</aqua>, Version: <aqua>${result.version.protocol}, ${result.version.name}</aqua></grey>)</dark_gray>"
+                                                } catch (e: Exception) {
+                                                    "$prefix <color:#f00000>●</color> <aqua>${server.serverInfo.name}</aqua> <dark_gray>(<grey>Address: <aqua>${server.serverInfo.address}</aqua></grey>)</dark_gray>"
+                                                }
+                                            }
+                                        }
+                                        val proxyRegisteredServersPrettyNames = futures.awaitAll()
+                                        val proxyRegisteredServersPrettyString = proxyRegisteredServersPrettyNames.joinToString(separator = "<br>")
+                                        if (proxyRegisteredServers.isNotEmpty()) {
+                                            sender.sendMessage(miniMessage.deserialize("$prefix <gray>Currently registered servers:<br>$proxyRegisteredServersPrettyString</gray>"))
+                                        } else {
+                                            sender.sendMessage(miniMessage.deserialize("$prefix <gray>There are currently no registered servers.</gray>"))
+                                        }
+                                    }
+                                }),
+                            CommandAPICommand("connected")
+                                .withArguments(StringArgument("proxy").replaceSuggestions(ArgumentSuggestions.stringCollection {
+                                    redisController.getList("rv-proxies")
+                                }))
+                                .withPermission("redivelocity.admin.proxy.servers.connected")
+                                .executes(CommandExecutor { sender, args ->
+                                    val proxy = args[0]
+                                    val proxyConnectedServers = redisController.getHashValuesAsPair("rv-$proxy-servers-servers")
+                                    val proxyConnectedServersPrettyNames: MutableList<String> = mutableListOf()
+                                    proxyConnectedServers.forEach { (serverName, address) ->
+                                        proxyConnectedServersPrettyNames.add("$prefix <color:#0dbf00>●</color> <aqua>$serverName</aqua> <dark_gray>(<grey>Players: <aqua>${redisController.getHashField("rv-$proxy-servers-playercount", serverName)}</aqua>, Address: <aqua>$address</aqua></grey>)</dark_gray>")
+                                    }
+
+                                    val proxyConnectedServersPrettyString = proxyConnectedServersPrettyNames.joinToString(separator = "<br>")
+
+                                    if (proxyConnectedServers.isEmpty()) {
+                                        sender.sendMessage(miniMessage.deserialize("$prefix <gray>There are currently no connected servers.</gray>"))
+                                        return@CommandExecutor
+                                    } else {
+                                        sender.sendMessage(miniMessage.deserialize("$prefix <gray>Currently connected servers on proxy <aqua>$proxy</aqua>:<br>$proxyConnectedServersPrettyString</gray>"))
+                                    }
+                                })
+                        )
                 ),
             CommandAPICommand("blacklist")
                 .withSubcommands(

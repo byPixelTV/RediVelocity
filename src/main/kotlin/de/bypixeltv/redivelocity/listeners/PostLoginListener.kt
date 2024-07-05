@@ -3,12 +3,13 @@ package de.bypixeltv.redivelocity.listeners
 import com.google.inject.Inject
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.connection.PostLoginEvent
-import de.bypixeltv.redivelocity.config.Config
+import com.velocitypowered.api.proxy.ProxyServer
 import de.bypixeltv.redivelocity.RediVelocity
+import de.bypixeltv.redivelocity.config.Config
 import de.bypixeltv.redivelocity.managers.RedisController
 import net.kyori.adventure.text.minimessage.MiniMessage
 
-class PostLoginListener @Inject constructor(private val rediVelocity: RediVelocity, private val redisController: RedisController, private val config: Config, private val proxyId: String)  {
+class PostLoginListener @Inject constructor(private val rediVelocity: RediVelocity, private val redisController: RedisController, private val config: Config, private val proxyId: String, private val proxy: ProxyServer)  {
 
     private val miniMessage = MiniMessage.miniMessage()
 
@@ -44,6 +45,7 @@ class PostLoginListener @Inject constructor(private val rediVelocity: RediVeloci
         }
         redisController.setHashField("rv-players-proxy", player.uniqueId.toString(), proxyId)
         redisController.setHashField("rv-players-name", player.uniqueId.toString(), player.username)
+        redisController.setHashField("rv-players-cache", player.uniqueId.toString(), player.username)
         redisController.setHashField("rv-players-ip", player.uniqueId.toString(), player.remoteAddress.toString().split(":")[0].substring(1))
     }
 }
