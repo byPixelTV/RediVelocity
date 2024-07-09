@@ -64,6 +64,7 @@ class RediVelocityCommand(private val rediVelocity: RediVelocity, private val pr
     @Suppress("UNUSED")
     val cmd = CommandAPICommand("redivelocity")
         .withAliases("rv", "rediv", "redisvelocity", "redisv")
+        .withPermission("redivelocity.admin")
         .withSubcommands(
             CommandAPICommand("player")
                 .withSubcommands(
@@ -93,15 +94,15 @@ class RediVelocityCommand(private val rediVelocity: RediVelocity, private val pr
                             val lastSeen = redisController.getHashField("rv-players-lastseen", getUUID(playerName).toString())
                             val isOnline: Boolean =
                                 redisController.getHashField("rv-players-name", getUUID(playerName).toString())?.contains(playerName) == true
-                                if (!isOnline) {
-                                    if (lastSeen != null) {
-                                        sender.sendMessage(miniMessage.deserialize("$prefix <gray>The player <aqua>$playerName</aqua> was last seen <aqua>${lastSeen.toLong().asDateString()}</aqua>.</gray>"))
-                                    } else {
-                                        sender.sendMessage(miniMessage.deserialize("$prefix <gray>The player <aqua>$playerName</aqua> was never seen before.</gray>"))
-                                    }
+                            if (!isOnline) {
+                                if (lastSeen != null) {
+                                    sender.sendMessage(miniMessage.deserialize("$prefix <gray>The player <aqua>$playerName</aqua> was last seen <aqua>${lastSeen.toLong().asDateString()}</aqua>.</gray>"))
                                 } else {
-                                    sender.sendMessage(miniMessage.deserialize("$prefix <gray>The player <aqua>$playerName</aqua> is currently <green>online</green>.</gray>"))
+                                    sender.sendMessage(miniMessage.deserialize("$prefix <gray>The player <aqua>$playerName</aqua> was never seen before.</gray>"))
                                 }
+                            } else {
+                                sender.sendMessage(miniMessage.deserialize("$prefix <gray>The player <aqua>$playerName</aqua> is currently <green>online</green>.</gray>"))
+                            }
                         }),
                     CommandAPICommand("ip")
                         .withArguments(StringArgument("playerIp").replaceSuggestions(ArgumentSuggestions.stringCollection {

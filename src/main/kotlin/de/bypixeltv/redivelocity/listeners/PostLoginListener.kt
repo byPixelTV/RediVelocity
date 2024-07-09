@@ -45,7 +45,7 @@ class PostLoginListener @Inject constructor(private val rediVelocity: RediVeloci
         }
         redisController.setHashField("rv-players-proxy", player.uniqueId.toString(), proxyId)
         redisController.setHashField("rv-players-name", player.uniqueId.toString(), player.username)
-        redisController.setHashField("rv-players-cache", player.uniqueId.toString(), player.username)
+        redisController.setHashField("rv-players-name", player.uniqueId.toString(), player.username)
         redisController.setHashField("rv-players-ip", player.uniqueId.toString(), player.remoteAddress.toString().split(":")[0].substring(1))
     }
 }
