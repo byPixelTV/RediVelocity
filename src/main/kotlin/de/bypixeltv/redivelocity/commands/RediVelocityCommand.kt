@@ -189,8 +189,13 @@ class RediVelocityCommand(private val rediVelocity: RediVelocity, private val pr
                             }
                             val playersPrettyString = playersPrettyNames.joinToString(separator = "<br>")
                             if (playerNames.isEmpty()) {
-                                sender.sendMessage(miniMessage.deserialize("$prefix <gray>There are currently no players online.</gray>"))
-                                return@CommandExecutor
+                                if (proxyId == null) {
+                                    sender.sendMessage(miniMessage.deserialize("$prefix <gray>There are currently no players online.</gray>"))
+                                    return@CommandExecutor
+                                } else {
+                                    sender.sendMessage(miniMessage.deserialize("$prefix <gray>There are currently no players online on proxy <aqua>$proxyId</aqua>.</gray>"))
+                                    return@CommandExecutor
+                                }
                             } else {
                                 if (proxyId != null) {
                                     sender.sendMessage(miniMessage.deserialize("$prefix <gray>Currently online players on proxy <aqua>$proxyId</aqua>:<br>$playersPrettyString</gray>"))
