@@ -9,7 +9,7 @@ import de.bypixeltv.redivelocity.config.Config
 import de.bypixeltv.redivelocity.managers.RedisController
 import net.kyori.adventure.text.minimessage.MiniMessage
 
-class PostLoginListener @Inject constructor(private val rediVelocity: RediVelocity, private val redisController: RedisController, private val config: Config, private val proxyId: String, private val proxy: ProxyServer)  {
+class PostLoginListener @Inject constructor(private val rediVelocity: RediVelocity, private val redisController: RedisController, private val config: Config, private val proxyId: String, private val proxy: ProxyServer) {
 
     private val miniMessage = MiniMessage.miniMessage()
 

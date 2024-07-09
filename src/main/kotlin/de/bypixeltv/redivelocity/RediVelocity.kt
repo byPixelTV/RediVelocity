@@ -8,10 +8,7 @@ import com.velocitypowered.api.plugin.Plugin
 import com.velocitypowered.api.proxy.ProxyServer
 import de.bypixeltv.redivelocity.commands.RediVelocityCommand
 import de.bypixeltv.redivelocity.config.ConfigLoader
-import de.bypixeltv.redivelocity.listeners.DisconnectListener
-import de.bypixeltv.redivelocity.listeners.PostLoginListener
-import de.bypixeltv.redivelocity.listeners.ProxyPingListener
-import de.bypixeltv.redivelocity.listeners.ServerSwitchListener
+import de.bypixeltv.redivelocity.listeners.*
 import de.bypixeltv.redivelocity.managers.RedisController
 import de.bypixeltv.redivelocity.managers.UpdateManager
 import de.bypixeltv.redivelocity.utils.ProxyIdGenerator
