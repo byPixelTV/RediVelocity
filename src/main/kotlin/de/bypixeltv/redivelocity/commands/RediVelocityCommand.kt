@@ -51,6 +51,15 @@ class RediVelocityCommand(private val rediVelocity: RediVelocity, private val pr
         return null
     }
 
+    fun isValidUUID(uuidString: String): Boolean {
+        return try {
+            UUID.fromString(uuidString)
+            true
+        } catch (e: IllegalArgumentException) {
+            false
+        }
+    }
+
     @OptIn(DelicateCoroutinesApi::class)
     @Suppress("UNUSED")
     val cmd = CommandAPICommand("redivelocity")
@@ -273,8 +282,13 @@ class RediVelocityCommand(private val rediVelocity: RediVelocity, private val pr
                         .executes(CommandExecutor { sender, args ->
                             val playerName = args[0] as String
                             val playerUUID = getUUID(playerName).toString()
-                            redisController.setHashField("rv-players-blacklist", playerUUID, redisController.getHashField("rv-players-ip", playerUUID) ?: "unknown-ip")
-                            sender.sendMessage(miniMessage.deserialize("$prefix <gray>Added player <aqua>$playerName</aqua> to the blacklist.</gray>"))
+                            if (!isValidUUID(playerUUID)) {
+                                sender.sendMessage(miniMessage.deserialize("$prefix <red>Failed to add player to the blacklist. Maybe the name you've entered is not correct?</red>"))
+                                return@CommandExecutor
+                            } else {
+                                redisController.setHashField("rv-players-blacklist", playerUUID, redisController.getHashField("rv-players-ip", playerUUID) ?: "unknown-ip")
+                                sender.sendMessage(miniMessage.deserialize("$prefix <gray>Added player <aqua>$playerName</aqua> to the blacklist.</gray>"))
+                            }
                         }),
                     CommandAPICommand("remove")
                         .withArguments(StringArgument("proxyBlacklistAdd").replaceSuggestions(ArgumentSuggestions.stringCollection {

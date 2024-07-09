@@ -109,10 +109,10 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
         redisController!!.removeFromListByValue("rv-proxies", proxyId)
         redisController!!.deleteHashField("rv-proxy-players", proxyId)
         redisController!!.deleteHash("rv-players-cache")
-        redisController!!.deleteHashField("rv-$proxyId-servers-servers", proxyId)
-        redisController!!.deleteHashField("rv-$proxyId-servers-players", proxyId)
-        redisController!!.deleteHashField("rv-$proxyId-servers-playercount", proxyId)
-        redisController!!.deleteHashField("rv-$proxyId-servers-address", proxyId)
+        redisController!!.deleteHash("rv-$proxyId-servers-servers")
+        redisController!!.deleteHash("rv-$proxyId-servers-players")
+        redisController!!.deleteHash("rv-$proxyId-servers-playercount")
+        redisController!!.deleteHash("rv-$proxyId-servers-address")
         // Check if any proxies are still connected if not, delete the hash
         if (redisController!!.getList("proxies")?.isEmpty() == true) {
             redisController!!.deleteHash("rv-proxy-players")
