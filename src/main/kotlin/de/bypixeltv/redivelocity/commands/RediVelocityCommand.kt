@@ -174,28 +174,29 @@ class RediVelocityCommand(private val rediVelocity: RediVelocity, private val pr
                             val proxyId = args.getOptional(0).getOrNull() as? String
                             val players = redisController.getAllHashValues("rv-players-name")
                             val playersPrettyNames: MutableList<String> = mutableListOf()
+                            val playerNames: MutableList<String> = mutableListOf()
                             players?.forEach { player ->
                                 val playerProxy = redisController.getHashField("rv-players-proxy", proxy.getPlayer(player).orElse(null).uniqueId.toString())
                                 if (proxyId == null) {
+                                    playerNames.add(player)
                                     playersPrettyNames.add("$prefix <aqua>$player</aqua> <dark_gray>(<aqua>$playerProxy</aqua>)</dark_gray>")
                                 } else {
                                     if (playerProxy == proxyId) {
+                                        playerNames.add(player)
                                         playersPrettyNames.add("$prefix <aqua>$player</aqua>")
                                     }
                                 }
                             }
                             val playersPrettyString = playersPrettyNames.joinToString(separator = "<br>")
-                            if (players != null) {
-                                if (players.isEmpty()) {
-                                    sender.sendMessage(miniMessage.deserialize("$prefix <gray>There are currently no players online.</gray>"))
-                                    return@CommandExecutor
+                            if (playerNames.isEmpty()) {
+                                sender.sendMessage(miniMessage.deserialize("$prefix <gray>There are currently no players online.</gray>"))
+                                return@CommandExecutor
+                            } else {
+                                if (proxyId != null) {
+                                    sender.sendMessage(miniMessage.deserialize("$prefix <gray>Currently online players on proxy <aqua>$proxyId</aqua>:<br>$playersPrettyString</gray>"))
                                 } else {
-                                    if (proxyId != null) {
-                                        sender.sendMessage(miniMessage.deserialize("$prefix <gray>Currently online players on proxy <aqua>$proxyId</aqua>:<br>$playersPrettyString</gray>"))
-                                    } else {
-                                        sender.sendMessage(miniMessage.deserialize("$prefix <gray>Currently online players:<br>$playersPrettyString</gray>"))
+                                    sender.sendMessage(miniMessage.deserialize("$prefix <gray>Currently online players:<br>$playersPrettyString</gray>"))
 
-                                    }
                                 }
                             }
                         }),
@@ -246,28 +247,6 @@ class RediVelocityCommand(private val rediVelocity: RediVelocity, private val pr
                                         } else {
                                             sender.sendMessage(miniMessage.deserialize("$prefix <gray>There are currently no registered servers.</gray>"))
                                         }
-                                    }
-                                }),
-                            CommandAPICommand("connected")
-                                .withArguments(StringArgument("proxy").replaceSuggestions(ArgumentSuggestions.stringCollection {
-                                    redisController.getList("rv-proxies")
-                                }))
-                                .withPermission("redivelocity.admin.proxy.servers.connected")
-                                .executes(CommandExecutor { sender, args ->
-                                    val proxy = args[0]
-                                    val proxyConnectedServers = redisController.getHashValuesAsPair("rv-$proxy-servers-servers")
-                                    val proxyConnectedServersPrettyNames: MutableList<String> = mutableListOf()
-                                    proxyConnectedServers.forEach { (serverName, address) ->
-                                        proxyConnectedServersPrettyNames.add("$prefix <color:#0dbf00>●</color> <aqua>$serverName</aqua> <dark_gray>(<grey>Players: <aqua>${redisController.getHashField("rv-$proxy-servers-playercount", serverName)}</aqua>, Address: <aqua>$address</aqua></grey>)</dark_gray>")
-                                    }
-
-                                    val proxyConnectedServersPrettyString = proxyConnectedServersPrettyNames.joinToString(separator = "<br>")
-
-                                    if (proxyConnectedServers.isEmpty()) {
-                                        sender.sendMessage(miniMessage.deserialize("$prefix <gray>There are currently no connected servers.</gray>"))
-                                        return@CommandExecutor
-                                    } else {
-                                        sender.sendMessage(miniMessage.deserialize("$prefix <gray>Currently connected servers on proxy <aqua>$proxy</aqua>:<br>$proxyConnectedServersPrettyString</gray>"))
                                     }
                                 })
                         )
