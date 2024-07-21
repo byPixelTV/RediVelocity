@@ -33,15 +33,23 @@ class PostLoginListener @Inject constructor(private val rediVelocity: RediVeloci
         }
         val players = redisController.getHashField("rv-proxy-players", proxyId)?.toInt()
         if (players != null) {
-            redisController.setHashField("rv-proxy-players", proxyId, (players + 1).toString())
+            if (players <= 0) {
+                redisController.setHashField("rv-proxy-players", proxyId, "1")
+            } else {
+                redisController.setHashField("rv-proxy-players", proxyId, (players + 1).toString())
+            }
         } else {
-            redisController.setHashField("rv-proxy-players", proxyId, "1")
+            redisController.setHashField("rv-proxy-players", proxyId, "0")
         }
         val gplayers = redisController.getString("rv-global-playercount")
         if (gplayers != null) {
-            redisController.setString("rv-global-playercount", (gplayers.toInt() + 1).toString())
+            if (gplayers.toInt() <= 0) {
+                redisController.setString("rv-global-playercount", "1")
+            } else {
+                redisController.setString("rv-global-playercount", (gplayers.toInt() + 1).toString())
+            }
         } else {
-            redisController.setString("rv-global-playercount", "1")
+            redisController.setString("rv-global-playercount", "0")
         }
         redisController.setHashField("rv-players-proxy", player.uniqueId.toString(), proxyId)
         redisController.setHashField("rv-players-name", player.uniqueId.toString(), player.username)
