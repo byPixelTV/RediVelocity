@@ -25,7 +25,6 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
     }
 
     private var redisController: RedisController? = null
-    private var serverCacheScheduler: ServerCacheScheduler? = null
     private val configLoader: ConfigLoader = ConfigLoader("plugins/redivelocity/config.yml").apply { load() }
     private val miniMessages = MiniMessage.miniMessage()
 
@@ -94,9 +93,6 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
 
         // Register commands
         RediVelocityCommand(this, proxy, redisController!!, config)
-
-        // Load ServerCacheScheduler
-        serverCacheScheduler = ServerCacheScheduler(this, redisController!!, proxyId)
     }
 
     @Suppress("UNUSED")

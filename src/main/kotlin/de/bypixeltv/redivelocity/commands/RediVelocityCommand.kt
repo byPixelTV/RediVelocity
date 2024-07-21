@@ -230,32 +230,29 @@ class RediVelocityCommand(private val rediVelocity: RediVelocity, private val pr
                             }
                         }),
                     CommandAPICommand("servers")
-                        .withSubcommands(
-                            CommandAPICommand("registered")
-                                .withPermission("redivelocity.admin.proxy.servers.registered")
-                                .executes(CommandExecutor { sender, _ ->
-                                    GlobalScope.launch {
-                                        val proxyRegisteredServers = proxy.allServers
-                                        val futures = proxyRegisteredServers.map { server ->
-                                            async {
-                                                try {
-                                                    val result = server.ping().get()
-                                                    "$prefix <color:#0dbf00>●</color> <aqua>${server.serverInfo.name}</aqua> <dark_gray>(<grey>Address: <aqua>${server.serverInfo.address}</aqua>, Playercount: <aqua>${server.playersConnected.size}</aqua>, Version: <aqua>${result.version.protocol}, ${result.version.name}</aqua></grey>)</dark_gray>"
-                                                } catch (e: Exception) {
-                                                    "$prefix <color:#f00000>●</color> <aqua>${server.serverInfo.name}</aqua> <dark_gray>(<grey>Address: <aqua>${server.serverInfo.address}</aqua></grey>)</dark_gray>"
-                                                }
-                                            }
-                                        }
-                                        val proxyRegisteredServersPrettyNames = futures.awaitAll()
-                                        val proxyRegisteredServersPrettyString = proxyRegisteredServersPrettyNames.joinToString(separator = "<br>")
-                                        if (proxyRegisteredServers.isNotEmpty()) {
-                                            sender.sendMessage(miniMessage.deserialize("$prefix <gray>Currently registered servers:<br>$proxyRegisteredServersPrettyString</gray>"))
-                                        } else {
-                                            sender.sendMessage(miniMessage.deserialize("$prefix <gray>There are currently no registered servers.</gray>"))
+                        .withPermission("redivelocity.admin.proxy.servers")
+                        .executes(CommandExecutor { sender, _ ->
+                            GlobalScope.launch {
+                                val proxyRegisteredServers = proxy.allServers
+                                val futures = proxyRegisteredServers.map { server ->
+                                    async {
+                                        try {
+                                            val result = server.ping().get()
+                                            "$prefix <color:#0dbf00>●</color> <aqua>${server.serverInfo.name}</aqua> <dark_gray>(<grey>Address: <aqua>${server.serverInfo.address}</aqua>, Playercount: <aqua>${server.playersConnected.size}</aqua>, Version: <aqua>${result.version.protocol}, ${result.version.name}</aqua></grey>)</dark_gray>"
+                                        } catch (e: Exception) {
+                                            "$prefix <color:#f00000>●</color> <aqua>${server.serverInfo.name}</aqua> <dark_gray>(<grey>Address: <aqua>${server.serverInfo.address}</aqua></grey>)</dark_gray>"
                                         }
                                     }
-                                })
-                        )
+                                }
+                                val proxyRegisteredServersPrettyNames = futures.awaitAll()
+                                val proxyRegisteredServersPrettyString = proxyRegisteredServersPrettyNames.joinToString(separator = "<br>")
+                                if (proxyRegisteredServers.isNotEmpty()) {
+                                    sender.sendMessage(miniMessage.deserialize("$prefix <gray>Currently registered servers:<br>$proxyRegisteredServersPrettyString</gray>"))
+                                } else {
+                                    sender.sendMessage(miniMessage.deserialize("$prefix <gray>There are currently no registered servers.</gray>"))
+                                }
+                            }
+                        })
                 ),
             CommandAPICommand("blacklist")
                 .withSubcommands(
