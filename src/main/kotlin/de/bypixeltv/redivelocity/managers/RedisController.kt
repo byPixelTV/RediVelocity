@@ -1,24 +1,27 @@
 package de.bypixeltv.redivelocity.managers
 
 import de.bypixeltv.redivelocity.RediVelocity
-import com.velocitypowered.api.scheduler.ScheduledTask
 import de.bypixeltv.redivelocity.config.Config
-import org.json.JSONObject
 import redis.clients.jedis.BinaryJedisPubSub
 import redis.clients.jedis.JedisPool
 import redis.clients.jedis.JedisPoolConfig
 import java.nio.charset.StandardCharsets
-import java.util.*
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
+import org.json.JSONObject
+import java.util.*
 
-class RedisController(private val plugin: RediVelocity, config: Config) : BinaryJedisPubSub(), Runnable {
+@Singleton
+class RedisController @Inject constructor(
+    private val rediVelocity: RediVelocity,
+    config: Config
+) : BinaryJedisPubSub(), Runnable {
 
     private val jedisPool: JedisPool
     private var channelsInByte: Array<ByteArray>
     private val isConnectionBroken = AtomicBoolean(true)
     private val isConnecting = AtomicBoolean(false)
-    private var connectionTask: ScheduledTask? = null
 
     init {
         val jConfig = JedisPoolConfig()
@@ -29,60 +32,37 @@ class RedisController(private val plugin: RediVelocity, config: Config) : Binary
         jConfig.minIdle = 1
         jConfig.blockWhenExhausted = true
 
-        val password = config.redisPassword ?: ""
+        val password = config.redis.password
         jedisPool = if (password.isEmpty()) {
-            JedisPool(
-                jConfig,
-                config.redisHost,
-                config.redisPort,
-                9000,
-                config.useSsl
-            )
+            JedisPool(jConfig, config.redis.host, config.redis.port)
         } else {
-            JedisPool(
-                jConfig,
-                config.redisHost ?: "0.0.0.0",
-                config.redisPort,
-                9000,
-                password,
-                config.useSsl
-            )
+            JedisPool(jConfig, config.redis.host, config.redis.port, 2000, password)
         }
 
         channelsInByte = setupChannels()
-        connectionTask = plugin.proxy.scheduler.buildTask(plugin, this).repeat(5, TimeUnit.SECONDS).schedule()
     }
 
     override fun run() {
         if (!isConnectionBroken.get() || isConnecting.get()) {
             return
         }
-        plugin.sendLogs("Connecting to Redis server...")
+        rediVelocity.sendLogs("Connecting to Redis server...")
         isConnecting.set(true)
         try {
             jedisPool.resource.use { jedis ->
                 isConnectionBroken.set(false)
-                plugin.sendLogs("Connection to Redis server has established! Success!")
+                rediVelocity.sendLogs("Connection to Redis server has established! Success!")
                 jedis.subscribe(this, *channelsInByte)
             }
         } catch (e: Exception) {
             isConnecting.set(false)
             isConnectionBroken.set(true)
-            plugin.sendErrorLogs("Connection to Redis server has failed! Please check your details in the configuration.")
+            rediVelocity.sendErrorLogs("Connection to Redis server has failed! Please check your details in the configuration.")
             e.printStackTrace()
         }
     }
 
     fun shutdown() {
-        connectionTask?.cancel()
-        if (this.isSubscribed) {
-            try {
-                this.unsubscribe()
-            } catch (e: Exception) {
-                plugin.sendErrorLogs("Something went wrong during unsubscribing...")
-                e.printStackTrace()
-            }
-        }
         jedisPool.close()
     }
 
@@ -269,18 +249,12 @@ class RedisController(private val plugin: RediVelocity, config: Config) : Binary
         return fieldNames
     }
 
-
     private fun setupChannels(): Array<ByteArray> {
         val channels = listOf("global", "messaging", "friends", "utils", "other") // replace with your actual channels
         return Array(channels.size) { channels[it].toByteArray(StandardCharsets.UTF_8) }
     }
 
-    fun isRedisConnectionOffline(): Boolean {
-        return isConnectionBroken.get()
-    }
-
     fun getJedisPool(): JedisPool {
         return jedisPool
-    } //
-
+    }
 }

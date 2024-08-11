@@ -1,39 +1,50 @@
 package de.bypixeltv.redivelocity
 
-import com.google.inject.Inject
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
-import com.velocitypowered.api.plugin.Plugin
 import com.velocitypowered.api.proxy.ProxyServer
 import de.bypixeltv.redivelocity.commands.RediVelocityCommand
 import de.bypixeltv.redivelocity.config.ConfigLoader
 import de.bypixeltv.redivelocity.listeners.*
 import de.bypixeltv.redivelocity.managers.RedisController
 import de.bypixeltv.redivelocity.managers.UpdateManager
+import de.bypixeltv.redivelocity.utils.CloudNetUtils
 import de.bypixeltv.redivelocity.utils.ProxyIdGenerator
 import dev.jorel.commandapi.CommandAPI
 import dev.jorel.commandapi.CommandAPIVelocityConfig
+import jakarta.inject.Inject
+import jakarta.inject.Provider
+import jakarta.inject.Singleton
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.bstats.velocity.Metrics
 
-@Plugin(id = "redivelocity", name = "RediVelocity", version = "1.0.2", authors = ["byPixelTV"], description = "A Velocity plugin that sends Redis messages if a player joins the network, switches servers, or leaves the network.", url = "https://bypixeltv.de")
-class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metricsFactory: Metrics.Factory) {
+@Singleton
+class RediVelocity @Inject constructor(
+    private val proxy: ProxyServer,
+    private val metricsFactory: Metrics.Factory,
+    private val proxyIdGenerator: ProxyIdGenerator,
+    private val updateManager: UpdateManager,
+    private val rediVelocityCommandProvider: Provider<RediVelocityCommand>
+) {
 
     init {
         CommandAPI.onLoad(CommandAPIVelocityConfig(proxy, this).silentLogs(true).verboseOutput(true))
     }
 
-    private var redisController: RedisController? = null
     private val configLoader: ConfigLoader = ConfigLoader("plugins/redivelocity/config.yml").apply { load() }
+    private val config = configLoader.config
     private val miniMessages = MiniMessage.miniMessage()
-
-
-    private var jsonFormat: String = "false"
+    private var jsonFormat: String = config?.jsonFormat.toString()
     private var proxyId: String = ""
+    private lateinit var redisController: RedisController
 
     fun getProxyId(): String {
         return proxyId
+    }
+
+    fun getRedisController(): RedisController {
+        return redisController
     }
 
     fun sendLogs(message: String) {
@@ -47,32 +58,32 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
     @Suppress("UNUSED")
     @Subscribe
     fun onProxyInitialization(event: ProxyInitializeEvent) {
+        // Load config and create RedisController
+        configLoader.load()
+        val config = configLoader.config
+        jsonFormat = config?.jsonFormat.toString()
+
+        redisController = RedisController(this, config!!)
+
         metricsFactory.make(this, 22365)
         CommandAPI.onEnable()
         event.toString()
 
-        // Load config and create RedisController
-        configLoader.load()
-        val config = configLoader.config
-        redisController = config?.let { RedisController(this, it) }
-        jsonFormat = config?.jsonFormat.toString()
-
         // Generate new proxy id
-        do {
-            proxyId = config?.let { ProxyIdGenerator(redisController!!, it).generateProxyId() }.toString()
-            val rvProxiesList = redisController!!.getList("rv-proxies")
-            var rvProxiesListFormatted = rvProxiesList?.joinToString()
-            if (rvProxiesListFormatted?.isEmpty() == true) {
-                rvProxiesListFormatted = "No proxies are connected"
+        proxyId = if (config.cloudnet.enabled) {
+            if (config.cloudnet.cloudnetUseServiceId) {
+                CloudNetUtils().getServicename()
+            } else {
+                proxyIdGenerator.generate()
             }
-            this.sendLogs("Generated proxy ID: $proxyId")
-            this.sendLogs("Connected proxies: ${rvProxiesListFormatted ?: "No proxies are connected"}")// Add logging
-        } while (rvProxiesList?.contains(proxyId) == true)
+        } else {
+            proxyIdGenerator.generate()
+        }
 
-        redisController!!.addToList("rv-proxies", arrayOf(proxyId))
-        redisController!!.setHashField("rv-proxy-players", proxyId, 0.toString())
-        if (redisController!!.getString("rv-global-playercount") == null) {
-            redisController!!.setString("rv-global-playercount", 0.toString())
+        redisController.addToList("rv-proxies", arrayOf(proxyId))
+        redisController.setHashField("rv-proxy-players", proxyId, 0.toString())
+        if (redisController.getString("rv-global-playercount") == null) {
+            redisController.setString("rv-global-playercount", 0.toString())
         }
         this.sendLogs("Creating new Proxy with ID: $proxyId")
         val version = proxy.pluginManager.getPlugin("redivelocity").get().description.version.toString()
@@ -83,37 +94,37 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
             this.sendLogs("https://github.com/byPixelTV/RediVelocity/issues")
         }
 
-        UpdateManager(this, proxy).checkForUpdate()
+        updateManager.checkForUpdate()
 
         // Register listeners
-        proxy.eventManager.register(this, ServerSwitchListener(this, redisController!!, config!!))
-        proxy.eventManager.register(this, PostLoginListener(this, redisController!!, config, proxyId, proxy))
-        proxy.eventManager.register(this, DisconnectListener(this, redisController!!, config, proxyId))
-        proxy.eventManager.register(this, ProxyPingListener(proxy, redisController!!))
+        proxy.eventManager.register(this, ServerSwitchListener(this, config))
+        proxy.eventManager.register(this, PostLoginListener(this, config))
+        proxy.eventManager.register(this, DisconnectListener(this, config))
+
+        if (config.playerCountSync) {
+            proxy.eventManager.register(this, ProxyPingListener(this))
+        }
 
         // Register commands
-        RediVelocityCommand(this, proxy, redisController!!, config)
+        rediVelocityCommandProvider.get().register()
     }
 
     @Suppress("UNUSED")
     @Subscribe
     fun onProxyShutdown(event: ProxyShutdownEvent) {
         event.toString()
-        redisController!!.removeFromListByValue("rv-proxies", proxyId)
-        redisController!!.deleteHashField("rv-proxy-players", proxyId)
-        redisController!!.deleteHash("rv-players-name")
-        redisController!!.deleteHash("rv-$proxyId-servers-servers")
-        redisController!!.deleteHash("rv-$proxyId-servers-players")
-        redisController!!.deleteHash("rv-$proxyId-servers-playercount")
-        redisController!!.deleteHash("rv-$proxyId-servers-address")
+        redisController.removeFromListByValue("rv-proxies", proxyId)
+        redisController.deleteHashField("rv-proxy-players", proxyId)
+        redisController.deleteHash("rv-players-name")
+        redisController.deleteHash("rv-$proxyId-servers-servers")
+        redisController.deleteHash("rv-$proxyId-servers-players")
+        redisController.deleteHash("rv-$proxyId-servers-playercount")
+        redisController.deleteHash("rv-$proxyId-servers-address")
         // Check if any proxies are still connected if not, delete the hash
-        if (redisController!!.getList("proxies")?.isEmpty() == true) {
-            redisController!!.deleteHash("rv-proxy-players")
-            redisController!!.deleteString("rv-global-playercount")
+        if (redisController.getList("proxies")?.isEmpty() == true) {
+            redisController.deleteHash("rv-proxy-players")
+            redisController.deleteString("rv-global-playercount")
         }
-        if (redisController != null) {
-            redisController!!.shutdown()
-        }
+        redisController.shutdown()
     }
-
 }

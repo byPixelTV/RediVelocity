@@ -1,14 +1,21 @@
 package de.bypixeltv.redivelocity.listeners
 
-import com.google.inject.Inject
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.proxy.ProxyPingEvent
-import com.velocitypowered.api.proxy.ProxyServer
-import de.bypixeltv.redivelocity.managers.RedisController
+import de.bypixeltv.redivelocity.RediVelocity
+import jakarta.inject.Inject
+import jakarta.inject.Provider
+import jakarta.inject.Singleton
 
-class ProxyPingListener @Inject constructor(private val server: ProxyServer, private val redisController: RedisController) {
+@Singleton
+class ProxyPingListener @Inject constructor(
+    rediVelocity: RediVelocity
+) {
+
+    private val redisController = rediVelocity.getRedisController()
 
     @Subscribe
+    @Suppress("UNUSED")
     fun onProxyPing(event: ProxyPingEvent) {
         val players = redisController.getString("rv-global-playercount")
         val ping = event.ping.asBuilder()

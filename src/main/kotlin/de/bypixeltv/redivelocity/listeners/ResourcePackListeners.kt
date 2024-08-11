@@ -1,62 +1,88 @@
 package de.bypixeltv.redivelocity.listeners
 
-import com.google.inject.Inject
+import com.velocitypowered.api.event.Continuation
 import com.velocitypowered.api.event.EventTask
 import com.velocitypowered.api.event.Subscribe
+import com.velocitypowered.api.event.player.PlayerResourcePackStatusEvent
 import com.velocitypowered.api.event.player.configuration.PlayerFinishConfigurationEvent
 import com.velocitypowered.api.proxy.Player
 import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.proxy.player.ResourcePackInfo
 import de.bypixeltv.redivelocity.config.Config
-import net.kyori.adventure.resource.ResourcePackCallback
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
 import net.kyori.adventure.text.minimessage.MiniMessage
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
 
-class ResourcePackListeners @Inject constructor(private val config: Config, private val proxy: ProxyServer) {
+@Singleton
+class ResourcePackListeners @Inject constructor(
+    private val proxy: ProxyServer,
+    private val config: Config
+) {
 
     private val miniMessage = MiniMessage.miniMessage()
+    private val packStatusFutures = ConcurrentHashMap<Player, CompletableFuture<PlayerResourcePackStatusEvent.Status>>()
 
-    private fun createPackRequest(player: Player, callback: ResourcePackCallback): ResourcePackInfo {
-        return proxy.createResourcePackBuilder(config.resourcepackUrl)
+    private fun createPackRequest(player: Player): ResourcePackInfo {
+        return proxy.createResourcePackBuilder(config.resourcepack.resourcepackUrl)
             .setId(player.uniqueId)
-            .setPrompt(miniMessage.deserialize(config.resourcepackMessage))
+            .setPrompt(config.resourcepack.let { miniMessage.deserialize(it.resourcepackMessage) })
             .build()
     }
 
     @Subscribe
-    fun onConfigurationFinish(e: PlayerFinishConfigurationEvent) : EventTask {
+    fun onConfigurationFinish(e: PlayerFinishConfigurationEvent, continuation: Continuation) {
         println("Entered configuration finish event")
 
-        // store a new countdown latch for this player
-        val userId = e.player.uniqueId
-        val future = CompletableFuture<Boolean>()
+        val player = e.player
+        val future = CompletableFuture<PlayerResourcePackStatusEvent.Status>()
+        packStatusFutures[player] = future
 
-        // assemble the resource pack and
-        val pack = createPackRequest(
-            e.player,
-            callback = ResourcePackCallback.onTerminal(
-                { _, _ ->
-                    // decrease the latch as it was successful
-                    future.complete(true)
+        val pack = createPackRequest(player)
+        player.sendResourcePacks(pack)
+        println("Sending resource pack download request of player ${player.uniqueId}.")
 
-                    // inform about successful load
-                    println("Successfully finished resource pack download of player $userId.")
-                },
-                { _, _ ->
-                    // remove the latch as the operation failed
-                    future.complete(false)
+        future.whenComplete { status, _ ->
+            when (status) {
+                PlayerResourcePackStatusEvent.Status.SUCCESSFUL -> {
+                    println("Successfully finished resource pack download of player ${player.uniqueId}.")
+                }
+                PlayerResourcePackStatusEvent.Status.FAILED_DOWNLOAD -> {
+                    println("Failed resource pack download of player ${player.uniqueId}.")
+                }
+                PlayerResourcePackStatusEvent.Status.DECLINED -> {
+                    println("Player ${player.uniqueId} declined the resource pack.")
+                }
+                PlayerResourcePackStatusEvent.Status.ACCEPTED -> {
+                    println("Player ${player.uniqueId} accepted the resource pack.")
+                }
+                PlayerResourcePackStatusEvent.Status.DOWNLOADED -> {
+                    println("Player ${player.uniqueId} downloaded the resource pack.")
+                }
+                PlayerResourcePackStatusEvent.Status.INVALID_URL -> {
+                    println("Invalid URL for resource pack for player ${player.uniqueId}.")
+                }
+                PlayerResourcePackStatusEvent.Status.FAILED_RELOAD -> {
+                    println("Failed to reload resource pack for player ${player.uniqueId}.")
+                }
+                PlayerResourcePackStatusEvent.Status.DISCARDED -> {
+                    println("Player ${player.uniqueId} discarded the resource pack.")
+                }
+                else -> {
+                    println("Unknown resource pack status for player ${player.uniqueId}.")
+                }
+            }
+            continuation.resume()
+        }
+    }
 
-                    // inform about failure
-                    println("Failed resource pack download of player $userId.")
-                },
-            ),
-        )
+    @Subscribe
+    fun onResourcePackStatus(event: PlayerResourcePackStatusEvent) {
+        val player = event.player
+        val userId = player.uniqueId
 
-        // send resource pack request
-        e.player.sendResourcePacks(pack)
-        println("Sending resource pack download request of player $userId.")
-
-        // await the processing
-        return EventTask.resumeWhenComplete(future)
+        packStatusFutures[player]?.complete(event.status)
+        packStatusFutures.remove(player)
     }
 }

@@ -1,27 +1,36 @@
 package de.bypixeltv.redivelocity.listeners
 
-import com.google.inject.Inject
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.connection.DisconnectEvent
-import de.bypixeltv.redivelocity.config.Config
 import de.bypixeltv.redivelocity.RediVelocity
-import de.bypixeltv.redivelocity.managers.RedisController
+import de.bypixeltv.redivelocity.config.Config
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
 
-class DisconnectListener @Inject constructor(private val rediVelocity: RediVelocity, private val redisController: RedisController, private val config: Config, private val proxyId: String) {
+@Singleton
+class DisconnectListener @Inject constructor(
+    private val rediVelocity: RediVelocity,
+    private val config: Config
+) {
+
+    private val redisController = rediVelocity.getRedisController()
+    private val proxyId = rediVelocity.getProxyId()
 
     @Suppress("UNUSED")
     @Subscribe
     fun onDisconnectEvent(event: DisconnectEvent) {
         val player = event.player
-        redisController.sendJsonMessage(
-            "disconnect",
-            rediVelocity.getProxyId(),
-            player.username,
-            player.uniqueId.toString(),
-            player.clientBrand.toString(),
-            player.remoteAddress.toString().split(":")[0].substring(1),
-            config.redisChannel
-        )
+        config.redis.channel.let {
+            redisController.sendJsonMessage(
+                "disconnect",
+                rediVelocity.getProxyId(),
+                player.username,
+                player.uniqueId.toString(),
+                player.clientBrand.toString(),
+                player.remoteAddress.toString().split(":")[0].substring(1),
+                it
+            )
+        }
         val players = redisController.getHashField("rv-proxy-players", proxyId)?.toInt()
         if (players != null) {
             if (players <= 0) {

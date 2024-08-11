@@ -1,11 +1,18 @@
 package de.bypixeltv.redivelocity.utils
 
-import com.google.inject.Inject
-import de.bypixeltv.redivelocity.config.Config
-import de.bypixeltv.redivelocity.managers.RedisController
+import de.bypixeltv.redivelocity.RediVelocity
+import jakarta.inject.Inject
+import jakarta.inject.Provider
+import jakarta.inject.Singleton
 
-class ProxyIdGenerator @Inject constructor(private val redisController: RedisController, private val config: Config) {
-    fun generateProxyId(): String {
+@Singleton
+class ProxyIdGenerator @Inject constructor(
+    private val rediVelocityProvider: Provider<RediVelocity>
+) {
+
+    fun generate(): String {
+        val redisController = rediVelocityProvider.get().getRedisController()
+
         redisController.getJedisPool().resource.use { jedis ->
             val proxiesList = jedis.lrange("rv-proxies", 0, -1)
             val ids = proxiesList.mapNotNull { it.removePrefix("Proxy-").toIntOrNull() }.sorted()

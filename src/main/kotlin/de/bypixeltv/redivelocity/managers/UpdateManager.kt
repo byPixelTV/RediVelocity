@@ -2,7 +2,6 @@ package de.bypixeltv.redivelocity.managers
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.google.inject.Inject
 import com.velocitypowered.api.proxy.ProxyServer
 import de.bypixeltv.redivelocity.RediVelocity
 import de.bypixeltv.redivelocity.utils.Version
@@ -12,10 +11,19 @@ import java.io.IOException
 import java.io.InputStreamReader
 import java.net.URI
 import java.util.function.Consumer
+import jakarta.inject.Inject
+import jakarta.inject.Provider
+import jakarta.inject.Singleton
 
-class UpdateManager @Inject constructor(private val rediVelocity: RediVelocity, private val proxy: ProxyServer) {
+@Singleton
+class UpdateManager @Inject constructor(
+    private val rediVelocityProvider: Provider<RediVelocity>,
+    private val proxy: ProxyServer
+) {
 
     private val miniMessages = MiniMessage.miniMessage()
+    private val rediVelocity: RediVelocity
+        get() = rediVelocityProvider.get()
 
     fun checkForUpdate() {
         rediVelocity.sendLogs("Checking for updates...")

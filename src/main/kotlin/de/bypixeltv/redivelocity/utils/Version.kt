@@ -1,6 +1,15 @@
 package de.bypixeltv.redivelocity.utils
 
-data class Version(val major: Int, val minor: Int, val patch: Int, val tag: String? = null) : Comparable<Version> {
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
+
+@Singleton
+data class Version @Inject constructor(
+    val major: Int,
+    val minor: Int,
+    val patch: Int,
+    val tag: String? = null
+) : Comparable<Version> {
     companion object {
         fun fromString(versionString: String): Version {
             // Preprocess the versionString to remove any known incorrect prefixes or formats

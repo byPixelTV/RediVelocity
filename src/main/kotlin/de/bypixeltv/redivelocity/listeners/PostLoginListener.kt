@@ -1,36 +1,56 @@
 package de.bypixeltv.redivelocity.listeners
 
-import com.google.inject.Inject
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.connection.PostLoginEvent
-import com.velocitypowered.api.proxy.ProxyServer
 import de.bypixeltv.redivelocity.RediVelocity
 import de.bypixeltv.redivelocity.config.Config
-import de.bypixeltv.redivelocity.managers.RedisController
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
 import net.kyori.adventure.text.minimessage.MiniMessage
 
-class PostLoginListener @Inject constructor(private val rediVelocity: RediVelocity, private val redisController: RedisController, private val config: Config, private val proxyId: String, private val proxy: ProxyServer) {
+@Singleton
+class PostLoginListener @Inject constructor(
+    private val rediVelocity: RediVelocity,
+    private val config: Config
+) {
 
     private val miniMessage = MiniMessage.miniMessage()
+
+    private val redisController = rediVelocity.getRedisController()
+    private val proxyId = rediVelocity.getProxyId()
 
     @Suppress("UNUSED")
     @Subscribe
     fun onPostLogin(event: PostLoginEvent) {
         val player = event.player
-        redisController.sendJsonMessage(
-            "postLogin",
-            rediVelocity.getProxyId(),
-            player.username,
-            player.uniqueId.toString(),
-            player.clientBrand.toString(),
-            player.remoteAddress.toString().split(":")[0].substring(1),
-            config.redisChannel
-        )
+
+        if (config.versionControl.enabled) {
+            val playerProtocolVersion = player.protocolVersion.protocol
+            val requiredProtocolVersion = config.versionControl.protocolVersion
+            if (playerProtocolVersion < requiredProtocolVersion) {
+                if (!player.hasPermission("redivelocity.admin.version.bypass")) {
+                    player.disconnect(miniMessage.deserialize(config.versionControl.kickMessage))
+                }
+            }
+        }
+
+        config.redis.let {
+            redisController.sendJsonMessage(
+                "postLogin",
+                rediVelocity.getProxyId(),
+                player.username,
+                player.uniqueId.toString(),
+                player.clientBrand.toString(),
+                player.remoteAddress.toString().split(":")[0].substring(1),
+                it.channel
+            )
+        }
         if (redisController.getHashField("rv-players-blacklist", player.uniqueId.toString()) != null) {
             redisController.setHashField("rv-players-blacklist", player.uniqueId.toString(), player.remoteAddress.toString().split(":")[0].substring(1))
-            player.disconnect(miniMessage.deserialize(config.kickMessage))
+            player.disconnect(config.messages.let { miniMessage.deserialize(it.kickMessage) })
             return
         }
+        redisController.setHashField("rv-players-proxy", player.uniqueId.toString(), proxyId)
         val players = redisController.getHashField("rv-proxy-players", proxyId)?.toInt()
         if (players != null) {
             if (players <= 0) {
@@ -51,8 +71,6 @@ class PostLoginListener @Inject constructor(private val rediVelocity: RediVeloci
         } else {
             redisController.setString("rv-global-playercount", "0")
         }
-        redisController.setHashField("rv-players-proxy", player.uniqueId.toString(), proxyId)
-        redisController.setHashField("rv-players-name", player.uniqueId.toString(), player.username)
         redisController.setHashField("rv-players-name", player.uniqueId.toString(), player.username)
         redisController.setHashField("rv-players-ip", player.uniqueId.toString(), player.remoteAddress.toString().split(":")[0].substring(1))
     }
