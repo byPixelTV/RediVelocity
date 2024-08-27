@@ -121,7 +121,7 @@ class RediVelocity @Inject constructor(
         redisController.deleteHash("rv-$proxyId-servers-playercount")
         redisController.deleteHash("rv-$proxyId-servers-address")
         // Check if any proxies are still connected if not, delete the hash
-        if (redisController.getList("proxies")?.isEmpty() == true) {
+        if (redisController.getList("rv-proxies")?.isEmpty() == true) {
             redisController.deleteHash("rv-proxy-players")
             redisController.deleteString("rv-global-playercount")
         }
