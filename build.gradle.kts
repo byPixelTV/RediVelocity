@@ -29,12 +29,12 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
 
     implementation("redis.clients:jedis:5.2.0-beta5")
-    implementation("org.yaml:snakeyaml:2.2")
-    implementation("org.bstats:bstats-velocity:3.0.2")
+    implementation("org.yaml:snakeyaml:2.3")
+    implementation("org.bstats:bstats-velocity:3.0.3")
     annotationProcessor("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
 
     implementation("dev.jorel:commandapi-velocity-shade:9.6.0-SNAPSHOT")
-    implementation("jakarta.inject:jakarta.inject-api:2.0.1.MR")
+    implementation("jakarta.inject:jakarta.inject-api:2.0.1")
 
     compileOnly("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
 
