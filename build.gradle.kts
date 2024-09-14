@@ -34,7 +34,7 @@ dependencies {
     annotationProcessor("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
 
     implementation("dev.jorel:commandapi-velocity-shade:9.6.0-SNAPSHOT")
-    implementation("jakarta.inject:jakarta.inject-api:2.0.1.MR")
+    implementation("jakarta.inject:jakarta.inject-api:2.0.1")
 
     compileOnly("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
 
