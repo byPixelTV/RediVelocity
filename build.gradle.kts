@@ -29,7 +29,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
 
     implementation("redis.clients:jedis:5.2.0-beta5")
-    implementation("org.yaml:snakeyaml:2.2")
+    implementation("org.yaml:snakeyaml:2.3")
     implementation("org.bstats:bstats-velocity:3.0.3")
     annotationProcessor("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
 
