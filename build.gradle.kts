@@ -39,7 +39,7 @@ dependencies {
     compileOnly("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
 
     compileOnly("eu.cloudnetservice.cloudnet:syncproxy:4.0.0-RC10")
-    compileOnly("eu.cloudnetservice.cloudnet:bridge:4.0.0-RC10")
+    compileOnly("eu.cloudnetservice.cloudnet:bridge:4.0.0-SNAPSHOT")
     compileOnly("eu.cloudnetservice.cloudnet:driver:4.0.0-RC10")
     compileOnly("eu.cloudnetservice.cloudnet:wrapper-jvm:4.0.0-RC10")
 }
