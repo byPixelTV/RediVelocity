@@ -66,13 +66,12 @@ class RedisController @Inject constructor(
         jedisPool.close()
     }
 
-    fun sendPostLoginMessage(event: String, proxyId: String, username: String, useruuid: String, server: String, userip: String, channel: String) {
+    fun sendPostLoginMessage(event: String, proxyId: String, username: String, useruuid: String, userip: String, channel: String) {
         val jsonObject = JSONObject()
         jsonObject.put("action", event)
         jsonObject.put("proxy", proxyId)
         jsonObject.put("name", username)
         jsonObject.put("uuid", useruuid)
-        jsonObject.put("server", server)
         jsonObject.put("address", userip)
         jsonObject.put("timestamp", System.currentTimeMillis())
         val jsonString = jsonObject.toString()

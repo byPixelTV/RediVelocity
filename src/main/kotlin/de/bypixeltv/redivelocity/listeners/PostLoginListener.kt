@@ -40,7 +40,6 @@ class PostLoginListener @Inject constructor(
                 rediVelocity.getProxyId(),
                 player.username,
                 player.uniqueId.toString(),
-                player.currentServer.get().serverInfo.name,
                 player.remoteAddress.toString().split(":")[0].substring(1),
                 it.channel
             )
