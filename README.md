@@ -18,7 +18,7 @@
 
 ### 📑 Requirements
 
-* **Java 17+**
+* **Java 21+**
 * **Velocity 3.3.0-SNAPSHOT**
 
 ### 🆘 Where can I get help?
@@ -32,11 +32,7 @@
 
 <div align="center">
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/intellij/intellij-original.svg" height="40" alt="intellij logo"  />
-  <img width="12" />
   <img src="https://cdn.simpleicons.org/gradle/02303A" height="40" alt="gradle logo"  />
-  <img width="12" />
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/kotlin/kotlin-original.svg" height="40" alt="kotlin logo"  />
-  <img width="12" />
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg" height="40" alt="java logo"  />
-  <img width="12" />
 </div>

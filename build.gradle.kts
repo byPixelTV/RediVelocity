@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "2.0.0"
-    id("io.github.goooler.shadow") version "8.1.7"
+    kotlin("jvm") version "2.0.20"
+    id("io.github.goooler.shadow") version "8.1.8"
 }
 
 group = "de.bypixeltv"
@@ -26,9 +26,9 @@ dependencies {
     implementation(kotlin("stdlib"))
 
     // Kotlinx Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0-RC")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
 
-    implementation("redis.clients:jedis:5.2.0-beta4")
+    implementation("redis.clients:jedis:5.2.0-beta5")
     implementation("org.yaml:snakeyaml:2.2")
     implementation("org.bstats:bstats-velocity:3.0.2")
     annotationProcessor("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
@@ -41,13 +41,7 @@ dependencies {
     compileOnly("eu.cloudnetservice.cloudnet:syncproxy:4.0.0-RC10")
     compileOnly("eu.cloudnetservice.cloudnet:bridge:4.0.0-RC10")
     compileOnly("eu.cloudnetservice.cloudnet:driver:4.0.0-RC10")
-    compileOnly("eu.cloudnetservice.cloudnet:platform-inject-runtime:4.0.0-RC10")
-    compileOnly("eu.cloudnetservice.cloudnet:platform-inject-processor:4.0.0-RC10")
-    compileOnly("eu.cloudnetservice.cloudnet:platform-inject-loader:4.0.0-RC10")
-    compileOnly("eu.cloudnetservice.cloudnet:platform-inject-api:4.0.0-RC10")
-    compileOnly("eu.cloudnetservice.cloudnet:platform-inject-support:4.0.0-RC10")
     compileOnly("eu.cloudnetservice.cloudnet:wrapper-jvm:4.0.0-RC10")
-    compileOnly("eu.cloudnetservice.cloudnet:common:4.0.0-RC10")
 }
 
 sourceSets {
@@ -74,7 +68,7 @@ tasks {
     }
 
     shadowJar {
-        relocate("org.bstats", "de.bypixeltv.redivelocity.metrics")
+        relocate("org.bstats", "de.bypixeltv.redivelocity.lib.bstats")
         dependencies {
             exclude(dependency("eu.cloudnetservice.cloudnet:.*"))
         }

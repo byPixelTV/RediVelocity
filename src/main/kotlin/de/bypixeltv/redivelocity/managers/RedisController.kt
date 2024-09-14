@@ -66,14 +66,14 @@ class RedisController @Inject constructor(
         jedisPool.close()
     }
 
-    fun sendJsonMessage(event: String, proxyId: String, username: String, useruuid: String, clientbrand: String, userip: String, channel: String) {
+    fun sendPostLoginMessage(event: String, proxyId: String, username: String, useruuid: String, server: String, userip: String, channel: String) {
         val jsonObject = JSONObject()
         jsonObject.put("action", event)
-        jsonObject.put("proxyid", proxyId)
-        jsonObject.put("username", username)
+        jsonObject.put("proxy", proxyId)
+        jsonObject.put("name", username)
         jsonObject.put("uuid", useruuid)
-        jsonObject.put("clientbrand", clientbrand)
-        jsonObject.put("ipadress", userip)
+        jsonObject.put("server", server)
+        jsonObject.put("address", userip)
         jsonObject.put("timestamp", System.currentTimeMillis())
         val jsonString = jsonObject.toString()
 
@@ -83,18 +83,35 @@ class RedisController @Inject constructor(
         }
     }
 
-    fun sendJsonMessageSC(event: String, proxyId: String, username: String, useruuid: String, clientbrand: String, userip: String, serverName: String, previousServer: String, channel: String) {
+    fun sendServerSwitchMessage(event: String, proxyId: String, username: String, useruuid: String, clientbrand: String, userip: String, serverName: String, previousServer: String, channel: String) {
         val jsonObject = JSONObject()
         jsonObject.put("action", event)
-        jsonObject.put("proxyid", proxyId)
-        jsonObject.put("username", username)
+        jsonObject.put("proxy", proxyId)
+        jsonObject.put("name", username)
         jsonObject.put("uuid", useruuid)
         jsonObject.put("clientbrand", clientbrand)
-        jsonObject.put("ipadress", userip)
+        jsonObject.put("address", userip)
         jsonObject.put("timestamp", System.currentTimeMillis())
-        jsonObject.put("servername", serverName)
-        jsonObject.put("previousserver", previousServer)
+        jsonObject.put("server", serverName)
+        jsonObject.put("previousServer", previousServer)
 
+        val jsonString = jsonObject.toString()
+
+        // Publish the JSON string to the specified channel
+        jedisPool.resource.use { jedis ->
+            jedis.publish(channel, jsonString)
+        }
+    }
+
+    fun sendJsonMessage(event: String, proxyId: String, username: String, useruuid: String, clientbrand: String, userip: String, channel: String) {
+        val jsonObject = JSONObject()
+        jsonObject.put("action", event)
+        jsonObject.put("proxy", proxyId)
+        jsonObject.put("name", username)
+        jsonObject.put("uuid", useruuid)
+        jsonObject.put("clientbrand", clientbrand)
+        jsonObject.put("address", userip)
+        jsonObject.put("timestamp", System.currentTimeMillis())
         val jsonString = jsonObject.toString()
 
         // Publish the JSON string to the specified channel

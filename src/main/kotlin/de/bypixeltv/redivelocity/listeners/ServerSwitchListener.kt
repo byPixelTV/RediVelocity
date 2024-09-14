@@ -21,7 +21,7 @@ class ServerSwitchListener @Inject constructor(
         val player = event.player
         val previousServerName = event.previousServer.map { it.serverInfo.name }.orElse("null")
         config.redis.let {
-            redisController.sendJsonMessageSC(
+            redisController.sendServerSwitchMessage(
                 "serverSwitch",
                 rediVelocity.getProxyId(),
                 player.username,
