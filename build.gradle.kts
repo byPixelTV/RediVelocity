@@ -30,7 +30,7 @@ dependencies {
 
     implementation("redis.clients:jedis:5.2.0-SNAPSHOT")
     implementation("org.yaml:snakeyaml:2.3")
-    implementation("org.bstats:bstats-velocity:3.0.3")
+    implementation("org.bstats:bstats-velocity:3.1.0")
     annotationProcessor("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
 
     implementation("dev.jorel:commandapi-velocity-shade:9.6.0-SNAPSHOT")
