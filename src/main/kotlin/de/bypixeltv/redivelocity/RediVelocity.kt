@@ -9,10 +9,10 @@ import de.bypixeltv.redivelocity.config.ConfigLoader
 import de.bypixeltv.redivelocity.listeners.*
 import de.bypixeltv.redivelocity.managers.RedisController
 import de.bypixeltv.redivelocity.managers.UpdateManager
-import de.bypixeltv.redivelocity.utils.CloudNetUtils
 import de.bypixeltv.redivelocity.utils.ProxyIdGenerator
 import dev.jorel.commandapi.CommandAPI
 import dev.jorel.commandapi.CommandAPIVelocityConfig
+import eu.cloudnetservice.wrapper.holder.ServiceInfoHolder
 import jakarta.inject.Inject
 import jakarta.inject.Provider
 import jakarta.inject.Singleton
@@ -25,7 +25,8 @@ class RediVelocity @Inject constructor(
     private val metricsFactory: Metrics.Factory,
     private val proxyIdGenerator: ProxyIdGenerator,
     private val updateManager: UpdateManager,
-    private val rediVelocityCommandProvider: Provider<RediVelocityCommand>
+    private val rediVelocityCommandProvider: Provider<RediVelocityCommand>,
+    private val serviceInfoHolder: ServiceInfoHolder
 ) {
 
     init {
@@ -72,7 +73,7 @@ class RediVelocity @Inject constructor(
         // Generate new proxy id
         proxyId = if (config.cloudnet.enabled) {
             if (config.cloudnet.cloudnetUseServiceId) {
-                CloudNetUtils().getServicename()
+                serviceInfoHolder.serviceInfo().name()
             } else {
                 proxyIdGenerator.generate()
             }
@@ -100,6 +101,7 @@ class RediVelocity @Inject constructor(
         proxy.eventManager.register(this, ServerSwitchListener(this, config))
         proxy.eventManager.register(this, PostLoginListener(this, config))
         proxy.eventManager.register(this, DisconnectListener(this, config))
+        proxy.eventManager.register(this, ResourcePackListeners(proxy, config))
 
         if (config.playerCountSync) {
             proxy.eventManager.register(this, ProxyPingListener(this))

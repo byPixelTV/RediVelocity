@@ -36,6 +36,10 @@ dependencies {
     implementation("dev.jorel:commandapi-velocity-shade:9.6.0-SNAPSHOT")
     implementation("jakarta.inject:jakarta.inject-api:2.0.1")
 
+    // Lombok dependencies
+    annotationProcessor("org.projectlombok:lombok:1.18.34")
+    compileOnly("org.projectlombok:lombok:1.18.34")
+
     compileOnly("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
 
     compileOnly("eu.cloudnetservice.cloudnet:syncproxy:4.0.0-RC10")

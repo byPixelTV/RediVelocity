@@ -41,7 +41,6 @@ class RediVelocityCommand @Inject constructor(
     fun register() {
         CommandAPICommand("redivelocity")
             .withAliases("rv", "rediv", "redisvelocity", "redisv")
-            .withPermission("redivelocity.admin")
             .withSubcommands(
                 CommandAPICommand("player")
                     .withSubcommands(
@@ -276,7 +275,11 @@ class RediVelocityCommand @Inject constructor(
                                     sender.sendMessage(miniMessage.deserialize("$prefix <gray>Currently blacklisted players:<br>$blacklistedPlayersPrettyString</gray>"))
                                 }
                             })
-                    )
+                    ),
+                CommandAPICommand("info")
+                    .executes(CommandExecutor { sender, _ ->
+                        sender.sendMessage(miniMessage.deserialize("$prefix <gray>Running <aqua>RediVelocity</aqua> version <aqua>${proxy.pluginManager.getPlugin("RediVelocity").get().description.version.get()}</aqua> made by <aqua>byPixelTV</aqua><br>$prefix Download: <aqua><click:open_url:'https://github.com/byPixelTV/RediVelocity'>https://github.com/byPixelTV/RediVelocity</click><br>$prefix Support: <aqua><click:open_url:'https://discord.gg/UvEC8C2vPy'>https://discord.gg/UvEC8C2vPy</click></aqua></gray>"))
+                    }),
             )
             .register()
     }

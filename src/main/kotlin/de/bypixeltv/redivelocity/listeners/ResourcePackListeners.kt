@@ -1,7 +1,6 @@
 package de.bypixeltv.redivelocity.listeners
 
 import com.velocitypowered.api.event.Continuation
-import com.velocitypowered.api.event.EventTask
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.player.PlayerResourcePackStatusEvent
 import com.velocitypowered.api.event.player.configuration.PlayerFinishConfigurationEvent
