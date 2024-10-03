@@ -13,7 +13,7 @@
 
 <h3 align="center">Get events from your proxy with ease!</h3>
 <h6 align="center">RediVelocity: communicate between your proxies with ease!</h6>
-<h6 align="center">Get information about your network and players with the build-in commands!</h6>
+<h6 align="center">Get information about your network and players with the build-in commands or use it in your code via Redis Pub/Sub or with the data stored in hashes, etc.!</h6>
 <hr>
 
 ### 📑 Requirements
