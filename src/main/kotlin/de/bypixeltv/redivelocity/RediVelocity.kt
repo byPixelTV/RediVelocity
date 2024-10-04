@@ -12,30 +12,42 @@ import de.bypixeltv.redivelocity.managers.UpdateManager
 import de.bypixeltv.redivelocity.utils.ProxyIdGenerator
 import dev.jorel.commandapi.CommandAPI
 import dev.jorel.commandapi.CommandAPIVelocityConfig
+import eu.cloudnetservice.ext.platforminject.api.PlatformEntrypoint
+import eu.cloudnetservice.ext.platforminject.api.stereotype.Dependency
+import eu.cloudnetservice.ext.platforminject.api.stereotype.PlatformPlugin
 import eu.cloudnetservice.wrapper.holder.ServiceInfoHolder
 import jakarta.inject.Inject
 import jakarta.inject.Provider
 import jakarta.inject.Singleton
 import net.kyori.adventure.text.minimessage.MiniMessage
-import org.bstats.velocity.Metrics
 
 @Singleton
+@PlatformPlugin(
+    platform = "velocity",
+    name = "RediVelocity",
+    version = "1.0.3",
+    authors = ["byPixelTV"],
+    description = "A fast, modern and clean alternative to RedisBungee on Velocity.",
+    dependencies = [Dependency(name = "CloudNet-Bridge")]
+)
 class RediVelocity @Inject constructor(
     private val proxy: ProxyServer,
-    private val metricsFactory: Metrics.Factory,
     private val proxyIdGenerator: ProxyIdGenerator,
     private val updateManager: UpdateManager,
     private val rediVelocityCommandProvider: Provider<RediVelocityCommand>,
     private val serviceInfoHolder: ServiceInfoHolder
-) {
+) : PlatformEntrypoint {
+
+    private val miniMessages: MiniMessage = MiniMessage.miniMessage()
 
     init {
         CommandAPI.onLoad(CommandAPIVelocityConfig(proxy, this).silentLogs(true).verboseOutput(true))
+        sendLogs("RediVelocity plugin loaded")
+        proxy.eventManager.register(this, this) // Register the event listener
     }
 
     private val configLoader: ConfigLoader = ConfigLoader("plugins/redivelocity/config.yml").apply { load() }
     private val config = configLoader.config
-    private val miniMessages = MiniMessage.miniMessage()
     private var jsonFormat: String = config?.jsonFormat.toString()
     private var proxyId: String = ""
     private lateinit var redisController: RedisController
@@ -59,14 +71,13 @@ class RediVelocity @Inject constructor(
     @Suppress("UNUSED")
     @Subscribe
     fun onProxyInitialization(event: ProxyInitializeEvent) {
+        sendLogs("Proxy initialization started")
         // Load config and create RedisController
         configLoader.load()
         val config = configLoader.config
         jsonFormat = config?.jsonFormat.toString()
 
         redisController = RedisController(this, config!!)
-
-        metricsFactory.make(this, 22365)
         CommandAPI.onEnable()
         event.toString()
 
@@ -86,13 +97,13 @@ class RediVelocity @Inject constructor(
         if (redisController.getString("rv-global-playercount") == null) {
             redisController.setString("rv-global-playercount", 0.toString())
         }
-        this.sendLogs("Creating new Proxy with ID: $proxyId")
+        sendLogs("Creating new Proxy with ID: $proxyId")
         val version = proxy.pluginManager.getPlugin("redivelocity").get().description.version.toString()
 
         // Check for updates
         if (version.contains("-")) {
-            this.sendLogs("This is a BETA build, things may not work as expected, please report any bugs on GitHub")
-            this.sendLogs("https://github.com/byPixelTV/RediVelocity/issues")
+            sendLogs("This is a BETA build, things may not work as expected, please report any bugs on GitHub")
+            sendLogs("https://github.com/byPixelTV/RediVelocity/issues")
         }
 
         updateManager.checkForUpdate()
@@ -109,11 +120,13 @@ class RediVelocity @Inject constructor(
 
         // Register commands
         rediVelocityCommandProvider.get().register()
+        sendLogs("Proxy initialization completed")
     }
 
     @Suppress("UNUSED")
     @Subscribe
     fun onProxyShutdown(event: ProxyShutdownEvent) {
+        sendLogs("Proxy shutdown started")
         event.toString()
         redisController.removeFromListByValue("rv-proxies", proxyId)
         redisController.deleteHashField("rv-proxy-players", proxyId)
@@ -128,5 +141,6 @@ class RediVelocity @Inject constructor(
             redisController.deleteString("rv-global-playercount")
         }
         redisController.shutdown()
+        sendLogs("Proxy shutdown completed")
     }
 }

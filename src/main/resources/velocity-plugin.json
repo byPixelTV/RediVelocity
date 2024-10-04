@@ -4,6 +4,6 @@
   "version": "1.0.3",
   "main": "de.bypixeltv.redivelocity.RediVelocity",
   "authors": ["byPixelTV"],
-  "description": "A Velocity plugin that sends Redis messages if a player joins the network, switches servers, or leaves the network.",
+  "description": "A fast, modern and clean alternative to RedisBungee on Velocity.",
   "url": "https://bypixeltv.de"
 }

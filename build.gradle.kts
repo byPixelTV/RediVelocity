@@ -30,7 +30,6 @@ dependencies {
 
     implementation("redis.clients:jedis:5.2.0")
     implementation("org.yaml:snakeyaml:2.3")
-    implementation("org.bstats:bstats-velocity:3.1.0")
     annotationProcessor("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
 
     implementation("dev.jorel:commandapi-velocity-shade:9.6.0-SNAPSHOT")
@@ -46,6 +45,13 @@ dependencies {
     compileOnly("eu.cloudnetservice.cloudnet:bridge:4.0.0-RC10")
     compileOnly("eu.cloudnetservice.cloudnet:driver:4.0.0-RC10")
     compileOnly("eu.cloudnetservice.cloudnet:wrapper-jvm:4.0.0-RC10")
+    compileOnly("eu.cloudnetservice.cloudnet:platform-inject-runtime:4.0.0-RC10")
+    compileOnly("eu.cloudnetservice.cloudnet:platform-inject-processor:4.0.0-RC10")
+    compileOnly("eu.cloudnetservice.cloudnet:platform-inject-loader:4.0.0-RC10")
+    compileOnly("eu.cloudnetservice.cloudnet:platform-inject-api:4.0.0-RC10")
+    compileOnly("eu.cloudnetservice.cloudnet:platform-inject-support:4.0.0-RC10")
+    annotationProcessor("eu.cloudnetservice.cloudnet:platform-inject-processor:4.0.0-RC10")
+    annotationProcessor("dev.derklaro.aerogel", "aerogel-auto", "2.1.0")
 }
 
 sourceSets {
@@ -70,13 +76,11 @@ tasks {
     build {
         dependsOn(shadowJar)
     }
+}
 
-    shadowJar {
-        relocate("org.bstats", "de.bypixeltv.redivelocity.lib.bstats")
-        dependencies {
-            exclude(dependency("eu.cloudnetservice.cloudnet:.*"))
-        }
-    }
+tasks.withType<JavaCompile> {
+    // Adds the option to change the output file name of the aerogel-auto file name
+    options.compilerArgs.add("-AaerogelAutoFileName=autoconfigure/bindings.aero")
 }
 
 kotlin {
