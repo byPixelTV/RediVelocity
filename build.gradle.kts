@@ -29,7 +29,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
 
     compileOnly("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
-    annotationProcessor("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
 
     // Jedis and SnakeYAML
     implementation("redis.clients:jedis:5.2.0")
@@ -76,11 +75,6 @@ tasks {
 
     build {
         dependsOn(shadowJar)
-    }
-
-    compileKotlin {
-        compilerOptions {
-        }
     }
 }
 

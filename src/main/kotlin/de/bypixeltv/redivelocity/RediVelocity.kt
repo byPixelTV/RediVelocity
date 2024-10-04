@@ -1,8 +1,5 @@
 package de.bypixeltv.redivelocity
 
-import com.velocitypowered.api.event.Subscribe
-import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
-import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
 import com.velocitypowered.api.proxy.ProxyServer
 import de.bypixeltv.redivelocity.commands.RediVelocityCommand
 import de.bypixeltv.redivelocity.config.ConfigLoader
@@ -17,6 +14,7 @@ import eu.cloudnetservice.ext.platforminject.api.stereotype.Dependency
 import eu.cloudnetservice.ext.platforminject.api.stereotype.PlatformPlugin
 import eu.cloudnetservice.wrapper.holder.ServiceInfoHolder
 import jakarta.inject.Inject
+import jakarta.inject.Named
 import jakarta.inject.Provider
 import jakarta.inject.Singleton
 import net.kyori.adventure.text.minimessage.MiniMessage
@@ -32,19 +30,19 @@ import net.kyori.adventure.text.minimessage.MiniMessage
 )
 class RediVelocity @Inject constructor(
     private val proxy: ProxyServer,
+    @Named("plugin") private val pluginInstance: Any,
     private val proxyIdGenerator: ProxyIdGenerator,
     private val updateManager: UpdateManager,
     private val rediVelocityCommandProvider: Provider<RediVelocityCommand>,
     private val serviceInfoHolder: ServiceInfoHolder
 ) : PlatformEntrypoint {
 
-    private val miniMessages: MiniMessage = MiniMessage.miniMessage()
-
     init {
         CommandAPI.onLoad(CommandAPIVelocityConfig(proxy, this).silentLogs(true).verboseOutput(true))
         sendLogs("RediVelocity plugin loaded")
-        proxy.eventManager.register(this, this) // Register the event listener
     }
+
+    private val miniMessages = MiniMessage.miniMessage()
 
     private val configLoader: ConfigLoader = ConfigLoader("plugins/redivelocity/config.yml").apply { load() }
     private val config = configLoader.config
@@ -68,9 +66,7 @@ class RediVelocity @Inject constructor(
         this.proxy.consoleCommandSource.sendMessage(miniMessages.deserialize("<grey>[<aqua>RediVelocity</aqua>]</grey> <red>$message</red>"))
     }
 
-    @Suppress("UNUSED")
-    @Subscribe
-    fun onProxyInitialization(event: ProxyInitializeEvent) {
+    override fun onLoad() {
         sendLogs("Proxy initialization started")
         // Load config and create RedisController
         configLoader.load()
@@ -79,7 +75,6 @@ class RediVelocity @Inject constructor(
 
         redisController = RedisController(this, config!!)
         CommandAPI.onEnable()
-        event.toString()
 
         // Generate new proxy id
         proxyId = if (config.cloudnet.enabled) {
@@ -109,13 +104,13 @@ class RediVelocity @Inject constructor(
         updateManager.checkForUpdate()
 
         // Register listeners
-        proxy.eventManager.register(this, ServerSwitchListener(this, config))
-        proxy.eventManager.register(this, PostLoginListener(this, config))
-        proxy.eventManager.register(this, DisconnectListener(this, config))
-        proxy.eventManager.register(this, ResourcePackListeners(proxy, config))
+        proxy.eventManager.register(this.pluginInstance, ServerSwitchListener(this, config))
+        proxy.eventManager.register(this.pluginInstance, PostLoginListener(this, config))
+        proxy.eventManager.register(this.pluginInstance, DisconnectListener(this, config))
+        proxy.eventManager.register(this.pluginInstance, ResourcePackListeners(proxy, config))
 
         if (config.playerCountSync) {
-            proxy.eventManager.register(this, ProxyPingListener(this))
+            proxy.eventManager.register(this.pluginInstance, ProxyPingListener(this))
         }
 
         // Register commands
@@ -123,11 +118,8 @@ class RediVelocity @Inject constructor(
         sendLogs("Proxy initialization completed")
     }
 
-    @Suppress("UNUSED")
-    @Subscribe
-    fun onProxyShutdown(event: ProxyShutdownEvent) {
+    override fun onDisable() {
         sendLogs("Proxy shutdown started")
-        event.toString()
         redisController.removeFromListByValue("rv-proxies", proxyId)
         redisController.deleteHashField("rv-proxy-players", proxyId)
         redisController.deleteHash("rv-players-name")
