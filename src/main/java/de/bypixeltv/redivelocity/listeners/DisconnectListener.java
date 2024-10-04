@@ -35,7 +35,7 @@ public class DisconnectListener {
                 rediVelocity.getProxyId(),
                 player.getUsername(),
                 player.getUniqueId().toString(),
-                player.getClientBrand().toString(),
+                player.getClientBrand(),
                 player.getRemoteAddress().toString().split(":")[0].substring(1),
                 redisConfig.getChannel()
         );

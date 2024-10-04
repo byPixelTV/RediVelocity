@@ -103,8 +103,6 @@ public class ConfigLoader {
             writer.write("messages:\n");
             writer.write("  # Here you can set the prefix for RediVelocity. For colorcodes you have to use minimessages\n");
             writer.write("  prefix: " + config.getMessages().getPrefix() + "\n");
-            writer.write("  # Here you can set the message for the kick message if you are blocked from the proxy. For colorecodes you have to use minimessages\n");
-            writer.write("  kickMessage: " + config.getMessages().getKickMessage() + "\n");
 
             writer.write("# Here you can enable or disable the resourcepack sending over the proxy\n# Not yet implemented, will be implemented in the next update or smth\n");
             writer.write("resourcepack:\n");

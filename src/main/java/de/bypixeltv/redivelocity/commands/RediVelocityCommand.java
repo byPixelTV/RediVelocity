@@ -1,5 +1,7 @@
 package de.bypixeltv.redivelocity.commands;
 
+import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.proxy.server.ServerPing;
 import de.bypixeltv.redivelocity.RediVelocity;
 import de.bypixeltv.redivelocity.config.ConfigLoader;
 import de.bypixeltv.redivelocity.managers.RedisController;
@@ -12,8 +14,10 @@ import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Singleton
 public class RediVelocityCommand {
@@ -22,6 +26,7 @@ public class RediVelocityCommand {
     private final String prefix;
     private final MiniMessage miniMessage;
     private final RedisController redisController;
+    private final ProxyServer proxy;
 
     @Inject
     public RediVelocityCommand(Provider<RediVelocity> rediVelocityProvider, Provider<MojangUtils> mojangUtilsProvider) {
@@ -32,6 +37,7 @@ public class RediVelocityCommand {
         this.miniMessage = MiniMessage.miniMessage();
         RediVelocity rediVelocity = rediVelocityProvider.get();
         this.redisController = rediVelocity.getRedisController();
+        this.proxy = rediVelocity.proxy;
     }
 
     public void register() {
@@ -41,7 +47,7 @@ public class RediVelocityCommand {
                         new CommandAPICommand("player")
                                 .withSubcommands(
                                         new CommandAPICommand("proxy")
-                                                .withArguments(new StringArgument("playerProxy").replaceSuggestions(ArgumentSuggestions.stringCollection(info -> redisController.getAllHashValues("rv-players-name"))))
+                                                .withArguments(new StringArgument("player").replaceSuggestions(ArgumentSuggestions.stringCollection(info -> redisController.getAllHashValues("rv-players-name"))))
                                                 .withPermission("redivelocity.admin.player.proxy")
                                                 .executes((sender, args) -> {
                                                     String playerName = (String) args.get(0);
@@ -53,7 +59,7 @@ public class RediVelocityCommand {
                                                     }
                                                 }),
                                         new CommandAPICommand("lastseen")
-                                                .withArguments(new StringArgument("playerProxy").replaceSuggestions(ArgumentSuggestions.stringCollection(info -> redisController.getAllHashValues("rv-players-name"))))
+                                                .withArguments(new StringArgument("player").replaceSuggestions(ArgumentSuggestions.stringCollection(info -> redisController.getAllHashValues("rv-players-name"))))
                                                 .withPermission("redivelocity.admin.player.lastseen")
                                                 .executes((sender, args) -> {
                                                     String playerName = (String) args.get(0);
@@ -71,7 +77,7 @@ public class RediVelocityCommand {
                                                     }
                                                 }),
                                         new CommandAPICommand("ip")
-                                                .withArguments(new StringArgument("playerProxy").replaceSuggestions(ArgumentSuggestions.stringCollection(info -> redisController.getAllHashValues("rv-players-name"))))
+                                                .withArguments(new StringArgument("player").replaceSuggestions(ArgumentSuggestions.stringCollection(info -> redisController.getAllHashValues("rv-players-name"))))
                                                 .withPermission("redivelocity.admin.player.ip")
                                                 .executes((sender, args) -> {
                                                     String playerName = (String) args.get(0);
@@ -83,12 +89,24 @@ public class RediVelocityCommand {
                                                     }
                                                 }),
                                         new CommandAPICommand("uuid")
-                                                .withArguments(new StringArgument("playerProxy").replaceSuggestions(ArgumentSuggestions.stringCollection(info -> redisController.getAllHashValues("rv-players-name"))))
+                                                .withArguments(new StringArgument("player").replaceSuggestions(ArgumentSuggestions.stringCollection(info -> redisController.getAllHashValues("rv-players-name"))))
                                                 .withPermission("redivelocity.admin.player.uuid")
                                                 .executes((sender, args) -> {
                                                     String playerName = (String) args.get(0);
                                                     String playerUuid = mojangUtilsProvider.get().getUUID(playerName).toString();
                                                     sender.sendMessage(miniMessage.deserialize(prefix + " <gray>The player <aqua>" + playerName + "</aqua> has the UUID: <aqua><hover:show_text:'<aqua>Click to copy</aqua>'><click:copy_to_clipboard:" + playerUuid + ">" + playerUuid + "</click></hover></aqua></gray>"));
+                                                }),
+                                        new CommandAPICommand("server")
+                                                .withArguments(new StringArgument("player").replaceSuggestions(ArgumentSuggestions.stringCollection(info -> redisController.getAllHashValues("rv-players-name"))))
+                                                .withPermission("redivelocity.admin.player.uuid")
+                                                .executes((sender, args) -> {
+                                                    String playerName = (String) args.get(0);
+                                                    String playerServer = redisController.getHashField("rv-players-server", mojangUtilsProvider.get().getUUID(playerName).toString());
+                                                    if (playerServer != null) {
+                                                        sender.sendMessage(miniMessage.deserialize(prefix + " <gray>The player <aqua>" + playerName + "</aqua> is currently on server: <aqua>" + playerServer + "</aqua></gray>"));
+                                                    } else {
+                                                        sender.sendMessage(miniMessage.deserialize(prefix + " <gray>The player <aqua>" + playerName + "</a> is <red>offline</red>.</gray>"));
+                                                    }
                                                 })
                                 ),
                         new CommandAPICommand("proxy")
@@ -97,24 +115,54 @@ public class RediVelocityCommand {
                                                 .withPermission("redivelocity.admin.proxy.list")
                                                 .executes((sender, args) -> {
                                                     List<String> proxies = redisController.getList("rv-proxies");
-                                                    List<String> proxiesPrettyNames = new ArrayList<>();
-                                                    if (proxies != null) {
-                                                        for (String proxyId : proxies) {
-                                                            proxiesPrettyNames.add(prefix + " <aqua>" + proxyId + "</aqua> <dark_grey>(<grey>Players: </grey><aqua>" + redisController.getHashField("rv-proxy-players", proxyId) + "</aqua>)</dark_grey>");
-                                                        }
-                                                    }
+                                                    List<String> proxiesPrettyNames = proxies.stream()
+                                                            .map(proxyId -> prefix + " <aqua>" + proxyId + "</aqua> <dark_grey>(<grey>Players: </grey><aqua>" + redisController.getHashField("rv-proxy-players", proxyId) + "</aqua>)</dark_grey>")
+                                                            .collect(Collectors.toList());
                                                     String proxiesPrettyString = String.join("<br>", proxiesPrettyNames);
-                                                    if (proxies != null && !proxies.isEmpty()) {
-                                                        sender.sendMessage(miniMessage.deserialize(prefix + " <gray>Currently connected proxies:<br>" + proxiesPrettyString + "</gray>"));
-                                                    } else {
+                                                    if (proxies.isEmpty()) {
                                                         sender.sendMessage(miniMessage.deserialize(prefix + " <gray>There are currently no connected proxies.</gray>"));
+                                                    } else {
+                                                        sender.sendMessage(miniMessage.deserialize(prefix + " <gray>Currently connected proxies:<br>" + proxiesPrettyString + "</gray>"));
+                                                    }
+                                                }),
+                                        new CommandAPICommand("players")
+                                                .withArguments(new StringArgument("proxy").replaceSuggestions(ArgumentSuggestions.stringCollection(info -> redisController.getAllHashValues("rv-proxies"))))
+                                                .withPermission("redivelocity.admin.proxy.players")
+                                                .executes((sender, args) -> {
+                                                    String proxyId = (String) args.getOptional(0).orElse(null);
+                                                    List<String> players = redisController.getAllHashValues("rv-players-name");
+                                                    List<String> playersPrettyNames = players.stream()
+                                                            .map(player -> {
+                                                                String playerProxy = redisController.getHashField("rv-players-proxy", mojangUtilsProvider.get().getUUID(player).toString());
+                                                                if (proxyId == null) {
+                                                                    return prefix + " <aqua>" + player + "</aqua> <dark_gray>(<aqua>" + playerProxy + "</aqua>)</dark_gray>";
+                                                                } else if (playerProxy.equals(proxyId)) {
+                                                                    return prefix + " <aqua>" + player + "</aqua>";
+                                                                }
+                                                                return null;
+                                                            })
+                                                            .filter(Objects::nonNull)
+                                                            .collect(Collectors.toList());
+                                                    String playersPrettyString = String.join("<br>", playersPrettyNames);
+                                                    if (playersPrettyNames.isEmpty()) {
+                                                        if (proxyId == null) {
+                                                            sender.sendMessage(miniMessage.deserialize(prefix + " <gray>There are currently no players online.</gray>"));
+                                                        } else {
+                                                            sender.sendMessage(miniMessage.deserialize(prefix + " <gray>There are currently no players online on proxy <aqua>" + proxyId + "</aqua>.</gray>"));
+                                                        }
+                                                    } else {
+                                                        if (proxyId != null) {
+                                                            sender.sendMessage(miniMessage.deserialize(prefix + " <gray>Currently online players on proxy <aqua>" + proxyId + "</aqua>:<br>" + playersPrettyString + "</gray>"));
+                                                        } else {
+                                                            sender.sendMessage(miniMessage.deserialize(prefix + " <gray>Currently online players:<br>" + playersPrettyString + "</gray>"));
+                                                        }
                                                     }
                                                 }),
                                         new CommandAPICommand("playercount")
-                                                .withArguments(new StringArgument("playerProxy").replaceSuggestions(ArgumentSuggestions.stringCollection(info -> redisController.getAllHashValues("rv-players-name"))))
+                                                .withArguments(new StringArgument("proxy").replaceSuggestions(ArgumentSuggestions.stringCollection(info -> redisController.getAllHashValues("rv-proxies"))))
                                                 .withPermission("redivelocity.admin.proxy.playercount")
                                                 .executes((sender, args) -> {
-                                                    String proxyId = (String) args.get(0);
+                                                    String proxyId = (String) args.getOptional(0).orElse(null);
                                                     if (proxyId == null) {
                                                         String playerCount = redisController.getString("rv-global-playercount");
                                                         if (playerCount != null) {
@@ -130,9 +178,33 @@ public class RediVelocityCommand {
                                                             sender.sendMessage(miniMessage.deserialize(prefix + " <gray>There are currently no players online on proxy <aqua>" + proxyId + "</aqua>.</gray>"));
                                                         }
                                                     }
+                                                }),
+                                        new CommandAPICommand("servers")
+                                                .withPermission("redivelocity.admin.proxy.servers")
+                                                .executes((sender, args) -> {
+                                                    List<CompletableFuture<String>> futures = proxy.getAllServers().stream()
+                                                            .map(server -> CompletableFuture.supplyAsync(() -> {
+                                                                try {
+                                                                    ServerPing result = server.ping().get();
+                                                                    return prefix + " <color:#0dbf00>●</color> <aqua>" + server.getServerInfo().getName() + "</aqua> <dark_gray>(<grey>Address: <aqua>" + server.getServerInfo().getAddress() + "</aqua>, Playercount: <aqua>" + server.getPlayersConnected().size() + "</aqua>, Version: <aqua>" + result.getVersion().getProtocol() + ", " + result.getVersion().getName() + "</aqua></grey>)</dark_gray>";
+                                                                } catch (Exception e) {
+                                                                    return prefix + " <color:#f00000>●</color> <aqua>" + server.getServerInfo().getName() + "</aqua> <dark_gray>(<grey>Address: <aqua>" + server.getServerInfo().getAddress() + "</aqua></grey>)</dark_gray>";
+                                                                }
+                                                            }))
+                                                            .toList();
+                                                    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).thenRun(() -> {
+                                                        List<String> proxyRegisteredServersPrettyNames = futures.stream()
+                                                                .map(CompletableFuture::join)
+                                                                .collect(Collectors.toList());
+                                                        String proxyRegisteredServersPrettyString = String.join("<br>", proxyRegisteredServersPrettyNames);
+                                                        if (!proxyRegisteredServersPrettyNames.isEmpty()) {
+                                                            sender.sendMessage(miniMessage.deserialize(prefix + " <gray>Currently registered servers:<br>" + proxyRegisteredServersPrettyString + "</gray>"));
+                                                        } else {
+                                                            sender.sendMessage(miniMessage.deserialize(prefix + " <gray>There are currently no registered servers.</gray>"));
+                                                        }
+                                                    });
                                                 })
                                 )
-                )
-                .register();
+                ).register();
     }
 }

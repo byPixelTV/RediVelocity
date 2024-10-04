@@ -1,5 +1,6 @@
 package de.bypixeltv.redivelocity;
 
+import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.proxy.ProxyServer;
 import de.bypixeltv.redivelocity.commands.RediVelocityCommand;
 import de.bypixeltv.redivelocity.config.Config;
@@ -19,7 +20,10 @@ import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import lombok.Getter;
+import lombok.Setter;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+
+import java.util.Optional;
 
 @Singleton
 @PlatformPlugin(
@@ -32,7 +36,7 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 )
 public class RediVelocity implements PlatformEntrypoint {
 
-    private final ProxyServer proxy;
+    public final ProxyServer proxy;
     private final Object pluginInstance;
     private final ProxyIdGenerator proxyIdGenerator;
     private final UpdateManager updateManager;
@@ -41,6 +45,8 @@ public class RediVelocity implements PlatformEntrypoint {
 
     private final MiniMessage miniMessages = MiniMessage.miniMessage();
     private final ConfigLoader configLoader;
+    @Setter
+    @Getter
     private String jsonFormat;
     @Getter
     private String proxyId;
@@ -96,11 +102,17 @@ public class RediVelocity implements PlatformEntrypoint {
             redisController.setString("rv-global-playercount", "0");
         }
         sendLogs("Creating new Proxy with ID: " + proxyId);
-        String version = proxy.getPluginManager().getPlugin("redivelocity").get().getDescription().getVersion().toString();
 
-        if (version.contains("-")) {
-            sendLogs("This is a BETA build, things may not work as expected, please report any bugs on GitHub");
-            sendLogs("https://github.com/byPixelTV/RediVelocity/issues");
+        Optional<PluginContainer> pluginContainer = proxy.getPluginManager().getPlugin("redivelocity");
+        if (pluginContainer.isPresent()) {
+            String version = pluginContainer.get().getDescription().getVersion().toString();
+            if (version.contains("-")) {
+                sendLogs("This is a BETA build, things may not work as expected, please report any bugs on GitHub");
+                sendLogs("https://github.com/byPixelTV/RediVelocity/issues");
+            }
+        } else {
+            // Handle the case where the plugin is not present
+            sendErrorLogs("RediVelocity plugin not found");
         }
 
         updateManager.checkForUpdate();
@@ -108,7 +120,6 @@ public class RediVelocity implements PlatformEntrypoint {
         proxy.getEventManager().register(this.pluginInstance, new ServerSwitchListener(this, config));
         proxy.getEventManager().register(this.pluginInstance, new PostLoginListener(this, config));
         proxy.getEventManager().register(this.pluginInstance, new DisconnectListener(this, config));
-        proxy.getEventManager().register(this.pluginInstance, new ResourcePackListeners(proxy, config));
 
         if (config.isPlayerCountSync()) {
             proxy.getEventManager().register(this.pluginInstance, new ProxyPingListener(this));
@@ -137,11 +148,4 @@ public class RediVelocity implements PlatformEntrypoint {
         sendLogs("Proxy shutdown completed");
     }
 
-    public String getJsonFormat() {
-        return jsonFormat;
-    }
-
-    public void setJsonFormat(String jsonFormat) {
-        this.jsonFormat = jsonFormat;
-    }
 }

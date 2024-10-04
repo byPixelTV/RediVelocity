@@ -51,12 +51,6 @@ public class PostLoginListener {
                 redisConfig.getChannel()
         );
 
-        if (redisController.getHashField("rv-players-blacklist", player.getUniqueId().toString()) != null) {
-            redisController.setHashField("rv-players-blacklist", player.getUniqueId().toString(), player.getRemoteAddress().toString().split(":")[0].substring(1));
-            player.disconnect(miniMessage.deserialize(config.getMessages().getKickMessage()));
-            return;
-        }
-
         redisController.setHashField("rv-players-proxy", player.getUniqueId().toString(), proxyId);
         var players = redisController.getHashField("rv-proxy-players", proxyId);
         if (players != null) {
