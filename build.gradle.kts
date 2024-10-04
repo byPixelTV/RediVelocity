@@ -50,7 +50,7 @@ dependencies {
     compileOnly("eu.cloudnetservice.cloudnet:platform-inject-api:4.0.0-RC10")
 
     // CloudNet and Aerogel annotationProcessors
-    annotationProcessor("eu.cloudnetservice.cloudnet:platform-inject-processor:4.0.0-RC10")
+    annotationProcessor("eu.cloudnetservice.cloudnet:platform-inject-processor:4.0.0-RC11-SNAPSHOT")
     annotationProcessor("dev.derklaro.aerogel", "aerogel-auto", "2.1.0")
 }
 
