@@ -45,11 +45,8 @@ dependencies {
     compileOnly("eu.cloudnetservice.cloudnet:bridge:4.0.0-RC10")
     compileOnly("eu.cloudnetservice.cloudnet:driver:4.0.0-RC10")
     compileOnly("eu.cloudnetservice.cloudnet:wrapper-jvm:4.0.0-RC10")
-    compileOnly("eu.cloudnetservice.cloudnet:platform-inject-runtime:4.0.0-RC10")
-    compileOnly("eu.cloudnetservice.cloudnet:platform-inject-processor:4.0.0-RC10")
-    compileOnly("eu.cloudnetservice.cloudnet:platform-inject-loader:4.0.0-RC10")
     compileOnly("eu.cloudnetservice.cloudnet:platform-inject-api:4.0.0-RC10")
-    compileOnly("eu.cloudnetservice.cloudnet:platform-inject-support:4.0.0-RC10")
+
     annotationProcessor("eu.cloudnetservice.cloudnet:platform-inject-processor:4.0.0-RC10")
     annotationProcessor("dev.derklaro.aerogel", "aerogel-auto", "2.1.0")
 }
