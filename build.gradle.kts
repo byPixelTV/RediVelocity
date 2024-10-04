@@ -37,7 +37,7 @@ dependencies {
     compileOnly("org.projectlombok:lombok:1.18.34")
 
     // CloudNet
-    val cloudNetVersion = "4.0.0-RC10"
+    val cloudNetVersion = "4.0.0-SNAPSHOT"
     compileOnly(platform("eu.cloudnetservice.cloudnet:bom:$cloudNetVersion"))
     compileOnly("eu.cloudnetservice.cloudnet", "bridge")
     compileOnly("eu.cloudnetservice.cloudnet", "wrapper-jvm")
