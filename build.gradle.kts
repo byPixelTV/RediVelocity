@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "2.0.20"
     id("io.github.goooler.shadow") version "8.1.8"
+    id("java")
 }
 
 group = "de.bypixeltv"
@@ -23,11 +23,6 @@ repositories {
 }
 
 dependencies {
-    implementation(kotlin("stdlib"))
-
-    // Kotlinx Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
-
     compileOnly("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
 
     // Jedis and SnakeYAML
@@ -36,31 +31,30 @@ dependencies {
 
     // CommandAPI and Jakarta Inject
     implementation("dev.jorel:commandapi-velocity-shade:9.6.0-SNAPSHOT")
-    implementation("jakarta.inject:jakarta.inject-api:2.0.1")
 
     // Lombok dependencies
     annotationProcessor("org.projectlombok:lombok:1.18.34")
     compileOnly("org.projectlombok:lombok:1.18.34")
 
-    // CloudNet dependencies
-    compileOnly("eu.cloudnetservice.cloudnet:syncproxy:4.0.0-RC10")
-    compileOnly("eu.cloudnetservice.cloudnet:bridge:4.0.0-RC10")
-    compileOnly("eu.cloudnetservice.cloudnet:driver:4.0.0-RC10")
-    compileOnly("eu.cloudnetservice.cloudnet:wrapper-jvm:4.0.0-RC10")
-    compileOnly("eu.cloudnetservice.cloudnet:platform-inject-api:4.0.0-RC10")
+    // CloudNet
+    val cloudNetVersion = "4.0.0-RC10"
+    compileOnly(platform("eu.cloudnetservice.cloudnet:bom:$cloudNetVersion"))
+    compileOnly("eu.cloudnetservice.cloudnet", "bridge")
+    compileOnly("eu.cloudnetservice.cloudnet", "wrapper-jvm")
+    compileOnly("eu.cloudnetservice.cloudnet", "platform-inject-api")
+    compileOnly("eu.cloudnetservice.cloudnet", "driver")
+    compileOnly("eu.cloudnetservice.cloudnet", "syncproxy")
+    compileOnly("dev.derklaro.aerogel", "aerogel-auto", "2.1.0")
 
-    // CloudNet and Aerogel annotationProcessors
-    annotationProcessor("eu.cloudnetservice.cloudnet:platform-inject-processor:4.0.0-RC10")
     annotationProcessor("dev.derklaro.aerogel", "aerogel-auto", "2.1.0")
+    annotationProcessor("eu.cloudnetservice.cloudnet", "platform-inject-processor", cloudNetVersion)
+
 }
 
 sourceSets {
     getByName("main") {
         java {
             srcDir("src/main/java")
-        }
-        kotlin {
-            srcDir("src/main/kotlin")
         }
     }
 }
@@ -69,19 +63,10 @@ tasks {
     compileJava {
         options.encoding = "UTF-8"
         options.release.set(21)
+        options.compilerArgs.add("-AaerogelAutoFileName=autoconfigure/bindings.aero")
     }
-
-    named("compileKotlin", org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask::class.java)
 
     build {
         dependsOn(shadowJar)
     }
-}
-
-tasks.withType<JavaCompile> {
-    options.compilerArgs.add("-AaerogelAutoFileName=autoconfigure/bindings.aero")
-}
-
-kotlin {
-    jvmToolchain(21)
 }
