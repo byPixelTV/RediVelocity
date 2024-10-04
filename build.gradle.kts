@@ -28,10 +28,14 @@ dependencies {
     // Kotlinx Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
 
-    implementation("redis.clients:jedis:5.2.0")
-    implementation("org.yaml:snakeyaml:2.3")
+    compileOnly("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
     annotationProcessor("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
 
+    // Jedis and SnakeYAML
+    implementation("redis.clients:jedis:5.2.0")
+    implementation("org.yaml:snakeyaml:2.3")
+
+    // CommandAPI and Jakarta Inject
     implementation("dev.jorel:commandapi-velocity-shade:9.6.0-SNAPSHOT")
     implementation("jakarta.inject:jakarta.inject-api:2.0.1")
 
@@ -39,14 +43,14 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:1.18.34")
     compileOnly("org.projectlombok:lombok:1.18.34")
 
-    compileOnly("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
-
+    // CloudNet dependencies
     compileOnly("eu.cloudnetservice.cloudnet:syncproxy:4.0.0-RC10")
     compileOnly("eu.cloudnetservice.cloudnet:bridge:4.0.0-RC10")
     compileOnly("eu.cloudnetservice.cloudnet:driver:4.0.0-RC10")
     compileOnly("eu.cloudnetservice.cloudnet:wrapper-jvm:4.0.0-RC10")
     compileOnly("eu.cloudnetservice.cloudnet:platform-inject-api:4.0.0-RC10")
 
+    // CloudNet and Aerogel annotationProcessors
     annotationProcessor("eu.cloudnetservice.cloudnet:platform-inject-processor:4.0.0-RC10")
     annotationProcessor("dev.derklaro.aerogel", "aerogel-auto", "2.1.0")
 }
@@ -73,10 +77,14 @@ tasks {
     build {
         dependsOn(shadowJar)
     }
+
+    compileKotlin {
+        compilerOptions {
+        }
+    }
 }
 
 tasks.withType<JavaCompile> {
-    // Adds the option to change the output file name of the aerogel-auto file name
     options.compilerArgs.add("-AaerogelAutoFileName=autoconfigure/bindings.aero")
 }
 
