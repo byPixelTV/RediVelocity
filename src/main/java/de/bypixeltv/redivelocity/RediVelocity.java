@@ -32,7 +32,9 @@ import java.util.Optional;
         version = "1.0.3",
         description = "A fast, modern and clean alternative to RedisBungee on Velocity.",
         authors = "byPixelTV",
-        dependencies = @Dependency(name = "CloudNet-Bridge")
+        dependencies = {
+                @Dependency(name = "CloudNet-Bridge", optional = true)
+        }
 )
 public class RediVelocity implements PlatformEntrypoint {
 

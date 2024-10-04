@@ -126,7 +126,7 @@ public class RediVelocityCommand {
                                                     }
                                                 }),
                                         new CommandAPICommand("players")
-                                                .withArguments(new StringArgument("proxy").replaceSuggestions(ArgumentSuggestions.stringCollection(info -> redisController.getAllHashValues("rv-proxies"))))
+                                                .withOptionalArguments(new StringArgument("proxy").replaceSuggestions(ArgumentSuggestions.stringCollection(info -> redisController.getList("rv-proxies"))))
                                                 .withPermission("redivelocity.admin.proxy.players")
                                                 .executes((sender, args) -> {
                                                     String proxyId = (String) args.getOptional(0).orElse(null);
@@ -159,7 +159,7 @@ public class RediVelocityCommand {
                                                     }
                                                 }),
                                         new CommandAPICommand("playercount")
-                                                .withArguments(new StringArgument("proxy").replaceSuggestions(ArgumentSuggestions.stringCollection(info -> redisController.getAllHashValues("rv-proxies"))))
+                                                .withOptionalArguments(new StringArgument("proxy").replaceSuggestions(ArgumentSuggestions.stringCollection(info -> redisController.getList("rv-proxies"))))
                                                 .withPermission("redivelocity.admin.proxy.playercount")
                                                 .executes((sender, args) -> {
                                                     String proxyId = (String) args.getOptional(0).orElse(null);
