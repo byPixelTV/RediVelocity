@@ -19,7 +19,6 @@
 ### 📑 Requirements
 
 * **Java 21+**
-* **CloudNet v4 RC10+**
 * **Velocity 3.3.0-SNAPSHOT**
 
 ### 🆘 Where can I get help?
