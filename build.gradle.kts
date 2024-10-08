@@ -20,6 +20,10 @@ repositories {
         name = "papermc"
         url = uri("https://repo.papermc.io/repository/maven-public/")
     }
+    maven {
+        name = "simplecloud"
+        url = uri("https://repo.thesimplecloud.eu/artifactory/list/gradle-release-local")
+    }
 }
 
 dependencies {
@@ -41,14 +45,12 @@ dependencies {
     compileOnly(platform("eu.cloudnetservice.cloudnet:bom:$cloudNetVersion"))
     compileOnly("eu.cloudnetservice.cloudnet", "bridge")
     compileOnly("eu.cloudnetservice.cloudnet", "wrapper-jvm")
-    compileOnly("eu.cloudnetservice.cloudnet", "platform-inject-api")
     compileOnly("eu.cloudnetservice.cloudnet", "driver")
     compileOnly("eu.cloudnetservice.cloudnet", "syncproxy")
-    compileOnly("dev.derklaro.aerogel", "aerogel-auto", "2.1.0")
 
-    annotationProcessor("dev.derklaro.aerogel", "aerogel-auto", "2.1.0")
-    annotationProcessor("eu.cloudnetservice.cloudnet", "platform-inject-processor", cloudNetVersion)
-
+    val simpleCloudVersion = "2.8.1"
+    compileOnly("eu.thesimplecloud.simplecloud", "simplecloud-api", simpleCloudVersion)
+    compileOnly("eu.thesimplecloud.simplecloud", "simplecloud-plugin", simpleCloudVersion)
 }
 
 sourceSets {
@@ -63,7 +65,6 @@ tasks {
     compileJava {
         options.encoding = "UTF-8"
         options.release.set(21)
-        options.compilerArgs.add("-AaerogelAutoFileName=autoconfigure/bindings.aero")
     }
 
     build {

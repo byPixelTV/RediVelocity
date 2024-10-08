@@ -6,9 +6,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Config {
-    private int configVersion = 5;
+    private int configVersion = 6;
     private RedisConfig redis = new RedisConfig();
-    private CloudNetConfig cloudnet = new CloudNetConfig();
+    private CloudSupportConfig cloud = new CloudSupportConfig();
     private VersionControlConfig versionControl = new VersionControlConfig();
     private MessagesConfig messages = new MessagesConfig();
     private ResourcePackConfig resourcepack = new ResourcePackConfig();
@@ -28,9 +28,9 @@ public class Config {
 
     @Getter
     @Setter
-    public static class CloudNetConfig {
+    public static class CloudSupportConfig {
         private boolean enabled = false;
-        private boolean cloudnetUseServiceId = true;
+        private String cloudSystem = "simplecloud";
     }
 
     @Getter
