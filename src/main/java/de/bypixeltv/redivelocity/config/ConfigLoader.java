@@ -83,11 +83,12 @@ public class ConfigLoader {
             writer.write("  useSsl: " + config.getRedis().isUseSsl() + "\n");
             writer.write("  channel: " + config.getRedis().getChannel() + "\n");
 
-            writer.write("# CloudNet hook\n");
-            writer.write("cloudnet:\n");
-            writer.write("  enabled: " + config.getCloudnet().isEnabled() + "\n");
-            writer.write("  # Here you can enable or disable that the proxy id is the CloudNet service id\n");
-            writer.write("  cloudnetUseServiceId: " + config.getCloudnet().isCloudnetUseServiceId() + "\n");
+            writer.write("# Cloud System hook\n");
+            writer.write("cloud:\n");
+            writer.write("  # Here you can enable or disable the hook into CloudNet or SimpleCloud, it will get the Proxy id from the cloud and not from our generator\n");
+            writer.write("  enabled: " + config.getCloud().isEnabled() + "\n");
+            writer.write("  # Here you can set the cloud system, this can be cloudnet or simplecloud\n");
+            writer.write("  cloudSystem: " + config.getCloud().getCloudSystem() + "\n");
 
             writer.write("# Here you can enable or disable the player count sync\n");
             writer.write("playerCountSync: " + config.isPlayerCountSync() + "\n");
