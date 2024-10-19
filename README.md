@@ -18,7 +18,7 @@
 
 ### 📑 Requirements
 
-* **Java 21+**
+* **Java 23+**
 * **Velocity 3.3.0-SNAPSHOT**
 
 ### 🆘 Where can I get help?
