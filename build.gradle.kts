@@ -36,17 +36,17 @@ dependencies {
     // CommandAPI and Jakarta Inject
     implementation("dev.jorel:commandapi-velocity-shade:9.6.0-SNAPSHOT")
 
+    implementation("org.json:json:20240303")
+
     // Lombok dependencies
     annotationProcessor("org.projectlombok:lombok:1.18.34")
     compileOnly("org.projectlombok:lombok:1.18.34")
 
     // CloudNet
-    val cloudNetVersion = "4.0.0-RC10"
-    compileOnly(platform("eu.cloudnetservice.cloudnet:bom:$cloudNetVersion"))
-    compileOnly("eu.cloudnetservice.cloudnet", "bridge")
-    compileOnly("eu.cloudnetservice.cloudnet", "wrapper-jvm")
-    compileOnly("eu.cloudnetservice.cloudnet", "driver")
-    compileOnly("eu.cloudnetservice.cloudnet", "syncproxy")
+    val cloudNetVersion = "4.0.0-RC11"
+    compileOnly("eu.cloudnetservice.cloudnet:driver:$cloudNetVersion")
+    compileOnly("eu.cloudnetservice.cloudnet:bridge:$cloudNetVersion")
+    compileOnly("eu.cloudnetservice.cloudnet:wrapper-jvm:$cloudNetVersion")
 
     val simpleCloudVersion = "2.8.1"
     compileOnly("eu.thesimplecloud.simplecloud", "simplecloud-api", simpleCloudVersion)
@@ -64,7 +64,7 @@ sourceSets {
 tasks {
     compileJava {
         options.encoding = "UTF-8"
-        options.release.set(21)
+        options.release.set(23)
     }
 
     build {

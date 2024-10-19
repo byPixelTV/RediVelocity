@@ -9,6 +9,10 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 @Singleton
 public class PostLoginListener {
 
@@ -64,17 +68,8 @@ public class PostLoginListener {
             redisController.setHashField("rv-proxy-players", proxyId, "0");
         }
 
-        var gplayers = redisController.getString("rv-global-playercount");
-        if (gplayers != null) {
-            int globalPlayerCount = Integer.parseInt(gplayers);
-            if (globalPlayerCount <= 0) {
-                redisController.setString("rv-global-playercount", "1");
-            } else {
-                redisController.setString("rv-global-playercount", String.valueOf(globalPlayerCount + 1));
-            }
-        } else {
-            redisController.setString("rv-global-playercount", "0");
-        }
+        Set<String> proxyPlayersKeys = redisController.getHashValuesAsPair("rv-proxy-players").keySet();
+        redisController.setString("rv-global-playercount", String.valueOf(proxyPlayersKeys.stream().mapToInt(Integer::parseInt).sum()));
 
         redisController.setHashField("rv-players-name", player.getUniqueId().toString(), player.getUsername());
         redisController.setHashField("rv-players-ip", player.getUniqueId().toString(), player.getRemoteAddress().toString().split(":")[0].substring(1));

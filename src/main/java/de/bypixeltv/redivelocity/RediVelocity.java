@@ -13,6 +13,7 @@ import de.bypixeltv.redivelocity.listeners.PostLoginListener;
 import de.bypixeltv.redivelocity.listeners.ProxyPingListener;
 import de.bypixeltv.redivelocity.listeners.ServerSwitchListener;
 import de.bypixeltv.redivelocity.managers.RedisController;
+import de.bypixeltv.redivelocity.managers.RedisManager;
 import de.bypixeltv.redivelocity.managers.UpdateManager;
 import de.bypixeltv.redivelocity.utils.CloudUtils;
 import de.bypixeltv.redivelocity.utils.ProxyIdGenerator;
@@ -22,6 +23,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import lombok.Getter;
+import de.bypixeltv.redivelocity.pubsub.MessageListener;
 import lombok.Setter;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
@@ -85,7 +87,7 @@ public class RediVelocity {
                 (CloudUtils.getServiceName(config.getCloud().getCloudSystem()) != null ? CloudUtils.getServiceName(config.getCloud().getCloudSystem()) : proxyIdGenerator.generate()) :
                 proxyIdGenerator.generate();
 
-        redisController.addToList("rv-proxies", new String[]{proxyId});
+        redisController.setHashField("rv-proxies", proxyId, proxyId);
         redisController.setHashField("rv-proxy-players", proxyId, "0");
         if (redisController.getString("rv-global-playercount") == null) {
             redisController.setString("rv-global-playercount", "0");
@@ -114,6 +116,10 @@ public class RediVelocity {
             proxy.getEventManager().register(this, new ProxyPingListener(this));
         }
 
+        RedisManager redisManager = new RedisManager(redisController.getJedisPool());
+
+        new MessageListener(redisManager, this.proxy);
+
         rediVelocityCommandProvider.get().register();
         sendLogs("Proxy initialization completed");
     }
@@ -121,7 +127,7 @@ public class RediVelocity {
     @Subscribe
     public void onProxyShutdown(ProxyShutdownEvent event) {
         sendLogs("Proxy shutdown started");
-        redisController.removeFromListByValue("rv-proxies", proxyId);
+        redisController.deleteHashField("rv-proxies", proxyId);
         redisController.deleteHashField("rv-proxy-players", proxyId);
         redisController.deleteHash("rv-players-name");
         redisController.deleteHash("rv-" + proxyId + "-servers-servers");
@@ -129,9 +135,8 @@ public class RediVelocity {
         redisController.deleteHash("rv-" + proxyId + "-servers-playercount");
         redisController.deleteHash("rv-" + proxyId + "-servers-address");
 
-        if (redisController.getList("rv-proxies").isEmpty()) {
-            redisController.deleteHash("rv-proxy-players");
-            redisController.deleteString("rv-global-playercount");
+        if (!redisController.exists("rv-proxies")) {
+            redisController.deleteHash("rv-global-playercount");
         }
         redisController.shutdown();
         sendLogs("Proxy shutdown completed");

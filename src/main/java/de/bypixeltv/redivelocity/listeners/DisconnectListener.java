@@ -8,6 +8,8 @@ import de.bypixeltv.redivelocity.RediVelocity;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
+import java.util.Set;
+
 @Singleton
 public class DisconnectListener {
 
@@ -52,17 +54,8 @@ public class DisconnectListener {
             redisController.setHashField("rv-proxy-players", proxyId, "0");
         }
 
-        var gplayers = redisController.getString("rv-global-playercount");
-        if (gplayers != null) {
-            int globalPlayerCount = Integer.parseInt(gplayers);
-            if (globalPlayerCount <= 0) {
-                redisController.setString("rv-global-playercount", "0");
-            } else {
-                redisController.setString("rv-global-playercount", String.valueOf(globalPlayerCount - 1));
-            }
-        } else {
-            redisController.setString("rv-global-playercount", "0");
-        }
+        Set<String> proxyPlayersKeys = redisController.getHashValuesAsPair("rv-proxy-players").keySet();
+        redisController.setString("rv-global-playercount", String.valueOf(proxyPlayersKeys.stream().mapToInt(Integer::parseInt).sum()));
 
         redisController.deleteHashField("rv-players-proxy", player.getUniqueId().toString());
         redisController.deleteHashField("rv-players-name", player.getUniqueId().toString());

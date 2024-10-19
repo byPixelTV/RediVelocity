@@ -249,6 +249,18 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
         }
     }
 
+    public String getHashValueByField(String hashName, String fieldName) {
+        try (var jedis = jedisPool.getResource()) {
+            return jedis.hget(hashName, fieldName);
+        }
+    }
+
+    public Boolean exists(String key) {
+        try (var jedis = jedisPool.getResource()) {
+            return jedis.exists(key);
+        }
+    }
+
     public List<String> getHashFieldNamesByValue(String hashName, String value) {
         List<String> fieldNames = new ArrayList<>();
         try (var jedis = jedisPool.getResource()) {
