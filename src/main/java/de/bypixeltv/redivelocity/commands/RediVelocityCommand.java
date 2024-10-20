@@ -131,11 +131,9 @@ public class RediVelocityCommand {
                                                 .executes((sender, args) -> {
                                                     String proxyId = (String) args.getOptional(0).orElse(null);
                                                     List<String> players = redisController.getAllHashValues("rv-players-name");
-
-                                                    // Use parallel stream for better performance
-                                                    List<String> playersPrettyNames = players.parallelStream()
+                                                    List<String> playersPrettyNames = players.stream()
                                                             .map(player -> {
-                                                                String playerProxy = redisController.getHashField("rv-players-proxy", redisController.getHashValueByField("rv-players-name", player));
+                                                                String playerProxy = redisController.getHashField("rv-players-proxy", mojangUtilsProvider.get().getUUID(player).toString());
                                                                 if (proxyId == null) {
                                                                     return prefix + " <aqua>" + player + "</aqua> <dark_gray>(<aqua>" + playerProxy + "</aqua>)</dark_gray>";
                                                                 } else if (playerProxy.equals(proxyId)) {
@@ -145,7 +143,6 @@ public class RediVelocityCommand {
                                                             })
                                                             .filter(Objects::nonNull)
                                                             .collect(Collectors.toList());
-
                                                     String playersPrettyString = String.join("<br>", playersPrettyNames);
                                                     if (playersPrettyNames.isEmpty()) {
                                                         if (proxyId == null) {
