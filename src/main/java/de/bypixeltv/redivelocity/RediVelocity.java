@@ -1,3 +1,4 @@
+// src/main/java/de/bypixeltv/redivelocity/RediVelocity.java
 package de.bypixeltv.redivelocity;
 
 import com.velocitypowered.api.event.Subscribe;
@@ -15,6 +16,7 @@ import de.bypixeltv.redivelocity.listeners.ServerSwitchListener;
 import de.bypixeltv.redivelocity.managers.RedisController;
 import de.bypixeltv.redivelocity.managers.RedisManager;
 import de.bypixeltv.redivelocity.managers.UpdateManager;
+import de.bypixeltv.redivelocity.pubsub.MessageListener;
 import de.bypixeltv.redivelocity.utils.CloudUtils;
 import de.bypixeltv.redivelocity.utils.ProxyIdGenerator;
 import dev.jorel.commandapi.CommandAPI;
@@ -23,7 +25,6 @@ import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import lombok.Getter;
-import de.bypixeltv.redivelocity.pubsub.MessageListener;
 import lombok.Setter;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
@@ -36,6 +37,8 @@ public class RediVelocity {
     private final ProxyIdGenerator proxyIdGenerator;
     private final UpdateManager updateManager;
     private final Provider<RediVelocityCommand> rediVelocityCommandProvider;
+    private final RedisController redisController;
+    private final Provider<RediVelocity> rediVelocityProvider = () -> this;
 
     private final MiniMessage miniMessages = MiniMessage.miniMessage();
     private final ConfigLoader configLoader;
@@ -44,16 +47,16 @@ public class RediVelocity {
     private String jsonFormat;
     @Getter
     private String proxyId;
-    @Getter
-    private RedisController redisController;
 
     @Inject
     public RediVelocity(ProxyServer proxy, ProxyIdGenerator proxyIdGenerator,
-                        UpdateManager updateManager, Provider<RediVelocityCommand> rediVelocityCommandProvider) {
+                        UpdateManager updateManager, Provider<RediVelocityCommand> rediVelocityCommandProvider,
+                        RedisController redisController) { // Initialize the field
         this.proxy = proxy;
         this.proxyIdGenerator = proxyIdGenerator;
         this.updateManager = updateManager;
         this.rediVelocityCommandProvider = rediVelocityCommandProvider;
+        this.redisController = redisController;
 
         this.configLoader = new ConfigLoader("plugins/redivelocity/config.yml");
         this.configLoader.load();
@@ -80,7 +83,8 @@ public class RediVelocity {
         Config config = configLoader.getConfig();
         jsonFormat = String.valueOf(config.isJsonFormat());
 
-        redisController = new RedisController(this, config);
+        redisController.initialize(rediVelocityProvider, config); // Use the existing instance
+
         CommandAPI.onEnable();
 
         proxyId = config.getCloud().isEnabled() ?
@@ -94,6 +98,8 @@ public class RediVelocity {
         }
         sendLogs("Creating new Proxy with ID: " + proxyId);
 
+        RedisManager redisManager = new RedisManager(redisController.getJedisPool());
+
         Optional<PluginContainer> pluginContainer = proxy.getPluginManager().getPlugin("redivelocity");
         if (pluginContainer.isPresent()) {
             String version = pluginContainer.get().getDescription().getVersion().toString();
@@ -102,21 +108,18 @@ public class RediVelocity {
                 sendLogs("https://github.com/byPixelTV/RediVelocity/issues");
             }
         } else {
-            // Handle the case where the plugin is not present
             sendErrorLogs("RediVelocity plugin not found");
         }
 
         updateManager.checkForUpdate();
 
-        proxy.getEventManager().register(this, new ServerSwitchListener(this, config));
-        proxy.getEventManager().register(this, new PostLoginListener(this, config));
-        proxy.getEventManager().register(this, new DisconnectListener(this, config));
+        proxy.getEventManager().register(this, new ServerSwitchListener(this, config, redisController));
+        proxy.getEventManager().register(this, new PostLoginListener(this, config, redisController));
+        proxy.getEventManager().register(this, new DisconnectListener(config, redisController, this));
 
         if (config.isPlayerCountSync()) {
-            proxy.getEventManager().register(this, new ProxyPingListener(this));
+            proxy.getEventManager().register(this, new ProxyPingListener(redisController));
         }
-
-        RedisManager redisManager = new RedisManager(redisController.getJedisPool());
 
         new MessageListener(redisManager, this.proxy);
 
@@ -141,5 +144,4 @@ public class RediVelocity {
         redisController.shutdown();
         sendLogs("Proxy shutdown completed");
     }
-
 }

@@ -9,6 +9,7 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.player.ResourcePackInfo;
 import de.bypixeltv.redivelocity.config.Config;
 import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
@@ -19,17 +20,18 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ResourcePackListeners {
 
     private final ProxyServer proxy;
-    private final Config config;
+    private final Provider<Config> configProvider;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private final ConcurrentHashMap<Player, CompletableFuture<PlayerResourcePackStatusEvent.Status>> packStatusFutures = new ConcurrentHashMap<>();
 
     @Inject
-    public ResourcePackListeners(ProxyServer proxy, Config config) {
+    public ResourcePackListeners(ProxyServer proxy, Provider<Config> configProvider) {
         this.proxy = proxy;
-        this.config = config;
+        this.configProvider = configProvider;
     }
 
     private ResourcePackInfo createPackRequest(Player player) {
+        Config config = configProvider.get();
         return proxy.createResourcePackBuilder(config.getResourcepack().getResourcepackUrl())
                 .setId(player.getUniqueId())
                 .setPrompt(miniMessage.deserialize(config.getResourcepack().getResourcepackMessage()))

@@ -16,10 +16,10 @@ public class ServerSwitchListener {
     private final RedisController redisController;
 
     @Inject
-    public ServerSwitchListener(RediVelocity rediVelocity, Config config) {
+    public ServerSwitchListener(RediVelocity rediVelocity, Config config, RedisController redisController) {
         this.rediVelocity = rediVelocity;
         this.config = config;
-        this.redisController = rediVelocity.getRedisController();
+        this.redisController = redisController;
     }
 
     @SuppressWarnings("unused")

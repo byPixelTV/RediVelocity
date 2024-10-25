@@ -2,7 +2,6 @@ package de.bypixeltv.redivelocity.listeners;
 
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyPingEvent;
-import de.bypixeltv.redivelocity.RediVelocity;
 import de.bypixeltv.redivelocity.managers.RedisController;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -13,8 +12,8 @@ public class ProxyPingListener {
     private final RedisController redisController;
 
     @Inject
-    public ProxyPingListener(RediVelocity rediVelocity) {
-        this.redisController = rediVelocity.getRedisController();
+    public ProxyPingListener(RedisController redisController) {
+        this.redisController = redisController;
     }
 
     @Subscribe

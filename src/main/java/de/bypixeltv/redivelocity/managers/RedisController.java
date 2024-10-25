@@ -2,13 +2,14 @@ package de.bypixeltv.redivelocity.managers;
 
 import de.bypixeltv.redivelocity.RediVelocity;
 import de.bypixeltv.redivelocity.config.Config;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 import lombok.Getter;
+import org.json.JSONObject;
 import redis.clients.jedis.BinaryJedisPubSub;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
-import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -17,16 +18,37 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Singleton
 public class RedisController extends BinaryJedisPubSub implements Runnable {
 
-    private final RediVelocity rediVelocity;
+    private Provider<RediVelocity> rediVelocityProvider;
     @Getter
-    private final JedisPool jedisPool;
-    private final byte[][] channelsInByte;
+    private JedisPool jedisPool;
+    private byte[][] channelsInByte;
     private final AtomicBoolean isConnectionBroken = new AtomicBoolean(true);
     private final AtomicBoolean isConnecting = new AtomicBoolean(false);
 
     @Inject
-    public RedisController(RediVelocity rediVelocity, Config config) {
-        this.rediVelocity = rediVelocity;
+    public RedisController(Provider<RediVelocity> rediVelocityProvider, Config config) {
+        this.rediVelocityProvider = rediVelocityProvider;
+
+        JedisPoolConfig jConfig = new JedisPoolConfig();
+        int maxConnections = 10;
+
+        jConfig.setMaxTotal(maxConnections);
+        jConfig.setMaxIdle(maxConnections);
+        jConfig.setMinIdle(1);
+        jConfig.setBlockWhenExhausted(true);
+
+        String password = config.getRedis().getPassword();
+        if (password.isEmpty()) {
+            this.jedisPool = new JedisPool(jConfig, config.getRedis().getHost(), config.getRedis().getPort());
+        } else {
+            this.jedisPool = new JedisPool(jConfig, config.getRedis().getHost(), config.getRedis().getPort(), 2000, password);
+        }
+
+        this.channelsInByte = setupChannels();
+    }
+
+    public void initialize(Provider<RediVelocity> rediVelocityProvider, Config config) {
+        this.rediVelocityProvider = rediVelocityProvider;
 
         JedisPoolConfig jConfig = new JedisPoolConfig();
         int maxConnections = 10;
@@ -51,6 +73,7 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
         if (!isConnectionBroken.get() || isConnecting.get()) {
             return;
         }
+        RediVelocity rediVelocity = rediVelocityProvider.get();
         rediVelocity.sendLogs("Connecting to Redis server...");
         isConnecting.set(true);
         try (var jedis = jedisPool.getResource()) {
@@ -192,7 +215,7 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
         try (var jedis = jedisPool.getResource()) {
             long listLength = jedis.llen(listName);
             if (index >= listLength) {
-                System.err.println("Error: Index " + index + " does not exist in the list " + listName + ".");
+                System.err.println("Error: Index " + index + " does not exist in the list " + listName);
             } else {
                 String tempKey = UUID.randomUUID().toString();
                 jedis.lset(listName, index, tempKey);
@@ -253,6 +276,18 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
         try (var jedis = jedisPool.getResource()) {
             return jedis.hget(hashName, fieldName);
         }
+    }
+
+    public String getHashKeyByValue(String hashName, String value) {
+        try (var jedis = jedisPool.getResource()) {
+            Set<String> keys = jedis.hkeys(hashName);
+            for (String key : keys) {
+                if (jedis.hget(hashName, key).equals(value)) {
+                    return key;
+                }
+            }
+        }
+        return null;
     }
 
     public Boolean exists(String key) {

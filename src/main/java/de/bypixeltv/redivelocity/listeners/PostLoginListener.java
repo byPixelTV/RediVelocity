@@ -2,32 +2,30 @@ package de.bypixeltv.redivelocity.listeners;
 
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.PostLoginEvent;
+import de.bypixeltv.redivelocity.RediVelocity;
 import de.bypixeltv.redivelocity.config.Config;
 import de.bypixeltv.redivelocity.managers.RedisController;
-import de.bypixeltv.redivelocity.RediVelocity;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Singleton
 public class PostLoginListener {
 
-    private final RediVelocity rediVelocity;
     private final Config config;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private final RedisController redisController;
     private final String proxyId;
+    private final RediVelocity rediVelocity;
 
     @Inject
-    public PostLoginListener(RediVelocity rediVelocity, Config config) {
-        this.rediVelocity = rediVelocity;
+    public PostLoginListener(RediVelocity rediVelocity, Config config, RedisController redisController) {
         this.config = config;
-        this.redisController = rediVelocity.getRedisController();
+        this.redisController = redisController;
         this.proxyId = rediVelocity.getProxyId();
+        this.rediVelocity = rediVelocity;
     }
 
     @SuppressWarnings("unused")
@@ -45,6 +43,8 @@ public class PostLoginListener {
             }
         }
 
+        redisController.setHashField("rv-players-proxy", player.getUniqueId().toString(), proxyId);
+
         var redisConfig = config.getRedis();
         redisController.sendPostLoginMessage(
                 "postLogin",
@@ -55,26 +55,18 @@ public class PostLoginListener {
                 redisConfig.getChannel()
         );
 
-        redisController.setHashField("rv-players-proxy", player.getUniqueId().toString(), proxyId);
-        var players = redisController.getHashField("rv-proxy-players", proxyId);
-        if (players != null) {
-            int playerCount = Integer.parseInt(players);
-            if (playerCount <= 0) {
-                redisController.setHashField("rv-proxy-players", proxyId, "1");
-            } else {
-                redisController.setHashField("rv-proxy-players", proxyId, String.valueOf(playerCount + 1));
-            }
-        } else {
-            redisController.setHashField("rv-proxy-players", proxyId, "0");
-        }
-
-        Map<String, String> proxyPlayersMap = redisController.getHashValuesAsPair("rv-proxy-players");
-        int sum = proxyPlayersMap.values().stream()
-                .mapToInt(Integer::parseInt)
-                .sum();
-        redisController.setString("rv-global-playercount", String.valueOf(sum));
-
         redisController.setHashField("rv-players-name", player.getUniqueId().toString(), player.getUsername());
         redisController.setHashField("rv-players-ip", player.getUniqueId().toString(), player.getRemoteAddress().toString().split(":")[0].substring(1));
+
+        Map<String, String> proxyPlayers = redisController.getHashValuesAsPair("rv-players-proxy");
+        int values = proxyPlayers.values().stream()
+                .filter(value -> value.equals(proxyId))
+                .toList()
+                .size();
+        redisController.setHashField("rv-proxy-players", proxyId, String.valueOf(values));
+
+        Map<String, String> proxyPlayersMap = redisController.getHashValuesAsPair("rv-players-name");
+        int sum = proxyPlayersMap.keySet().size();
+        redisController.setString("rv-global-playercount", String.valueOf(sum));
     }
 }
