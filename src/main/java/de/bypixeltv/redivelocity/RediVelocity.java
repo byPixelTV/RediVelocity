@@ -169,6 +169,8 @@ public class RediVelocity {
 
         rediVelocityCommandProvider.get().register();
 
+        redisController.setHashField("rv-proxy-heartbeats", proxyId, String.valueOf(System.currentTimeMillis()));
+
         startHeartbeatCheck();
         startHeartbeat();
 
@@ -183,14 +185,14 @@ public class RediVelocity {
 
         redisController.deleteHashField("rv-proxies", proxyId);
         redisController.deleteHashField("rv-proxy-players", proxyId);
-        redisController.deleteHash("rv-players-name");
-        redisController.deleteHash("rv-" + proxyId + "-servers-servers");
-        redisController.deleteHash("rv-" + proxyId + "-servers-players");
-        redisController.deleteHash("rv-" + proxyId + "-servers-playercount");
-        redisController.deleteHash("rv-" + proxyId + "-servers-address");
+
+        if (redisController.getAllHashFields("rv-proxies").isEmpty() || redisController.getAllHashFields("rv-proxies").size() == 1) {
+            redisController.deleteHash("rv-players-name");
+        }
 
         if (!redisController.exists("rv-proxies")) {
             redisController.deleteHash("rv-global-playercount");
+            redisController.deleteHash("rv-players-name");
         }
         redisController.shutdown();
         sendLogs("RediVelocity shutdown completed");
