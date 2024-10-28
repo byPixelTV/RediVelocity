@@ -1,4 +1,3 @@
-// src/main/java/de/bypixeltv/redivelocity/RediVelocity.java
 package de.bypixeltv.redivelocity;
 
 import com.velocitypowered.api.event.Subscribe;
@@ -6,6 +5,7 @@ import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.scheduler.ScheduledTask;
 import de.bypixeltv.redivelocity.commands.RediVelocityCommand;
 import de.bypixeltv.redivelocity.config.Config;
 import de.bypixeltv.redivelocity.config.ConfigLoader;
@@ -26,9 +26,12 @@ import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.val;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @Singleton
 public class RediVelocity {
@@ -51,7 +54,7 @@ public class RediVelocity {
     @Inject
     public RediVelocity(ProxyServer proxy, ProxyIdGenerator proxyIdGenerator,
                         UpdateManager updateManager, Provider<RediVelocityCommand> rediVelocityCommandProvider,
-                        RedisController redisController) { // Initialize the field
+                        RedisController redisController) {
         this.proxy = proxy;
         this.proxyIdGenerator = proxyIdGenerator;
         this.updateManager = updateManager;
@@ -75,9 +78,43 @@ public class RediVelocity {
         this.proxy.getConsoleCommandSource().sendMessage(miniMessages.deserialize("<grey>[<aqua>RediVelocity</aqua>]</grey> <red>" + message + "</red>"));
     }
 
+    private ScheduledTask heartbeatCheckTask;
+    private ScheduledTask heartbeatTask;
+
+    public void startHeartbeatCheck() {
+        heartbeatCheckTask = this.proxy.getScheduler().buildTask(this, () -> {
+            val proxyIds = redisController.getAllHashFields("rv-proxies").toArray(new String[0]);
+            if (Objects.equals(proxyId, "Proxy-1") || Objects.equals(proxyId, proxyIds[0])) {
+                val proxyHeartbeats = redisController.getHashValuesAsPair("rv-proxy-heartbeats");
+                for (val entry : proxyHeartbeats.entrySet()) {
+                    if (System.currentTimeMillis() - Long.parseLong(entry.getValue()) > 60000) {
+                        redisController.deleteHashField("rv-proxies", entry.getKey());
+                        redisController.deleteHashField("rv-proxy-players", entry.getKey());
+                        redisController.deleteHashField("rv-proxy-heartbeats", entry.getKey());
+                    }
+                }
+            }
+        }).repeat(5, TimeUnit.SECONDS).schedule();
+    }
+
+    public void startHeartbeat() {
+        heartbeatTask = this.proxy.getScheduler().buildTask(this, () -> {
+            redisController.setHashField("rv-proxy-heartbeats", proxyId, String.valueOf(System.currentTimeMillis()));
+        }).repeat(1, TimeUnit.MINUTES).schedule();
+    }
+
+    public void stop() {
+        if (heartbeatCheckTask != null) {
+            heartbeatCheckTask.cancel();
+        }
+        if (heartbeatTask != null) {
+            heartbeatTask.cancel();
+        }
+    }
+
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
-        sendLogs("Proxy initialization started");
+        sendLogs("RediVelocity initialization started");
 
         configLoader.load();
         Config config = configLoader.getConfig();
@@ -90,6 +127,13 @@ public class RediVelocity {
         proxyId = config.getCloud().isEnabled() ?
                 (CloudUtils.getServiceName(config.getCloud().getCloudSystem()) != null ? CloudUtils.getServiceName(config.getCloud().getCloudSystem()) : proxyIdGenerator.generate()) :
                 proxyIdGenerator.generate();
+
+        if (!redisController.exists("rv-proxies")) {
+            redisController.deleteHash("rv-proxies");
+            redisController.deleteHash("rv-proxy-players");
+            redisController.deleteHash("rv-players-name");
+            redisController.deleteHash("rv-global-playercount");
+        }
 
         redisController.setHashField("rv-proxies", proxyId, proxyId);
         redisController.setHashField("rv-proxy-players", proxyId, "0");
@@ -108,7 +152,7 @@ public class RediVelocity {
                 sendLogs("https://github.com/byPixelTV/RediVelocity/issues");
             }
         } else {
-            sendErrorLogs("RediVelocity plugin not found");
+            sendErrorLogs("RediVelocity plugin not found (soo, this is really bad, please report this issue on GitHub)");
         }
 
         updateManager.checkForUpdate();
@@ -124,12 +168,19 @@ public class RediVelocity {
         new MessageListener(redisManager, this.proxy);
 
         rediVelocityCommandProvider.get().register();
-        sendLogs("Proxy initialization completed");
+
+        startHeartbeatCheck();
+        startHeartbeat();
+
+        sendLogs("RediVelocity initialization completed");
     }
 
     @Subscribe
     public void onProxyShutdown(ProxyShutdownEvent event) {
-        sendLogs("Proxy shutdown started");
+        sendLogs("RediVelocity shutdown started");
+
+        stop();
+
         redisController.deleteHashField("rv-proxies", proxyId);
         redisController.deleteHashField("rv-proxy-players", proxyId);
         redisController.deleteHash("rv-players-name");
@@ -142,6 +193,6 @@ public class RediVelocity {
             redisController.deleteHash("rv-global-playercount");
         }
         redisController.shutdown();
-        sendLogs("Proxy shutdown completed");
+        sendLogs("RediVelocity shutdown completed");
     }
 }

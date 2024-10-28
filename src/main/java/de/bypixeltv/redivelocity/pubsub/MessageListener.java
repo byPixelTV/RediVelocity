@@ -1,6 +1,7 @@
 package de.bypixeltv.redivelocity.pubsub;
 
 import com.velocitypowered.api.proxy.ProxyServer;
+import de.bypixeltv.redivelocity.managers.RedisController;
 import de.bypixeltv.redivelocity.managers.RedisManager;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
@@ -14,7 +15,7 @@ import java.util.UUID;
 @Singleton
 public class MessageListener {
 
-    private static final List<String> channels = List.of("redivelocity-kick");
+    private static final List<String> channels = List.of("redivelocity-kick", "redivelocity-heartbeat");
 
     private final RedisManager redisManager;
     private final ProxyServer proxyServer;

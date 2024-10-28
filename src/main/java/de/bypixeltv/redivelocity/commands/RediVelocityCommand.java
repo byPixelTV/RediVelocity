@@ -69,6 +69,7 @@ public class RediVelocityCommand {
                                                         return;
                                                     }
                                                     String lastSeen = redisController.getHashField("rv-players-lastseen", playerKey);
+                                                    assert playerName != null;
                                                     boolean isOnline = redisController.getHashField("rv-players-name", playerKey).contains(playerName);
                                                     if (!isOnline) {
                                                         if (lastSeen != null) {
