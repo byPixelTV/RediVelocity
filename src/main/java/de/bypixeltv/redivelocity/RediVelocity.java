@@ -29,6 +29,7 @@ import lombok.Setter;
 import lombok.val;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -80,6 +81,7 @@ public class RediVelocity {
 
     private ScheduledTask heartbeatCheckTask;
     private ScheduledTask heartbeatTask;
+    private ScheduledTask globalPlayerCountTask;
 
     public void startHeartbeatCheck() {
         heartbeatCheckTask = this.proxy.getScheduler().buildTask(this, () -> {
@@ -102,6 +104,15 @@ public class RediVelocity {
             redisController.setHashField("rv-proxy-heartbeats", proxyId, String.valueOf(System.currentTimeMillis()));
         }).repeat(1, TimeUnit.MINUTES).schedule();
     }
+
+    public void calculateGlobalPlayers() {
+        globalPlayerCountTask = this.proxy.getScheduler().buildTask(this, () -> {
+            Map<String, String> proxyPlayersMap = redisController.getHashValuesAsPair("rv-players-name");
+            int sum = proxyPlayersMap.keySet().size();
+            redisController.setString("rv-global-playercount", String.valueOf(sum));
+        }).repeat(5, TimeUnit.SECONDS).schedule();
+    }
+
 
     public void stop() {
         if (heartbeatCheckTask != null) {
@@ -173,6 +184,7 @@ public class RediVelocity {
 
         startHeartbeatCheck();
         startHeartbeat();
+        calculateGlobalPlayers();
 
         sendLogs("RediVelocity initialization completed");
     }
