@@ -12,6 +12,7 @@ import jakarta.inject.Singleton;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -125,6 +126,20 @@ public class RediVelocityCommand {
                                                         sender.sendMessage(miniMessage.deserialize(prefix + " <gray>The player <aqua>" + playerName + "</aqua> is currently on server: <aqua>" + playerServer + "</aqua></gray>"));
                                                     } else {
                                                         sender.sendMessage(miniMessage.deserialize(prefix + " <gray>The player <aqua>" + playerName + "</a> is <red>offline</red>.</gray>"));
+                                                    }
+                                                }),
+                                        new CommandAPICommand("servers")
+                                                .withPermission("redivelocity.admin.player.servers")
+                                                .executes((sender, _) -> {
+                                                    Map<String, String> players = redisController.getHashValuesAsPair("rv-players-server");
+                                                    List<String> playersPrettyNames = players.entrySet().stream()
+                                                            .map(entry -> prefix + " <aqua>" + redisController.getHashField("rv-players-name", entry.getKey()) + "</aqua> <dark_gray>(<grey>Server: <aqua>" + entry.getValue() + "</aqua></grey>)</dark_gray>")
+                                                            .collect(Collectors.toList());
+                                                    String playersPrettyString = String.join("<br>", playersPrettyNames);
+                                                    if (playersPrettyNames.isEmpty()) {
+                                                        sender.sendMessage(miniMessage.deserialize(prefix + " <gray>There are currently no players online. (Stupid msg, but when bug, pls report or fix it)</gray>"));
+                                                    } else {
+                                                        sender.sendMessage(miniMessage.deserialize(prefix + " <gray>Current servers of all online players:<br>" + playersPrettyString + "</gray>"));
                                                     }
                                                 })
                                 ),

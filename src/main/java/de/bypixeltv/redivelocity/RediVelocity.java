@@ -26,7 +26,6 @@ import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.val;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
 import java.util.Map;
@@ -79,31 +78,7 @@ public class RediVelocity {
         this.proxy.getConsoleCommandSource().sendMessage(miniMessages.deserialize("<grey>[<aqua>RediVelocity</aqua>]</grey> <red>" + message + "</red>"));
     }
 
-    private ScheduledTask heartbeatCheckTask;
-    private ScheduledTask heartbeatTask;
     private ScheduledTask globalPlayerCountTask;
-
-    public void startHeartbeatCheck() {
-        heartbeatCheckTask = this.proxy.getScheduler().buildTask(this, () -> {
-            val proxyIds = redisController.getAllHashFields("rv-proxies").toArray(new String[0]);
-            if (Objects.equals(proxyId, "Proxy-1") || Objects.equals(proxyId, proxyIds[0])) {
-                val proxyHeartbeats = redisController.getHashValuesAsPair("rv-proxy-heartbeats");
-                for (val entry : proxyHeartbeats.entrySet()) {
-                    if (System.currentTimeMillis() - Long.parseLong(entry.getValue()) > 60000) {
-                        redisController.deleteHashField("rv-proxies", entry.getKey());
-                        redisController.deleteHashField("rv-proxy-players", entry.getKey());
-                        redisController.deleteHashField("rv-proxy-heartbeats", entry.getKey());
-                    }
-                }
-            }
-        }).repeat(5, TimeUnit.SECONDS).schedule();
-    }
-
-    public void startHeartbeat() {
-        heartbeatTask = this.proxy.getScheduler().buildTask(this, () -> {
-            redisController.setHashField("rv-proxy-heartbeats", proxyId, String.valueOf(System.currentTimeMillis()));
-        }).repeat(1, TimeUnit.MINUTES).schedule();
-    }
 
     public void calculateGlobalPlayers() {
         globalPlayerCountTask = this.proxy.getScheduler().buildTask(this, () -> {
@@ -115,11 +90,8 @@ public class RediVelocity {
 
 
     public void stop() {
-        if (heartbeatCheckTask != null) {
-            heartbeatCheckTask.cancel();
-        }
-        if (heartbeatTask != null) {
-            heartbeatTask.cancel();
+        if (Objects.nonNull(globalPlayerCountTask)) {
+            globalPlayerCountTask.cancel();
         }
     }
 
@@ -180,10 +152,6 @@ public class RediVelocity {
 
         rediVelocityCommandProvider.get().register();
 
-        redisController.setHashField("rv-proxy-heartbeats", proxyId, String.valueOf(System.currentTimeMillis()));
-
-        startHeartbeatCheck();
-        startHeartbeat();
         calculateGlobalPlayers();
 
         sendLogs("RediVelocity initialization completed");
