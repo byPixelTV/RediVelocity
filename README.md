@@ -11,9 +11,9 @@
 [//]: # (<- Header ->)
 <h1 align="center">RediVelocity</h1>
 
-<h3 align="center">Get events from your proxy with ease!</h3>
-<h6 align="center">RediVelocity: communicate between your proxies with ease!</h6>
-<h6 align="center">Get information about your network and players with the build-in commands or use it in your code via Redis Pub/Sub or with the data stored in hashes, etc.!</h6>
+<h3 align="center">A simple but efficient Velocity plugin to synchronize data between proxies.</h3>
+<h5 align="center">RediVelocity supports the general use with a normal multiproxy setup with Velocity, or a multiproxy setup using CloudNet or SimpleCloud!</h6>
+<h6 align="center">Get information about your network and players with the build-in commands or use it in your code via Redis Pub/Sub or with the data stored in the Redis database!</h6>
 <hr>
 
 ### 📑 Requirements
