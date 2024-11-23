@@ -6,7 +6,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Config {
-    private int configVersion = 6;
+    private int configVersion = 7;
     private RedisConfig redis = new RedisConfig();
     private CloudSupportConfig cloud = new CloudSupportConfig();
     private VersionControlConfig versionControl = new VersionControlConfig();
@@ -44,7 +44,7 @@ public class Config {
     @Getter
     @Setter
     public static class MessagesConfig {
-        private String prefix = "<dark_gray>[<aqua>ℹ</aqua>]</dark_gray> <color:#0079FF>⌞RediVelocity⌝</color> <dark_gray>◘</dark_gray>";
+        private String prefix = "<grey>[<aqua>RediVelocity</aqua>]</grey>";
     }
 
     @Getter

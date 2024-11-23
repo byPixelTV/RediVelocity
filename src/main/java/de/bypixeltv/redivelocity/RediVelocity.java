@@ -9,10 +9,7 @@ import com.velocitypowered.api.scheduler.ScheduledTask;
 import de.bypixeltv.redivelocity.commands.RediVelocityCommand;
 import de.bypixeltv.redivelocity.config.Config;
 import de.bypixeltv.redivelocity.config.ConfigLoader;
-import de.bypixeltv.redivelocity.listeners.DisconnectListener;
-import de.bypixeltv.redivelocity.listeners.PostLoginListener;
-import de.bypixeltv.redivelocity.listeners.ProxyPingListener;
-import de.bypixeltv.redivelocity.listeners.ServerSwitchListener;
+import de.bypixeltv.redivelocity.listeners.*;
 import de.bypixeltv.redivelocity.managers.RedisController;
 import de.bypixeltv.redivelocity.managers.RedisManager;
 import de.bypixeltv.redivelocity.managers.UpdateManager;
@@ -78,6 +75,10 @@ public class RediVelocity {
         this.proxy.getConsoleCommandSource().sendMessage(miniMessages.deserialize("<grey>[<aqua>RediVelocity</aqua>]</grey> <red>" + message + "</red>"));
     }
 
+    public void sendConsoleMessage(String message) {
+        this.proxy.getConsoleCommandSource().sendMessage(miniMessages.deserialize("<grey>[<aqua>RediVelocity</aqua>]</grey> " + message));
+    }
+
     private ScheduledTask globalPlayerCountTask;
 
     public void calculateGlobalPlayers() {
@@ -128,21 +129,28 @@ public class RediVelocity {
         RedisManager redisManager = new RedisManager(redisController.getJedisPool());
 
         Optional<PluginContainer> pluginContainer = proxy.getPluginManager().getPlugin("redivelocity");
+        boolean isBeta = false;
         if (pluginContainer.isPresent()) {
             String version = pluginContainer.get().getDescription().getVersion().toString();
             if (version.contains("-")) {
-                sendLogs("This is a BETA build, things may not work as expected, please report any bugs on GitHub");
-                sendLogs("https://github.com/byPixelTV/RediVelocity/issues");
+                sendConsoleMessage("<yellow>This is a <color:#ff0000><b>BETA build,</b></color> things may not work as expected, please report any bugs on <blue>GitHub</blue></yellow>");
+                sendConsoleMessage("<blue><b>https://github.com/byPixelTV/RediVelocity/issues</b></blue>");
+                isBeta = true;
             }
         } else {
             sendErrorLogs("RediVelocity plugin not found (soo, this is really bad, please report this issue on GitHub)");
         }
 
-        updateManager.checkForUpdate();
+        if (!isBeta) {
+            updateManager.checkForUpdate();
+        } else {
+            sendConsoleMessage("<yellow>The <blue>update checker</blue> is disabled, because you are using a <blue>beta build</blue> of <blue>RediVelocity!</blue></yellow>");
+        }
 
         proxy.getEventManager().register(this, new ServerSwitchListener(this, config, redisController));
         proxy.getEventManager().register(this, new PostLoginListener(this, config, redisController));
         proxy.getEventManager().register(this, new DisconnectListener(config, redisController, this));
+        // proxy.getEventManager().register(this, new ResourcePackListeners(proxy, config));
 
         if (config.isPlayerCountSync()) {
             proxy.getEventManager().register(this, new ProxyPingListener(redisController));

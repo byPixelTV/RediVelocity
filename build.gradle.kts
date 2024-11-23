@@ -1,10 +1,10 @@
 plugins {
-    id("io.github.goooler.shadow") version "8.1.8"
+    id("com.gradleup.shadow") version "8.3.5"
     id("java")
 }
 
 group = "de.bypixeltv"
-version = "1.0.4-Beta"
+version = "1.0.5-BETA"
 
 repositories {
     maven {
@@ -65,6 +65,12 @@ tasks {
     compileJava {
         options.encoding = "UTF-8"
         options.release.set(23)
+    }
+
+    shadowJar {
+        archiveBaseName.set("RediVelocity")
+        archiveVersion.set(version.toString())
+        archiveClassifier.set("")
     }
 
     build {
