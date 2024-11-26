@@ -84,7 +84,7 @@ public class RediVelocity {
     public void calculateGlobalPlayers() {
         globalPlayerCountTask = this.proxy.getScheduler().buildTask(this, () -> {
             Map<String, String> proxyPlayersMap = redisController.getHashValuesAsPair("rv-players-name");
-            int sum = proxyPlayersMap.keySet().size();
+            int sum = proxyPlayersMap.size();
             redisController.setString("rv-global-playercount", String.valueOf(sum));
         }).repeat(5, TimeUnit.SECONDS).schedule();
     }
@@ -161,6 +161,17 @@ public class RediVelocity {
         rediVelocityCommandProvider.get().register();
 
         calculateGlobalPlayers();
+
+        if (config.getJoingate().getAllowBedrockClients()) {
+            if (!config.getJoingate().getFloodgateHook()) {
+                sendErrorLogs("You currently disallow Bedrock client to connect, but the Floodgate hook is disabled, please enable the Floodgate hook in the config");
+            } else {
+                // check if geyser and floodgate are installed
+                if (proxy.getPluginManager().getPlugin("floodgate").isEmpty() && proxy.getPluginManager().getPlugin("geyser").isEmpty()) {
+                    sendErrorLogs("You currently disallow Bedrock client to connect, but Floodgate and GeyserMC are <color:#ff0000>NOT</color> installed, you should fix this issue.");
+                }
+            }
+        }
 
         sendLogs("RediVelocity initialization completed");
     }

@@ -100,6 +100,15 @@ public class ConfigLoader {
             writer.write("  protocolVersion: " + config.getVersionControl().getProtocolVersion() + "\n");
             writer.write("  kickMessage: " + config.getVersionControl().getKickMessage() + "\n");
 
+            writer.write("# Joingate\n");
+            writer.write("joinGate:\n");
+            writer.write("  # Here you can enable or disable that Java edition clients can connect\n");
+            writer.write("  allowJavaClients: " + config.getJoingate().getAllowJavaClients() + "\n");
+            writer.write("  # Here you can enable or disable the Floodgate and GeyserMC hook, both have to be installed on your proxy\n");
+            writer.write("  floodgateHook: " + config.getJoingate().getFloodgateHook() + "\n");
+            writer.write("  # Here you can enable or disable that Bedrock edition clients can connect (floodgate + geyser have to be installed + support has to be enabled here)\n");
+            writer.write("  allowBedrockClients: " + config.getJoingate().getAllowBedrockClients() + "\n");
+
             writer.write("# Messages\n");
             writer.write("messages:\n");
             writer.write("  # Here you can set the prefix for RediVelocity. For colorcodes you have to use minimessages\n");

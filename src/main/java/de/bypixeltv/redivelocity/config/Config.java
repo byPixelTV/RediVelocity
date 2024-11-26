@@ -6,12 +6,13 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Config {
-    private int configVersion = 7;
+    private int configVersion = 8;
     private RedisConfig redis = new RedisConfig();
     private CloudSupportConfig cloud = new CloudSupportConfig();
     private VersionControlConfig versionControl = new VersionControlConfig();
     private MessagesConfig messages = new MessagesConfig();
     private ResourcePackConfig resourcepack = new ResourcePackConfig();
+    private JoingateConfig joingate = new JoingateConfig();
     private boolean jsonFormat;
     private boolean playerCountSync;
 
@@ -39,6 +40,14 @@ public class Config {
         private boolean enabled = false;
         private int protocolVersion = 754;
         private String kickMessage = "<dark_grey>- <dark_red>Version</dark_red> -</dark_grey><br><br><grey>You have to use the <aqua>Version</aqua> <blue>1.16.5</blue> to play on <aqua>Example.net</aqua>.<br>Please update your <aqua>Version</aqua> to join the <aqua>Server</aqua>!</grey>";
+    }
+
+    @Getter
+    @Setter
+    public static class JoingateConfig {
+        private Boolean allowJavaClients = true;
+        private Boolean floodgateHook = true;
+        private Boolean allowBedrockClients = true;
     }
 
     @Getter
