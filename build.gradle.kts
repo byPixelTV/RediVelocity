@@ -12,18 +12,17 @@ repositories {
     }
 
     mavenCentral()
-    maven {
-        name = "jitpack"
-        url = uri("https://jitpack.io")
-    }
+
     maven {
         name = "papermc"
         url = uri("https://repo.papermc.io/repository/maven-public/")
     }
+
     maven {
         name = "simplecloud"
         url = uri("https://repo.thesimplecloud.eu/artifactory/list/gradle-release-local")
     }
+
     maven {
         url = uri("https://repo.opencollab.dev/main/")
     }
@@ -36,8 +35,8 @@ dependencies {
     implementation("redis.clients:jedis:5.2.0")
     implementation("org.yaml:snakeyaml:2.3")
 
-    // CommandAPI and Jakarta Inject
-    implementation("dev.jorel:commandapi-velocity-shade:9.6.0-SNAPSHOT")
+    // CommandAPI
+    implementation("dev.jorel:commandapi-velocity-shade:9.6.2-SNAPSHOT")
 
     implementation("org.json:json:20240303")
 

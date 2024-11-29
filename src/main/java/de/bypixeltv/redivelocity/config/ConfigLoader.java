@@ -97,11 +97,14 @@ public class ConfigLoader {
             writer.write("versionControl:\n");
             writer.write("  # Here you can enable or disable to check the players version\n");
             writer.write("  enabled: " + config.getVersionControl().isEnabled() + "\n");
-            writer.write("  protocolVersion: " + config.getVersionControl().getProtocolVersion() + "\n");
+            writer.write("  allowedVersions:\n");
+            for (Integer version : config.getVersionControl().getAllowedVersions()) {
+                writer.write("    - " + version + "\n");
+            }
             writer.write("  kickMessage: " + config.getVersionControl().getKickMessage() + "\n");
 
             writer.write("# Joingate\n");
-            writer.write("joinGate:\n");
+            writer.write("joingate:\n");
             writer.write("  # Here you can enable or disable that Java edition clients can connect\n");
             writer.write("  allowJavaClients: " + config.getJoingate().getAllowJavaClients() + "\n");
             writer.write("  # Here you can enable or disable the Floodgate and GeyserMC hook, both have to be installed on your proxy\n");

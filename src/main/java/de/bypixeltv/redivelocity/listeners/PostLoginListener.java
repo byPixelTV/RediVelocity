@@ -9,6 +9,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
+import java.util.List;
 import java.util.Map;
 
 @Singleton
@@ -35,8 +36,8 @@ public class PostLoginListener {
 
         if (config.getVersionControl().isEnabled()) {
             int playerProtocolVersion = player.getProtocolVersion().getProtocol();
-            int requiredProtocolVersion = config.getVersionControl().getProtocolVersion();
-            if (playerProtocolVersion < requiredProtocolVersion) {
+            List<Integer> requiredProtocolVersions = config.getVersionControl().getAllowedVersions();
+            if (requiredProtocolVersions.contains(playerProtocolVersion)) {
                 if (!player.hasPermission("redivelocity.admin.version.bypass")) {
                     player.disconnect(miniMessage.deserialize(config.getVersionControl().getKickMessage()));
                 }
