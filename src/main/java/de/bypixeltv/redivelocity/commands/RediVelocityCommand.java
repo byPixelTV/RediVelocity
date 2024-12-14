@@ -3,7 +3,7 @@ package de.bypixeltv.redivelocity.commands;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.ServerPing;
 import de.bypixeltv.redivelocity.config.ConfigLoader;
-import de.bypixeltv.redivelocity.managers.RedisController;
+import de.bypixeltv.redivelocity.jedisWrapper.RedisController;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import dev.jorel.commandapi.arguments.StringArgument;

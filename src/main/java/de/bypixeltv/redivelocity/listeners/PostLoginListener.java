@@ -4,7 +4,7 @@ import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.PostLoginEvent;
 import de.bypixeltv.redivelocity.RediVelocity;
 import de.bypixeltv.redivelocity.config.Config;
-import de.bypixeltv.redivelocity.managers.RedisController;
+import de.bypixeltv.redivelocity.jedisWrapper.RedisController;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import net.kyori.adventure.text.minimessage.MiniMessage;

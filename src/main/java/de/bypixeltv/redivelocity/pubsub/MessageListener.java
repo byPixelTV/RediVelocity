@@ -1,8 +1,7 @@
 package de.bypixeltv.redivelocity.pubsub;
 
 import com.velocitypowered.api.proxy.ProxyServer;
-import de.bypixeltv.redivelocity.managers.RedisController;
-import de.bypixeltv.redivelocity.managers.RedisManager;
+import de.bypixeltv.redivelocity.jedisWrapper.RedisManager;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
 import jakarta.inject.Inject;

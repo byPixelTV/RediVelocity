@@ -1,4 +1,4 @@
-package de.bypixeltv.redivelocity.managers;
+package de.bypixeltv.redivelocity.jedisWrapper;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;

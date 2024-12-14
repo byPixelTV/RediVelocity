@@ -1,6 +1,6 @@
 package de.bypixeltv.redivelocity.utils;
 
-import de.bypixeltv.redivelocity.managers.RedisController;
+import de.bypixeltv.redivelocity.jedisWrapper.RedisController;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 

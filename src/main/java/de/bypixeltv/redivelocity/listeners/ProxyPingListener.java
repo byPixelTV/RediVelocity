@@ -2,7 +2,7 @@ package de.bypixeltv.redivelocity.listeners;
 
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyPingEvent;
-import de.bypixeltv.redivelocity.managers.RedisController;
+import de.bypixeltv.redivelocity.jedisWrapper.RedisController;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 

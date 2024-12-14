@@ -1,4 +1,4 @@
-package de.bypixeltv.redivelocity.managers;
+package de.bypixeltv.redivelocity.jedisWrapper;
 
 import de.bypixeltv.redivelocity.RediVelocity;
 import de.bypixeltv.redivelocity.config.Config;

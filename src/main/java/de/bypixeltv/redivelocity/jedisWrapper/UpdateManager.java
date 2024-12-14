@@ -1,4 +1,4 @@
-package de.bypixeltv.redivelocity.managers;
+package de.bypixeltv.redivelocity.jedisWrapper;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;

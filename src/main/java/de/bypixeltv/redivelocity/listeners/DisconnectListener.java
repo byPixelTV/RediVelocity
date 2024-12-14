@@ -3,7 +3,7 @@ package de.bypixeltv.redivelocity.listeners;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
 import de.bypixeltv.redivelocity.config.Config;
-import de.bypixeltv.redivelocity.managers.RedisController;
+import de.bypixeltv.redivelocity.jedisWrapper.RedisController;
 import de.bypixeltv.redivelocity.RediVelocity;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
