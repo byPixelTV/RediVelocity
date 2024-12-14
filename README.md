@@ -3,6 +3,10 @@
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/byPixelTV/RediVelocity/gradle.yml?style=for-the-badge)
 ![GitHub issues](https://img.shields.io/github/issues-raw/byPixelTV/RediVelocity?style=for-the-badge)
 ![GitHub All Downloads](https://img.shields.io/github/downloads/byPixelTV/RediVelocity/total?style=for-the-badge)
+<br>
+[![](https://sonarcloud.io/api/project_badges/measure?project=byPixelTV_RediVelocity&metric=ncloc)](https://sonarcloud.io/summary/overall?id=byPixelTV_RediVelocity) 
+[![](https://sonarcloud.io/api/project_badges/measure?project=byPixelTV_RediVelocity&metric=duplicated_lines_density)](https://sonarcloud.io/summary/overall?id=byPixelTV_RediVelocity) 
+[![](https://sonarcloud.io/api/project_badges/measure?project=byPixelTV_RediVelocity&metric=sqale_rating)](https://sonarcloud.io/summary/overall?id=byPixelTV_RediVelocity)
 
 </div>
 
