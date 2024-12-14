@@ -76,6 +76,11 @@ tasks {
         archiveBaseName.set("RediVelocity")
         archiveVersion.set(version.toString())
         archiveClassifier.set("")
+
+        relocate("redis.clients", "de.bypixeltv.shaded.redis.clients")
+        relocate("org.yaml.snakeyaml", "de.bypixeltv.shaded.org.yaml.snakeyaml")
+        relocate("dev.jorel.commandapi", "de.bypixeltv.shaded.dev.jorel.commandapi")
+        relocate("org.json", "de.bypixeltv.shaded.org.json")
     }
 
     build {
