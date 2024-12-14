@@ -37,7 +37,7 @@ public class ResourcePackListeners {
                 .build();
     }
 
-    @Subscribe(order = PostOrder.EARLY)
+    @Subscribe()
     public void onConfigurationFinish(PlayerFinishConfigurationEvent event, Continuation continuation) {
         Player player = event.player();
         ResourcePackInfo pack = createPackRequest(player);

@@ -1,9 +1,9 @@
 package de.bypixeltv.redivelocity.jedisWrapper;
 
-import de.bypixeltv.redivelocity.RediVelocity;
+import de.bypixeltv.redivelocity.RediVelocityLogger;
 import de.bypixeltv.redivelocity.config.Config;
+import de.bypixeltv.redivelocity.config.ConfigLoader;
 import jakarta.inject.Inject;
-import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import lombok.Getter;
 import org.json.JSONObject;
@@ -11,22 +11,29 @@ import redis.clients.jedis.BinaryJedisPubSub;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Singleton
 public class RedisController extends BinaryJedisPubSub implements Runnable {
 
-    private Provider<RediVelocity> rediVelocityProvider;
+    private final RediVelocityLogger rediVelocityLogger;
     @Getter
     private JedisPool jedisPool;
     private final AtomicBoolean isConnectionBroken = new AtomicBoolean(true);
     private final AtomicBoolean isConnecting = new AtomicBoolean(false);
 
     @Inject
-    public RedisController(Provider<RediVelocity> rediVelocityProvider, Config config) {
-        this.rediVelocityProvider = rediVelocityProvider;
+    public RedisController(RediVelocityLogger rediVelocityLogger) { // Constructor directly injects RediVelocity
+        this.rediVelocityLogger = rediVelocityLogger;
+
+        ConfigLoader configLoader = new ConfigLoader(rediVelocityLogger);
+        configLoader.load();
+
+        Config config = configLoader.getConfig();
 
         JedisPoolConfig jConfig = new JedisPoolConfig();
         int maxConnections = 10;
@@ -36,38 +43,21 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
         jConfig.setMinIdle(1);
         jConfig.setBlockWhenExhausted(true);
 
-        String password = config.getRedis().getPassword();
-        if (password.isEmpty()) {
-            this.jedisPool = new JedisPool(jConfig, config.getRedis().getHost(), config.getRedis().getPort());
-        } else {
-            this.jedisPool = new JedisPool(jConfig, config.getRedis().getHost(), config.getRedis().getPort(), 2000, password);
-        }
-    }
-
-    public void initialize(Provider<RediVelocity> rediVelocityProvider, Config config) {
-        this.rediVelocityProvider = rediVelocityProvider;
-
-        JedisPoolConfig jConfig = new JedisPoolConfig();
-        int maxConnections = 10;
-
-        jConfig.setMaxTotal(maxConnections);
-        jConfig.setMaxIdle(maxConnections);
-        jConfig.setMinIdle(1);
-        jConfig.setBlockWhenExhausted(true);
-
-        String username = config.getRedis().getUsername();
-        if (username.isEmpty()) {
-            username = "default"; // Use "default" as the default username
+        // Initialize Redis connection
+        try {
+            String password = config.getRedis().getPassword();
+            if (password.isEmpty()) {
+                this.jedisPool = new JedisPool(jConfig, config.getRedis().getHost(), config.getRedis().getPort());
+            } else {
+                this.jedisPool = new JedisPool(jConfig, config.getRedis().getHost(), config.getRedis().getPort(), 2000, password);
+            }
+        } catch (Exception e) {
+            rediVelocityLogger.sendErrorLogs("Failed to initialize RedisController: " + e.getMessage());
+            throw e; // Ensure failure is handled properly during initialization
         }
 
-        String password = config.getRedis().getPassword();
-        if (password.isEmpty()) {
-            // Connect to Redis with the default or provided username, no password
-            this.jedisPool = new JedisPool(jConfig, config.getRedis().getHost(), config.getRedis().getPort(), 2000, username);
-        } else {
-            // Connect to Redis with the default or provided username and password
-            this.jedisPool = new JedisPool(jConfig, config.getRedis().getHost(), config.getRedis().getPort(), 2000, username, password);
-        }
+        // Attempt to connect to Redis server
+        run();
     }
 
     @Override
@@ -75,22 +65,24 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
         if (!isConnectionBroken.get() || isConnecting.get()) {
             return;
         }
-        RediVelocity rediVelocity = rediVelocityProvider.get();
-        rediVelocity.sendLogs("Connecting to Redis server...");
+        rediVelocityLogger.sendLogs("Connecting to Redis server...");
         isConnecting.set(true);
-        try (var jedis = jedisPool.getResource()) {
+        try (var _ = jedisPool.getResource()) {
             isConnectionBroken.set(false);
-            rediVelocity.sendLogs("Connection to Redis server has established! Success!");
+            rediVelocityLogger.sendConsoleMessage("<green>Successfully connected to Redis server.</green>");
         } catch (Exception e) {
             isConnecting.set(false);
             isConnectionBroken.set(true);
-            rediVelocity.sendErrorLogs("Connection to Redis server has failed! Please check your details in the configuration.");
-            rediVelocity.sendErrorLogs(e.getMessage());
+            rediVelocityLogger.sendErrorLogs("Connection to Redis server has failed: " + e.getMessage());
         }
     }
 
     public void shutdown() {
-        jedisPool.close();
+        rediVelocityLogger.sendLogs("Shutting down Redis connection...");
+        if (jedisPool != null) {
+            jedisPool.close();
+        }
+        rediVelocityLogger.sendLogs("Redis connection has been shut down.");
     }
 
     public void sendPostLoginMessage(String event, String proxyId, String username, String useruuid, String userip, String channel) {
@@ -105,6 +97,9 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
 
         try (var jedis = jedisPool.getResource()) {
             jedis.publish(channel, jsonString);
+            rediVelocityLogger.sendLogs("Post-login message published to Redis channel '" + channel + "'.");
+        } catch (Exception e) {
+            rediVelocityLogger.sendErrorLogs("Failed to send post-login message: " + e.getMessage());
         }
     }
 
@@ -124,6 +119,9 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
 
         try (var jedis = jedisPool.getResource()) {
             jedis.publish(channel, jsonString);
+            rediVelocityLogger.sendLogs("Server switch message published to Redis channel '" + channel + "'.");
+        } catch (Exception e) {
+            rediVelocityLogger.sendErrorLogs("Failed to send server switch message: " + e.getMessage());
         }
     }
 
@@ -143,18 +141,6 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
         }
     }
 
-    public void sendMessage(String message, String channel) {
-        try (var jedis = jedisPool.getResource()) {
-            jedis.publish(channel, message);
-        }
-    }
-
-    public void removeFromListByValue(String listName, String value) {
-        try (var jedis = jedisPool.getResource()) {
-            jedis.lrem(listName, 0, value);
-        }
-    }
-
     public void setHashField(String hashName, String fieldName, String value) {
         try (var jedis = jedisPool.getResource()) {
             String type = jedis.type(hashName);
@@ -162,7 +148,7 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
                 if ("none".equals(type)) {
                     jedis.hset(hashName, fieldName, value);
                 } else {
-                    System.err.println("Error: Key " + hashName + " doesn't hold a hash. It holds a " + type + ".");
+                    rediVelocityLogger.sendErrorLogs("Error: Key " + hashName + " doesn't hold a hash. It holds a " + type + ".");
                 }
             } else {
                 jedis.hset(hashName, fieldName, value);
@@ -182,25 +168,6 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
         }
     }
 
-    public void addToList(String listName, String[] values) {
-        try (var jedis = jedisPool.getResource()) {
-            for (String value : values) {
-                jedis.rpush(listName, value);
-            }
-        }
-    }
-
-    public void setListValue(String listName, int index, String value) {
-        try (var jedis = jedisPool.getResource()) {
-            long listLength = jedis.llen(listName);
-            if (index >= listLength) {
-                System.err.println("Error: Index " + index + " does not exist in the list " + listName + ".");
-            } else {
-                jedis.lset(listName, index, value);
-            }
-        }
-    }
-
     public Map<String, String> getHashValuesAsPair(String hashName) {
         Map<String, String> values = new HashMap<>();
         try (var jedis = jedisPool.getResource()) {
@@ -212,25 +179,6 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
         return values;
     }
 
-    public void removeFromList(String listName, int index) {
-        try (var jedis = jedisPool.getResource()) {
-            long listLength = jedis.llen(listName);
-            if (index >= listLength) {
-                System.err.println("Error: Index " + index + " does not exist in the list " + listName);
-            } else {
-                String tempKey = UUID.randomUUID().toString();
-                jedis.lset(listName, index, tempKey);
-                jedis.lrem(listName, 0, tempKey);
-            }
-        }
-    }
-
-    public void deleteList(String listName) {
-        try (var jedis = jedisPool.getResource()) {
-            jedis.del(listName);
-        }
-    }
-
     public void setString(String key, String value) {
         try (var jedis = jedisPool.getResource()) {
             jedis.set(key, value);
@@ -240,12 +188,6 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
     public String getString(String key) {
         try (var jedis = jedisPool.getResource()) {
             return jedis.get(key);
-        }
-    }
-
-    public void deleteString(String key) {
-        try (var jedis = jedisPool.getResource()) {
-            jedis.del(key);
         }
     }
 
@@ -267,18 +209,6 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
         }
     }
 
-    public List<String> getList(String listName) {
-        try (var jedis = jedisPool.getResource()) {
-            return jedis.lrange(listName, 0, -1);
-        }
-    }
-
-    public String getHashValueByField(String hashName, String fieldName) {
-        try (var jedis = jedisPool.getResource()) {
-            return jedis.hget(hashName, fieldName);
-        }
-    }
-
     public String getHashKeyByValue(String hashName, String value) {
         try (var jedis = jedisPool.getResource()) {
             Set<String> keys = jedis.hkeys(hashName);
@@ -295,21 +225,5 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
         try (var jedis = jedisPool.getResource()) {
             return jedis.exists(key);
         }
-    }
-
-    public List<String> getHashFieldNamesByValue(String hashName, String value) {
-        List<String> fieldNames = new ArrayList<>();
-        try (var jedis = jedisPool.getResource()) {
-            Set<String> keys = jedis.keys(hashName);
-            for (String key : keys) {
-                Map<String, String> fieldsAndValues = jedis.hgetAll(key);
-                for (Map.Entry<String, String> entry : fieldsAndValues.entrySet()) {
-                    if (entry.getValue().equals(value)) {
-                        fieldNames.add(entry.getKey());
-                    }
-                }
-            }
-        }
-        return fieldNames;
     }
 }

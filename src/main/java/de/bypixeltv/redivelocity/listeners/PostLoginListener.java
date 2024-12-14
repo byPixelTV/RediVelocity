@@ -67,7 +67,7 @@ public class PostLoginListener {
         redisController.setHashField("rv-proxy-players", proxyId, String.valueOf(values));
 
         Map<String, String> proxyPlayersMap = redisController.getHashValuesAsPair("rv-players-name");
-        int sum = proxyPlayersMap.keySet().size();
+        int sum = proxyPlayersMap.size();
         redisController.setString("rv-global-playercount", String.valueOf(sum));
     }
 }

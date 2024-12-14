@@ -4,13 +4,10 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.proxy.ProxyServer;
-import jakarta.inject.Inject;
-import jakarta.inject.Provider;
-import jakarta.inject.Singleton;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-
-import de.bypixeltv.redivelocity.RediVelocity;
+import de.bypixeltv.redivelocity.RediVelocityLogger;
 import de.bypixeltv.redivelocity.utils.Version;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -23,18 +20,17 @@ import java.util.function.Consumer;
 @Singleton
 public class UpdateManager {
 
-    private final Provider<RediVelocity> rediVelocityProvider;
+    private final RediVelocityLogger rediVelocityLogger;
     private final ProxyServer proxy;
-    private final MiniMessage miniMessages = MiniMessage.miniMessage();
 
     @Inject
-    public UpdateManager(Provider<RediVelocity> rediVelocityProvider, ProxyServer proxy) {
-        this.rediVelocityProvider = rediVelocityProvider;
+    public UpdateManager(RediVelocityLogger rediVelocityLogger, ProxyServer proxy) {
+        this.rediVelocityLogger = rediVelocityLogger;
         this.proxy = proxy;
     }
 
-    private RediVelocity getRediVelocity() {
-        return rediVelocityProvider.get();
+    private RediVelocityLogger getRediVelocity() {
+        return rediVelocityLogger;
     }
 
     public void checkForUpdate() {
@@ -49,12 +45,12 @@ public class UpdateManager {
                     Version latestVersion = Version.fromString(version);
                     // Compare versions and notify accordingly
                     if (latestVersion.compareTo(currentVersion) <= 0) {
-                        proxy.getConsoleCommandSource().sendMessage(miniMessages.deserialize("<grey>[<aqua>RediVelocity</aqua>]</grey> <green>The plugin is up to date!</green>"));
+                        getRediVelocity().sendConsoleMessage("<green>The plugin is up to date!</green>");
                     } else {
-                        proxy.getConsoleCommandSource().sendMessage(miniMessages.deserialize("<grey>[<aqua>RediVelocity</aqua>]</grey> <red>The plugin is not up to date!</red>"));
-                        proxy.getConsoleCommandSource().sendMessage(miniMessages.deserialize(" - Current version: <red>v" + currentVersionString + "</red>"));
-                        proxy.getConsoleCommandSource().sendMessage(miniMessages.deserialize(" - Available update: <green>v" + version + "</green>"));
-                        proxy.getConsoleCommandSource().sendMessage(miniMessages.deserialize(" - Download available at: <aqua>https://github.com/byPixelTV/RediVelocity/releases</aqua>"));
+                        getRediVelocity().sendConsoleMessage("<red>The plugin is not up to date!</red>");
+                        getRediVelocity().sendConsoleMessage(" - Current version: <red>v" + currentVersionString + "</red>");
+                        getRediVelocity().sendConsoleMessage(" - Available update: <green>v" + version + "</green>");
+                        getRediVelocity().sendConsoleMessage(" - Download available at: <aqua>https://github.com/byPixelTV/RediVelocity/releases</aqua>");
                     }
                 } catch (NumberFormatException e) {
                     getRediVelocity().sendErrorLogs("Invalid version format: " + currentVersionString);

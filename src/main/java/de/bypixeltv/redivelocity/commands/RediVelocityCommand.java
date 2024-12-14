@@ -2,6 +2,7 @@ package de.bypixeltv.redivelocity.commands;
 
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.ServerPing;
+import de.bypixeltv.redivelocity.RediVelocityLogger;
 import de.bypixeltv.redivelocity.config.ConfigLoader;
 import de.bypixeltv.redivelocity.jedisWrapper.RedisController;
 import dev.jorel.commandapi.CommandAPICommand;
@@ -27,8 +28,8 @@ public class RediVelocityCommand {
     private final ProxyServer proxy;
 
     @Inject
-    public RediVelocityCommand(RedisController redisController, ProxyServer proxy) {
-        ConfigLoader configLoader = new ConfigLoader("plugins/redivelocity/config.yml");
+    public RediVelocityCommand(RedisController redisController, ProxyServer proxy, RediVelocityLogger rediVelocityLogger) {
+        ConfigLoader configLoader = new ConfigLoader(rediVelocityLogger);
         configLoader.load();
         this.prefix = configLoader.getConfig().getMessages().getPrefix();
         this.miniMessage = MiniMessage.miniMessage();
@@ -60,7 +61,7 @@ public class RediVelocityCommand {
                                                     }
                                                 }),
                                         new CommandAPICommand("lastseen")
-                                                .withArguments(new StringArgument("player").replaceSuggestions(ArgumentSuggestions.stringCollection(info -> redisController.getAllHashValues("rv-players-name"))))
+                                                .withArguments(new StringArgument("player").replaceSuggestions(ArgumentSuggestions.stringCollection(_ -> redisController.getAllHashValues("rv-players-name"))))
                                                 .withPermission("redivelocity.admin.player.lastseen")
                                                 .executes((sender, args) -> {
                                                     String playerName = (String) args.get(0);
@@ -83,7 +84,7 @@ public class RediVelocityCommand {
                                                     }
                                                 }),
                                         new CommandAPICommand("ip")
-                                                .withArguments(new StringArgument("player").replaceSuggestions(ArgumentSuggestions.stringCollection(info -> redisController.getAllHashValues("rv-players-name"))))
+                                                .withArguments(new StringArgument("player").replaceSuggestions(ArgumentSuggestions.stringCollection(_ -> redisController.getAllHashValues("rv-players-name"))))
                                                 .withPermission("redivelocity.admin.player.ip")
                                                 .executes((sender, args) -> {
                                                     String playerName = (String) args.get(0);
@@ -100,7 +101,7 @@ public class RediVelocityCommand {
                                                     }
                                                 }),
                                         new CommandAPICommand("uuid")
-                                                .withArguments(new StringArgument("player").replaceSuggestions(ArgumentSuggestions.stringCollection(info -> redisController.getAllHashValues("rv-players-name"))))
+                                                .withArguments(new StringArgument("player").replaceSuggestions(ArgumentSuggestions.stringCollection(_ -> redisController.getAllHashValues("rv-players-name"))))
                                                 .withPermission("redivelocity.admin.player.uuid")
                                                 .executes((sender, args) -> {
                                                     String playerName = (String) args.get(0);
@@ -112,7 +113,7 @@ public class RediVelocityCommand {
                                                     }
                                                 }),
                                         new CommandAPICommand("server")
-                                                .withArguments(new StringArgument("player").replaceSuggestions(ArgumentSuggestions.stringCollection(info -> redisController.getAllHashValues("rv-players-name"))))
+                                                .withArguments(new StringArgument("player").replaceSuggestions(ArgumentSuggestions.stringCollection(_ -> redisController.getAllHashValues("rv-players-name"))))
                                                 .withPermission("redivelocity.admin.player.uuid")
                                                 .executes((sender, args) -> {
                                                     String playerName = (String) args.get(0);
@@ -147,7 +148,7 @@ public class RediVelocityCommand {
                                 .withSubcommands(
                                         new CommandAPICommand("list")
                                                 .withPermission("redivelocity.admin.proxy.list")
-                                                .executes((sender, args) -> {
+                                                .executes((sender, _) -> {
                                                     Set<String> proxies = redisController.getAllHashFields("rv-proxies");
                                                     List<String> proxiesPrettyNames = proxies.stream()
                                                             .map(proxyId -> prefix + " <aqua>" + proxyId + "</aqua> <dark_grey>(<grey>Players: </grey><aqua>" + redisController.getHashField("rv-proxy-players", proxyId) + "</aqua>)</dark_grey>")
@@ -160,7 +161,7 @@ public class RediVelocityCommand {
                                                     }
                                                 }),
                                         new CommandAPICommand("players")
-                                                .withOptionalArguments(new StringArgument("proxy").replaceSuggestions(ArgumentSuggestions.stringCollection(info -> redisController.getAllHashFields("rv-proxies"))))
+                                                .withOptionalArguments(new StringArgument("proxy").replaceSuggestions(ArgumentSuggestions.stringCollection(_ -> redisController.getAllHashFields("rv-proxies"))))
                                                 .withPermission("redivelocity.admin.proxy.players")
                                                 .executes((sender, args) -> {
                                                     String proxyId = (String) args.getOptional(0).orElse(null);
@@ -193,7 +194,7 @@ public class RediVelocityCommand {
                                                     }
                                                 }),
                                         new CommandAPICommand("playercount")
-                                                .withOptionalArguments(new StringArgument("proxy").replaceSuggestions(ArgumentSuggestions.stringCollection(info -> redisController.getAllHashFields("rv-proxies"))))
+                                                .withOptionalArguments(new StringArgument("proxy").replaceSuggestions(ArgumentSuggestions.stringCollection(_ -> redisController.getAllHashFields("rv-proxies"))))
                                                 .withPermission("redivelocity.admin.proxy.playercount")
                                                 .executes((sender, args) -> {
                                                     String proxyId = (String) args.getOptional(0).orElse(null);
@@ -215,7 +216,7 @@ public class RediVelocityCommand {
                                                 }),
                                         new CommandAPICommand("servers")
                                                 .withPermission("redivelocity.admin.proxy.servers")
-                                                .executes((sender, args) -> {
+                                                .executes((sender, _) -> {
                                                     List<CompletableFuture<String>> futures = proxy.getAllServers().stream()
                                                             .map(server -> CompletableFuture.supplyAsync(() -> {
                                                                 try {
