@@ -58,11 +58,18 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
         jConfig.setMinIdle(1);
         jConfig.setBlockWhenExhausted(true);
 
+        String username = config.getRedis().getUsername();
+        if (username.isEmpty()) {
+            username = "default"; // Use "default" as the default username
+        }
+
         String password = config.getRedis().getPassword();
         if (password.isEmpty()) {
-            this.jedisPool = new JedisPool(jConfig, config.getRedis().getHost(), config.getRedis().getPort());
+            // Connect to Redis with the default or provided username, no password
+            this.jedisPool = new JedisPool(jConfig, config.getRedis().getHost(), config.getRedis().getPort(), 2000, username);
         } else {
-            this.jedisPool = new JedisPool(jConfig, config.getRedis().getHost(), config.getRedis().getPort(), 2000, password);
+            // Connect to Redis with the default or provided username and password
+            this.jedisPool = new JedisPool(jConfig, config.getRedis().getHost(), config.getRedis().getPort(), 2000, username, password);
         }
 
         this.channelsInByte = setupChannels();
