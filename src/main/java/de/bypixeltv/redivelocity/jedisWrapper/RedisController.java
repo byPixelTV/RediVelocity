@@ -21,7 +21,6 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
     private Provider<RediVelocity> rediVelocityProvider;
     @Getter
     private JedisPool jedisPool;
-    private byte[][] channelsInByte;
     private final AtomicBoolean isConnectionBroken = new AtomicBoolean(true);
     private final AtomicBoolean isConnecting = new AtomicBoolean(false);
 
@@ -43,8 +42,6 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
         } else {
             this.jedisPool = new JedisPool(jConfig, config.getRedis().getHost(), config.getRedis().getPort(), 2000, password);
         }
-
-        this.channelsInByte = setupChannels();
     }
 
     public void initialize(Provider<RediVelocity> rediVelocityProvider, Config config) {
@@ -71,8 +68,6 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
             // Connect to Redis with the default or provided username and password
             this.jedisPool = new JedisPool(jConfig, config.getRedis().getHost(), config.getRedis().getPort(), 2000, username, password);
         }
-
-        this.channelsInByte = setupChannels();
     }
 
     @Override
@@ -86,7 +81,6 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
         try (var jedis = jedisPool.getResource()) {
             isConnectionBroken.set(false);
             rediVelocity.sendLogs("Connection to Redis server has established! Success!");
-            jedis.subscribe(this, channelsInByte);
         } catch (Exception e) {
             isConnecting.set(false);
             isConnectionBroken.set(true);
@@ -318,14 +312,4 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
         }
         return fieldNames;
     }
-
-    private byte[][] setupChannels() {
-        List<String> channels = Arrays.asList("global", "messaging", "friends", "utils", "other"); // replace with your actual channels
-        byte[][] channelsInByte = new byte[channels.size()][];
-        for (int i = 0; i < channels.size(); i++) {
-            channelsInByte[i] = channels.get(i).getBytes(StandardCharsets.UTF_8);
-        }
-        return channelsInByte;
-    }
-
 }

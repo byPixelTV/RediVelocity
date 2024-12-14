@@ -34,4 +34,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: RediVelocity-Dev-Build [CLICK TO DOWNLOAD]
-          path: build/libs/SkCloudnet-*.jar
+          path: build/libs/RediVelocity-*.jar
