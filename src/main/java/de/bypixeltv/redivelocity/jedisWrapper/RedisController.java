@@ -84,7 +84,7 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
             isConnecting.set(false);
             isConnectionBroken.set(true);
             rediVelocity.sendErrorLogs("Connection to Redis server has failed! Please check your details in the configuration.");
-            e.printStackTrace();
+            rediVelocity.sendErrorLogs(e.getMessage());
         }
     }
 
