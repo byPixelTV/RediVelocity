@@ -22,7 +22,9 @@
 ### 📑 Requirements
 
 * **Java 23+**
-* **Velocity 3.3.0-SNAPSHOT**
+* **Velocity 3.4.0-SNAPSHOT**
+* **Redis Server**
+* **CloudNet or SimpleCloud (optional)**
 
 ### 🆘 Where can I get help?
 

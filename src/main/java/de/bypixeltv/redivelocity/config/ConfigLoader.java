@@ -82,7 +82,7 @@ public class ConfigLoader {
     public void save() {
         try (FileWriter writer = new FileWriter("plugins/redivelocity/config.yml")) {
             writer.write("# This is the internal version of the config, DO NOT MODIFY THIS VALUE\n");
-            writer.write("configVersion: " + config.getConfigVersion() + "\n");
+            writer.write("configVersion: " + config.getConfigVersion() + "\n\n");
 
             writer.write("# Redis configuration\n");
             writer.write("redis:\n");
@@ -91,15 +91,15 @@ public class ConfigLoader {
             writer.write("  username: " + config.getRedis().getUsername() + "\n");
             writer.write("  password: " + config.getRedis().getPassword() + "\n");
             writer.write("  useSsl: " + config.getRedis().isUseSsl() + "\n");
-            writer.write("  channel: " + config.getRedis().getChannel() + "\n");
+            writer.write("  channel: " + config.getRedis().getChannel() + "\n\n");
 
             writer.write("# Cloud System hook\n");
             writer.write("cloud:\n");
             writer.write("  enabled: " + config.getCloud().isEnabled() + "\n");
-            writer.write("  cloudSystem: " + config.getCloud().getCloudSystem() + "\n");
+            writer.write("  cloudSystem: " + config.getCloud().getCloudSystem() + "\n\n");
 
             writer.write("# Player Count Sync\n");
-            writer.write("playerCountSync: " + config.isPlayerCountSync() + "\n");
+            writer.write("playerCountSync: " + config.isPlayerCountSync() + "\n\n");
 
             writer.write("# Version control\n");
             writer.write("versionControl:\n");
@@ -108,17 +108,17 @@ public class ConfigLoader {
             for (Integer version : config.getVersionControl().getAllowedVersions()) {
                 writer.write("    - " + version + "\n");
             }
-            writer.write("  kickMessage: " + config.getVersionControl().getKickMessage() + "\n");
+            writer.write("  kickMessage: " + config.getVersionControl().getKickMessage() + "\n\n");
 
             writer.write("# Joingate\n");
             writer.write("joingate:\n");
             writer.write("  allowJavaClients: " + config.getJoingate().getAllowJavaClients() + "\n");
             writer.write("  floodgateHook: " + config.getJoingate().getFloodgateHook() + "\n");
-            writer.write("  allowBedrockClients: " + config.getJoingate().getAllowBedrockClients() + "\n");
+            writer.write("  allowBedrockClients: " + config.getJoingate().getAllowBedrockClients() + "\n\n");
 
             writer.write("# Messages\n");
             writer.write("messages:\n");
-            writer.write("  prefix: " + config.getMessages().getPrefix() + "\n");
+            writer.write("  prefix: " + config.getMessages().getPrefix() + "\n\n");
 
             writer.write("# Resourcepack\n");
             writer.write("resourcepack:\n");
@@ -126,7 +126,7 @@ public class ConfigLoader {
             writer.write("  forceResourcepack: " + config.getResourcepack().isForceResourcepack() + "\n");
             writer.write("  resourcepackUrl: " + config.getResourcepack().getResourcepackUrl() + "\n");
             writer.write("  resourcepackMessage: " + config.getResourcepack().getResourcepackMessage() + "\n");
-            writer.write("  resourcepackKickMessage: " + config.getResourcepack().getResourcepackKickMessage() + "\n");
+            writer.write("  resourcepackKickMessage: " + config.getResourcepack().getResourcepackKickMessage() + "\n\n");
 
         } catch (IOException e) {
             rediVelocityLogger.sendErrorLogs("<red>Failed to save configuration file!</red>");
