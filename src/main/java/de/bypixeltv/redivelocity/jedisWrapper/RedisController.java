@@ -97,6 +97,7 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
 
         try (var jedis = jedisPool.getResource()) {
             jedis.publish(channel, jsonString);
+            rediVelocityLogger.sendLogs("Post-login message published to Redis channel '" + channel + "'.");
         } catch (Exception e) {
             rediVelocityLogger.sendErrorLogs("Failed to send post-login message: " + e.getMessage());
         }
@@ -118,6 +119,7 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
 
         try (var jedis = jedisPool.getResource()) {
             jedis.publish(channel, jsonString);
+            rediVelocityLogger.sendLogs("Server switch message published to Redis channel '" + channel + "'.");
         } catch (Exception e) {
             rediVelocityLogger.sendErrorLogs("Failed to send server switch message: " + e.getMessage());
         }
