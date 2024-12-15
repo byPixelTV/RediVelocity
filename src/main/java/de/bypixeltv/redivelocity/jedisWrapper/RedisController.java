@@ -53,7 +53,6 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
             }
         } catch (Exception e) {
             rediVelocityLogger.sendErrorLogs("Failed to initialize RedisController: " + e.getMessage());
-            throw e; // Ensure failure is handled properly during initialization
         }
 
         // Attempt to connect to Redis server
@@ -97,9 +96,8 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
 
         try (var jedis = jedisPool.getResource()) {
             jedis.publish(channel, jsonString);
-            rediVelocityLogger.sendLogs("Post-login message published to Redis channel '" + channel + "'.");
         } catch (Exception e) {
-            rediVelocityLogger.sendErrorLogs("Failed to send post-login message: " + e.getMessage());
+            rediVelocityLogger.sendErrorLogs("Failed to send post-login Redis message: " + e.getMessage());
         }
     }
 
@@ -119,9 +117,8 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
 
         try (var jedis = jedisPool.getResource()) {
             jedis.publish(channel, jsonString);
-            rediVelocityLogger.sendLogs("Server switch message published to Redis channel '" + channel + "'.");
         } catch (Exception e) {
-            rediVelocityLogger.sendErrorLogs("Failed to send server switch message: " + e.getMessage());
+            rediVelocityLogger.sendErrorLogs("Failed to send server switch Redis message: " + e.getMessage());
         }
     }
 
