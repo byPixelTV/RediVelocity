@@ -37,6 +37,10 @@ import java.util.concurrent.TimeUnit;
 @Plugin(id = "redivelocity", name = "RediVelocity", version = "1.0.5-Beta", description = "A fast, modern and clean alternative to RedisBungee on Velocity.", authors = {"byPixelTV"}, url = "https://github.com/byPixelTV/RediVelocity")
 public class RediVelocity {
 
+    private static final String RV_PLAYERS_NAME = "rv-players-name";
+    private static final String RV_GLOBAL_PLAYERCOUNT = "rv-global-playercount";
+    private static final String RV_PROXIES = "rv-proxies";
+
     public final ProxyServer proxy;
     private final ProxyIdGenerator proxyIdGenerator;
     private final UpdateManager updateManager;
@@ -88,9 +92,9 @@ public class RediVelocity {
 
     public void calculateGlobalPlayers() {
         globalPlayerCountTask = this.proxy.getScheduler().buildTask(this, () -> {
-            Map<String, String> proxyPlayersMap = redisController.getHashValuesAsPair("rv-players-name");
+            Map<String, String> proxyPlayersMap = redisController.getHashValuesAsPair(RV_PLAYERS_NAME);
             int sum = proxyPlayersMap.size();
-            redisController.setString("rv-global-playercount", String.valueOf(sum));
+            redisController.setString(RV_GLOBAL_PLAYERCOUNT, String.valueOf(sum));
         }).repeat(5, TimeUnit.SECONDS).schedule();
     }
 
@@ -115,17 +119,17 @@ public class RediVelocity {
 
         Optional<PluginContainer> pluginContainer = proxy.getPluginManager().getPlugin("redivelocity");
 
-        if (!redisController.exists("rv-proxies")) {
-            redisController.deleteHash("rv-proxies");
+        if (!redisController.exists(RV_PROXIES)) {
+            redisController.deleteHash(RV_PROXIES);
             redisController.deleteHash("rv-proxy-players");
-            redisController.deleteHash("rv-players-name");
-            redisController.deleteHash("rv-global-playercount");
+            redisController.deleteHash(RV_PLAYERS_NAME);
+            redisController.deleteHash(RV_GLOBAL_PLAYERCOUNT);
         }
 
-        redisController.setHashField("rv-proxies", proxyId, proxyId);
+        redisController.setHashField(RV_PROXIES, proxyId, proxyId);
         redisController.setHashField("rv-proxy-players", proxyId, "0");
-        if (redisController.getString("rv-global-playercount") == null) {
-            redisController.setString("rv-global-playercount", "0");
+        if (redisController.getString(RV_GLOBAL_PLAYERCOUNT) == null) {
+            redisController.setString(RV_GLOBAL_PLAYERCOUNT, "0");
         }
         rediVelocityLogger.sendLogs("Creating new Proxy with ID: " + proxyId);
 
@@ -180,16 +184,16 @@ public class RediVelocity {
     public void onProxyShutdown(ProxyShutdownEvent event) {
         stop();
 
-        redisController.deleteHashField("rv-proxies", proxyId);
+        redisController.deleteHashField(RV_PROXIES, proxyId);
         redisController.deleteHashField("rv-proxy-players", proxyId);
 
-        if (redisController.getAllHashFields("rv-proxies").isEmpty() || redisController.getAllHashFields("rv-proxies").size() == 1) {
-            redisController.deleteHash("rv-players-name");
+        if (redisController.getAllHashFields(RV_PROXIES).isEmpty() || redisController.getAllHashFields(RV_PROXIES).size() == 1) {
+            redisController.deleteHash(RV_PLAYERS_NAME);
         }
 
-        if (!redisController.exists("rv-proxies")) {
-            redisController.deleteHash("rv-global-playercount");
-            redisController.deleteHash("rv-players-name");
+        if (!redisController.exists(RV_PROXIES)) {
+            redisController.deleteHash(RV_GLOBAL_PLAYERCOUNT);
+            redisController.deleteHash(RV_PLAYERS_NAME);
         }
         redisController.shutdown();
     }
