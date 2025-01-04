@@ -43,7 +43,7 @@ dependencies {
     // CommandAPI
     implementation("dev.jorel:commandapi-velocity-shade:9.6.2-SNAPSHOT")
 
-    implementation("org.json:json:20240303")
+    implementation("org.json:json:20241224")
 
     // Lombok dependencies
     annotationProcessor("org.projectlombok:lombok:1.18.36")
