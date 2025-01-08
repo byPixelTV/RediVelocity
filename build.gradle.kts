@@ -26,6 +26,11 @@ repositories {
     maven {
         url = uri("https://repo.opencollab.dev/main/")
     }
+
+    maven {
+        url = uri("https://repo.vulpescloud.de/snapshots")
+    }
+
 }
 
 dependencies {
@@ -38,7 +43,7 @@ dependencies {
     // CommandAPI
     implementation("dev.jorel:commandapi-velocity-shade:9.6.2-SNAPSHOT")
 
-    implementation("org.json:json:20240303")
+    implementation("org.json:json:20241224")
 
     // Lombok dependencies
     annotationProcessor("org.projectlombok:lombok:1.18.36")
@@ -56,6 +61,11 @@ dependencies {
 
     compileOnly("org.geysermc.geyser:api:2.4.2-SNAPSHOT")
     compileOnly("org.geysermc.floodgate:api:2.2.3-SNAPSHOT")
+
+    val vulpesCloudVersion = "1.0.0-alpha1"
+    compileOnly("de.vulpescloud", "VulpesCloud-api", vulpesCloudVersion)
+    compileOnly("de.vulpescloud", "VulpesCloud-bridge", vulpesCloudVersion)
+    compileOnly("de.vulpescloud", "VulpesCloud-wrapper", vulpesCloudVersion)
 }
 
 sourceSets {

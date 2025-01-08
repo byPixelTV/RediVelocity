@@ -15,8 +15,7 @@
 <h1 align="center">RediVelocity</h1>
 
 <h3 align="center">A simple but efficient Velocity plugin to synchronize data between proxies.</h3>
-<h5 align="center">RediVelocity supports the general use with a normal multiproxy setup with Velocity, or a multiproxy setup using CloudNet or SimpleCloud!</h6>
-<h6 align="center">Get information about your network and players with the build-in commands or use it in your code via Redis Pub/Sub or with the data stored in the Redis database!</h6>
+<h5 align="center">Get information about your network and players with the build-in commands or use it in your code via Redis Pub/Sub or with the data stored in the Redis database!</h5>
 <hr>
 
 ### 📑 Requirements
@@ -24,7 +23,7 @@
 * **Java 23+**
 * **Velocity 3.4.0-SNAPSHOT**
 * **Redis Server**
-* **CloudNet or SimpleCloud (optional)**
+* **CloudNet, SimpleCloud or VulpesCloud (optional)**
 
 ### 🆘 Where can I get help?
 
