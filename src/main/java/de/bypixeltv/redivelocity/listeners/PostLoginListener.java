@@ -53,7 +53,7 @@ public class PostLoginListener {
         if (config.getVersionControl().isEnabled()) {
             int playerProtocolVersion = player.getProtocolVersion().getProtocol();
             List<Integer> requiredProtocolVersions = config.getVersionControl().getAllowedVersions();
-            if (requiredProtocolVersions.contains(playerProtocolVersion)) {
+            if (!requiredProtocolVersions.contains(playerProtocolVersion)) {
                 if (!player.hasPermission("redivelocity.admin.version.bypass")) {
                     player.disconnect(miniMessage.deserialize(config.getVersionControl().getKickMessage()));
                 }

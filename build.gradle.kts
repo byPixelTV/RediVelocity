@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "de.bypixeltv"
-version = "1.1.0"
+version = "1.1.1-Beta"
 
 repositories {
     maven {
