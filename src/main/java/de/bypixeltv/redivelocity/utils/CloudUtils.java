@@ -29,7 +29,7 @@ public class CloudUtils {
             final ServiceInfoHolder serviceInfoHolder = InjectionLayer.ext().instance(ServiceInfoHolder.class);
             return serviceInfoHolder.serviceInfo().name();
         } else if (cloud.equalsIgnoreCase("vulpescloud")) {
-            return Wrapper.instance.getService().getName();
+            return Wrapper.instance.getServiceName();
         } else {
             return null;
         }
