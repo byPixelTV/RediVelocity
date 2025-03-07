@@ -166,7 +166,7 @@ public class RediVelocity {
         if (!isBeta) {
             updateManager.checkForUpdate();
         } else {
-            rediVelocityLogger.sendConsoleMessage("<yellow>The <aqua>update checker</aqua> is disabled, because you are using a <aqua>beta build</aqua> of <aqua>RediVelocity!</aqua></yellow>");
+            rediVelocityLogger.sendConsoleMessage("<yellow>The <aqua>update checker</aqua> is disabled because you are using a <aqua>beta build</aqua> of <aqua>RediVelocity!</aqua></yellow>");
         }
 
         proxy.getEventManager().register(this, new ServerSwitchListener(this, config, redisController));
@@ -186,11 +186,11 @@ public class RediVelocity {
 
         if (config.getJoingate().getAllowBedrockClients()) {
             if (!config.getJoingate().getFloodgateHook()) {
-                rediVelocityLogger.sendErrorLogs("You currently disallow Bedrock client to connect, but the Floodgate hook is disabled, please enable the Floodgate hook in the config");
+                rediVelocityLogger.sendErrorLogs("You currently allow Bedrock clients to connect, but the Floodgate hook is disabled, please enable the Floodgate hook in the config");
             } else {
                 // check if geyser and floodgate are installed
                 if (proxy.getPluginManager().getPlugin("floodgate").isEmpty() && proxy.getPluginManager().getPlugin("geyser").isEmpty()) {
-                    rediVelocityLogger.sendErrorLogs("You currently disallow Bedrock client to connect, but Floodgate and GeyserMC are <color:#ff0000>NOT</color> installed, you should fix this issue.");
+                    rediVelocityLogger.sendErrorLogs("You currently allow Bedrock clients to connect, but Floodgate and GeyserMC are <color:#ff0000>NOT</color> installed, you should fix this issue.");
                 }
             }
         }
