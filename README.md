@@ -23,7 +23,7 @@
 * **Java 23+**
 * **Velocity 3.4.0-SNAPSHOT**
 * **Redis Server**
-* **CloudNet, SimpleCloud or VulpesCloud (optional)**
+* **CloudNet or VulpesCloud (optional)**
 
 ### 🆘 Where can I get help?
 
