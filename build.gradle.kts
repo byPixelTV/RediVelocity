@@ -19,11 +19,6 @@ repositories {
     }
 
     maven {
-        name = "simplecloud"
-        url = uri("https://repo.thesimplecloud.eu/artifactory/list/gradle-release-local")
-    }
-
-    maven {
         url = uri("https://repo.opencollab.dev/main/")
     }
 
@@ -54,10 +49,6 @@ dependencies {
     compileOnly("eu.cloudnetservice.cloudnet:driver:$cloudNetVersion")
     compileOnly("eu.cloudnetservice.cloudnet:bridge:$cloudNetVersion")
     compileOnly("eu.cloudnetservice.cloudnet:wrapper-jvm:$cloudNetVersion")
-
-    val simpleCloudVersion = "2.8.1"
-    compileOnly("eu.thesimplecloud.simplecloud", "simplecloud-api", simpleCloudVersion)
-    compileOnly("eu.thesimplecloud.simplecloud", "simplecloud-plugin", simpleCloudVersion)
 
     compileOnly("org.geysermc.geyser:api:2.4.2-SNAPSHOT")
     compileOnly("org.geysermc.floodgate:api:2.2.3-SNAPSHOT")
