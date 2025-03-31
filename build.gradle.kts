@@ -41,8 +41,8 @@ dependencies {
     implementation("org.json:json:20250107")
 
     // Lombok dependencies
-    annotationProcessor("org.projectlombok:lombok:1.18.36")
-    compileOnly("org.projectlombok:lombok:1.18.36")
+    annotationProcessor("org.projectlombok:lombok:1.18.38")
+    compileOnly("org.projectlombok:lombok:1.18.38")
 
     // CloudNet
     val cloudNetVersion = "4.0.0-RC11.1"
