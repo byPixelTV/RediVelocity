@@ -53,7 +53,7 @@ dependencies {
     compileOnly("org.geysermc.geyser:api:2.4.2-SNAPSHOT")
     compileOnly("org.geysermc.floodgate:api:2.2.3-SNAPSHOT")
 
-    val vulpesCloudVersion = "1.0.0"
+    val vulpesCloudVersion = "1.1.0"
     compileOnly("de.vulpescloud", "VulpesCloud-wrapper", vulpesCloudVersion)
 }
 
