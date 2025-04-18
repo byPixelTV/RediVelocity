@@ -36,13 +36,13 @@ dependencies {
     implementation("org.yaml:snakeyaml:2.4")
 
     // CommandAPI
-    implementation("dev.jorel:commandapi-velocity-shade:9.6.2-SNAPSHOT")
+    implementation("dev.jorel:commandapi-velocity-shade:10.0.0")
 
     implementation("org.json:json:20250107")
 
     // Lombok dependencies
-    annotationProcessor("org.projectlombok:lombok:1.18.36")
-    compileOnly("org.projectlombok:lombok:1.18.36")
+    annotationProcessor("org.projectlombok:lombok:1.18.38")
+    compileOnly("org.projectlombok:lombok:1.18.38")
 
     // CloudNet
     val cloudNetVersion = "4.0.0-RC11.1"
@@ -53,7 +53,7 @@ dependencies {
     compileOnly("org.geysermc.geyser:api:2.4.2-SNAPSHOT")
     compileOnly("org.geysermc.floodgate:api:2.2.3-SNAPSHOT")
 
-    val vulpesCloudVersion = "1.0.0"
+    val vulpesCloudVersion = "1.1.0"
     compileOnly("de.vulpescloud", "VulpesCloud-wrapper", vulpesCloudVersion)
 }
 
