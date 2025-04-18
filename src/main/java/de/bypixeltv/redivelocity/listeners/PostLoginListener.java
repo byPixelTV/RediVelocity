@@ -27,6 +27,9 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.CompletableFuture;
 
 @Singleton
 public class PostLoginListener {
@@ -36,6 +39,7 @@ public class PostLoginListener {
     private final RedisController redisController;
     private final String proxyId;
     private final RediVelocity rediVelocity;
+    private final ExecutorService redisExecutor = Executors.newFixedThreadPool(5);
 
     @Inject
     public PostLoginListener(RediVelocity rediVelocity, Config config, RedisController redisController) {
@@ -45,7 +49,6 @@ public class PostLoginListener {
         this.rediVelocity = rediVelocity;
     }
 
-    @SuppressWarnings("unused")
     @Subscribe
     public void onPostLogin(PostLoginEvent event) {
         var player = event.getPlayer();
@@ -56,34 +59,41 @@ public class PostLoginListener {
             if (!requiredProtocolVersions.contains(playerProtocolVersion)) {
                 if (!player.hasPermission("redivelocity.admin.version.bypass")) {
                     player.disconnect(miniMessage.deserialize(config.getVersionControl().getKickMessage()));
+                    return;
                 }
             }
         }
 
-        redisController.setHashField("rv-players-proxy", player.getUniqueId().toString(), proxyId);
+        redisExecutor.submit(() -> {
+            try {
+                redisController.setHashField("rv-players-proxy", player.getUniqueId().toString(), proxyId);
 
-        var redisConfig = config.getRedis();
-        redisController.sendPostLoginMessage(
-                "postLogin",
-                rediVelocity.getProxyId(),
-                player.getUsername(),
-                player.getUniqueId().toString(),
-                player.getRemoteAddress().toString().split(":")[0].substring(1),
-                redisConfig.getChannel()
-        );
+                var redisConfig = config.getRedis();
+                redisController.sendPostLoginMessage(
+                        "postLogin",
+                        rediVelocity.getProxyId(),
+                        player.getUsername(),
+                        player.getUniqueId().toString(),
+                        player.getRemoteAddress().toString().split(":")[0].substring(1),
+                        redisConfig.getChannel()
+                );
 
-        redisController.setHashField("rv-players-name", player.getUniqueId().toString(), player.getUsername());
-        redisController.setHashField("rv-players-ip", player.getUniqueId().toString(), player.getRemoteAddress().toString().split(":")[0].substring(1));
+                redisController.setHashField("rv-players-name", player.getUniqueId().toString(), player.getUsername());
+                redisController.setHashField("rv-players-ip", player.getUniqueId().toString(), player.getRemoteAddress().toString().split(":")[0].substring(1));
 
-        Map<String, String> proxyPlayers = redisController.getHashValuesAsPair("rv-players-proxy");
-        int values = proxyPlayers.values().stream()
-                .filter(value -> value.equals(proxyId))
-                .toList()
-                .size();
-        redisController.setHashField("rv-proxy-players", proxyId, String.valueOf(values));
+                Map<String, String> proxyPlayers = redisController.getHashValuesAsPair("rv-players-proxy");
+                int values = proxyPlayers.values().stream()
+                        .filter(value -> value.equals(proxyId))
+                        .toList()
+                        .size();
+                redisController.setHashField("rv-proxy-players", proxyId, String.valueOf(values));
 
-        Map<String, String> proxyPlayersMap = redisController.getHashValuesAsPair("rv-players-name");
-        int sum = proxyPlayersMap.size();
-        redisController.setString("rv-global-playercount", String.valueOf(sum));
+                Map<String, String> proxyPlayersMap = redisController.getHashValuesAsPair("rv-players-name");
+                int sum = proxyPlayersMap.size();
+                redisController.setString("rv-global-playercount", String.valueOf(sum));
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
     }
 }

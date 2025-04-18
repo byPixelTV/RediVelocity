@@ -25,6 +25,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Singleton
 public class DisconnectListener {
@@ -48,30 +49,35 @@ public class DisconnectListener {
         var player = event.getPlayer();
         var redisConfig = config.getRedis();
 
-        redisController.sendJsonMessage(
-                "disconnect",
-                rediVelocity.getProxyId(),
-                player.getUsername(),
-                player.getUniqueId().toString(),
-                player.getClientBrand(),
-                player.getRemoteAddress().toString().split(":")[0].substring(1),
-                redisConfig.getChannel()
-        );
+        CompletableFuture.runAsync(() -> {
+            redisController.sendJsonMessage(
+                    "disconnect",
+                    rediVelocity.getProxyId(),
+                    player.getUsername(),
+                    player.getUniqueId().toString(),
+                    player.getClientBrand(),
+                    player.getRemoteAddress().toString().split(":")[0].substring(1),
+                    redisConfig.getChannel()
+            );
 
-        redisController.deleteHashField("rv-players-proxy", player.getUniqueId().toString());
-        redisController.deleteHashField("rv-players-name", player.getUniqueId().toString());
-        redisController.setHashField("rv-players-lastseen", player.getUniqueId().toString(), String.valueOf(System.currentTimeMillis()));
-        redisController.deleteHashField("rv-players-server", player.getUniqueId().toString());
+            redisController.deleteHashField("rv-players-proxy", player.getUniqueId().toString());
+            redisController.deleteHashField("rv-players-name", player.getUniqueId().toString());
+            redisController.setHashField("rv-players-lastseen", player.getUniqueId().toString(), String.valueOf(System.currentTimeMillis()));
+            redisController.deleteHashField("rv-players-server", player.getUniqueId().toString());
 
-        Map<String, String> proxyPlayers = redisController.getHashValuesAsPair("rv-players-proxy");
-        int values = proxyPlayers.values().stream()
-                .filter(value -> value.equals(proxyId))
-                .toList()
-                .size();
-        redisController.setHashField("rv-proxy-players", proxyId, String.valueOf(values));
+            Map<String, String> proxyPlayers = redisController.getHashValuesAsPair("rv-players-proxy");
+            int values = proxyPlayers.values().stream()
+                    .filter(value -> value.equals(proxyId))
+                    .toList()
+                    .size();
+            redisController.setHashField("rv-proxy-players", proxyId, String.valueOf(values));
 
-        Map<String, String> proxyPlayersMap = redisController.getHashValuesAsPair("rv-players-name");
-        int sum = proxyPlayersMap.size();
-        redisController.setString("rv-global-playercount", String.valueOf(sum));
+            Map<String, String> proxyPlayersMap = redisController.getHashValuesAsPair("rv-players-name");
+            int sum = proxyPlayersMap.size();
+            redisController.setString("rv-global-playercount", String.valueOf(sum));
+        }).exceptionally(ex -> {
+            ex.printStackTrace();
+            return null;
+        });
     }
 }

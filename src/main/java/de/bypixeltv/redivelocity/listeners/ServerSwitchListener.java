@@ -22,7 +22,12 @@ import de.bypixeltv.redivelocity.RediVelocity;
 import de.bypixeltv.redivelocity.config.Config;
 import de.bypixeltv.redivelocity.jedisWrapper.RedisController;
 import jakarta.inject.Inject;
+import java.util.concurrent.CompletableFuture;
 import jakarta.inject.Singleton;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Singleton
 public class ServerSwitchListener {
@@ -30,6 +35,7 @@ public class ServerSwitchListener {
     private final RediVelocity rediVelocity;
     private final Config config;
     private final RedisController redisController;
+    private final ExecutorService redisExecutor = Executors.newFixedThreadPool(5);
 
     @Inject
     public ServerSwitchListener(RediVelocity rediVelocity, Config config, RedisController redisController) {
@@ -45,18 +51,23 @@ public class ServerSwitchListener {
         var previousServerName = event.getPreviousServer().map(server -> server.getServerInfo().getName()).orElse("null");
         var redisConfig = config.getRedis();
 
-        redisController.sendServerSwitchMessage(
-                "serverSwitch",
-                rediVelocity.getProxyId(),
-                player.getUsername(),
-                player.getUniqueId().toString(),
-                player.getClientBrand(),
-                player.getRemoteAddress().toString().split(":")[0].substring(1),
-                event.getServer().getServerInfo().getName() != null ? event.getServer().getServerInfo().getName() : "null",
-                previousServerName,
-                redisConfig.getChannel()
-        );
+        CompletableFuture.runAsync(() -> {
+            redisController.sendServerSwitchMessage(
+                    "serverSwitch",
+                    rediVelocity.getProxyId(),
+                    player.getUsername(),
+                    player.getUniqueId().toString(),
+                    player.getClientBrand(),
+                    player.getRemoteAddress().toString().split(":")[0].substring(1),
+                    event.getServer().getServerInfo().getName() != null ? event.getServer().getServerInfo().getName() : "null",
+                    previousServerName,
+                    redisConfig.getChannel()
+            );
 
-        redisController.setHashField("rv-players-server", player.getUniqueId().toString(), event.getServer().getServerInfo().getName());
+            redisController.setHashField("rv-players-server", player.getUniqueId().toString(), event.getServer().getServerInfo().getName());
+        }, redisExecutor).exceptionally(ex -> {
+            ex.printStackTrace();
+            return null;
+        });
     }
 }

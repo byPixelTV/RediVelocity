@@ -31,7 +31,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CompletableFuture;
 
 @Singleton
 public class RedisController extends BinaryJedisPubSub implements Runnable {
@@ -82,14 +84,17 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
         }
         rediVelocityLogger.sendLogs("Connecting to Redis server...");
         isConnecting.set(true);
-        try (var _ = jedisPool.getResource()) {
-            isConnectionBroken.set(false);
-            rediVelocityLogger.sendConsoleMessage("<green>Successfully connected to Redis server.</green>");
-        } catch (Exception e) {
-            isConnecting.set(false);
-            isConnectionBroken.set(true);
-            rediVelocityLogger.sendErrorLogs("Connection to Redis server has failed: " + e.getMessage());
-        }
+
+        CompletableFuture.runAsync(() -> {
+            try (var _ = jedisPool.getResource()) {
+                isConnectionBroken.set(false);
+                rediVelocityLogger.sendConsoleMessage("<green>Successfully connected to Redis server.</green>");
+            } catch (Exception e) {
+                isConnecting.set(false);
+                isConnectionBroken.set(true);
+                rediVelocityLogger.sendErrorLogs("Connection to Redis server has failed: " + e.getMessage());
+            }
+        });
     }
 
     public void shutdown() {
