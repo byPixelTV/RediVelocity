@@ -17,7 +17,6 @@
 package de.bypixeltv.redivelocity.listeners;
 
 import com.velocitypowered.api.event.Continuation;
-import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.player.configuration.PlayerFinishConfigurationEvent;
 import com.velocitypowered.api.proxy.Player;

@@ -20,6 +20,8 @@ import de.bypixeltv.redivelocity.jedisWrapper.RedisController;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
+import java.util.List;
+
 @Singleton
 public class ProxyIdGenerator {
     private final RedisController redisController;
@@ -30,8 +32,14 @@ public class ProxyIdGenerator {
     }
 
     public String generate() {
-        // Atomare Erhöhung des Zählers in Redis
+        List<String> proxies = redisController.getAllHashValues("rv-proxies");
+
+        if (proxies.isEmpty()) {
+            redisController.deleteString("rv-proxies-counter");
+        }
+
         long newId = redisController.increment("rv-proxies-counter");
+
         return "Proxy-" + newId;
     }
 }
