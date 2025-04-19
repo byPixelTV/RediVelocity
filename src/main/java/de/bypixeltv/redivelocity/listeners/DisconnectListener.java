@@ -18,6 +18,7 @@ package de.bypixeltv.redivelocity.listeners;
 
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
+import com.velocitypowered.api.proxy.ProxyServer;
 import de.bypixeltv.redivelocity.RediVelocity;
 import de.bypixeltv.redivelocity.RediVelocityLogger;
 import de.bypixeltv.redivelocity.config.Config;
@@ -36,14 +37,16 @@ public class DisconnectListener {
     private final String proxyId;
     private final RediVelocity rediVelocity;
     private final RediVelocityLogger logger;
+    private final ProxyServer proxy;
 
     @Inject
-    public DisconnectListener(Config config, RedisController redisController, RediVelocity rediVelocity, RediVelocityLogger logger) {
+    public DisconnectListener(Config config, RedisController redisController, RediVelocity rediVelocity, RediVelocityLogger logger, ProxyServer proxy) {
         this.config = config;
         this.redisController = redisController;
         this.proxyId = rediVelocity.getProxyId();
         this.rediVelocity = rediVelocity;
         this.logger = logger;
+        this.proxy = proxy;
     }
 
     @SuppressWarnings("unused")
@@ -67,6 +70,8 @@ public class DisconnectListener {
             redisController.deleteHashField("rv-players-name", player.getUniqueId().toString());
             redisController.setHashField("rv-players-lastseen", player.getUniqueId().toString(), String.valueOf(System.currentTimeMillis()));
             redisController.deleteHashField("rv-players-server", player.getUniqueId().toString());
+
+            redisController.setHashField("rv-proxy-players", proxyId, proxy.getAllPlayers().size() + "");
 
             Map<String, String> proxyPlayers = redisController.getHashValuesAsPair("rv-players-proxy");
             int values = proxyPlayers.values().stream()

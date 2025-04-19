@@ -47,7 +47,7 @@ import jakarta.inject.Singleton;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Map;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -113,8 +113,10 @@ public class RediVelocity {
 
     public void calculateGlobalPlayers() {
         globalPlayerCountTask = this.proxy.getScheduler().buildTask(this, () -> {
-            Map<String, String> proxyPlayersMap = redisController.getHashValuesAsPair(RV_PLAYERS_NAME);
-            int sum = proxyPlayersMap.size();
+            List<Integer> proxyPlayersMap = redisController.getAllHashValues("rv-proxy-players").stream()
+                    .map(Integer::parseInt)
+                    .toList();
+            int sum = proxyPlayersMap.stream().mapToInt(Integer::intValue).sum();
             redisController.setString(RV_GLOBAL_PLAYERCOUNT, String.valueOf(sum));
         }).repeat(5, TimeUnit.SECONDS).schedule();
     }
@@ -184,8 +186,8 @@ public class RediVelocity {
             }
 
             proxy.getEventManager().register(this, new ServerSwitchListener(this, config, redisController, rediVelocityLogger));
-            proxy.getEventManager().register(this, new PostLoginListener(this, config, redisController, rediVelocityLogger));
-            proxy.getEventManager().register(this, new DisconnectListener(config, redisController, this, rediVelocityLogger));
+            proxy.getEventManager().register(this, new PostLoginListener(this, config, redisController, rediVelocityLogger, proxy));
+            proxy.getEventManager().register(this, new DisconnectListener(config, redisController, this, rediVelocityLogger, proxy));
             // proxy.getEventManager().register(this, new ResourcePackListeners(proxy, config));
 
             if (config.isPlayerCountSync()) {

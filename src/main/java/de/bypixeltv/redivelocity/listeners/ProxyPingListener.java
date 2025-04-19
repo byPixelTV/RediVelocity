@@ -22,6 +22,9 @@ import de.bypixeltv.redivelocity.jedisWrapper.RedisController;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Singleton
 public class ProxyPingListener {
 
@@ -35,9 +38,13 @@ public class ProxyPingListener {
     @Subscribe()
     @SuppressWarnings("unused")
     public void onProxyPing(ProxyPingEvent event) {
-        String players = redisController.getString("rv-global-playercount");
+        List<Integer> proxyPlayersMap = redisController.getAllHashValues("rv-proxy-players").stream()
+                .map(Integer::parseInt)
+                .toList();
+        int sum = proxyPlayersMap.stream().mapToInt(Integer::intValue).sum();
+        
         var ping = event.getPing().asBuilder();
-        ping.onlinePlayers(players != null ? Integer.parseInt(players) : 0);
+        ping.onlinePlayers(sum);
         event.setPing(ping.build());
     }
 }

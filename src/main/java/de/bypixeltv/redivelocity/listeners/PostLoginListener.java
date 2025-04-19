@@ -18,6 +18,7 @@ package de.bypixeltv.redivelocity.listeners;
 
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.PostLoginEvent;
+import com.velocitypowered.api.proxy.ProxyServer;
 import de.bypixeltv.redivelocity.RediVelocity;
 import de.bypixeltv.redivelocity.RediVelocityLogger;
 import de.bypixeltv.redivelocity.config.Config;
@@ -41,14 +42,16 @@ public class PostLoginListener {
     private final RediVelocity rediVelocity;
     private final ExecutorService redisExecutor = Executors.newFixedThreadPool(5);
     private final RediVelocityLogger logger;
+    private final ProxyServer proxy;
 
     @Inject
-    public PostLoginListener(RediVelocity rediVelocity, Config config, RedisController redisController, RediVelocityLogger logger) {
+    public PostLoginListener(RediVelocity rediVelocity, Config config, RedisController redisController, RediVelocityLogger logger, ProxyServer proxy) {
         this.config = config;
         this.redisController = redisController;
         this.proxyId = rediVelocity.getProxyId();
         this.rediVelocity = rediVelocity;
         this.logger = logger;
+        this.proxy = proxy;
     }
 
     @Subscribe
@@ -79,6 +82,8 @@ public class PostLoginListener {
                         player.getRemoteAddress().toString().split(":")[0].substring(1),
                         redisConfig.getChannel()
                 );
+
+                redisController.setHashField("rv-proxy-players", proxyId, proxy.getAllPlayers().size() + "");
 
                 redisController.setHashField("rv-players-name", player.getUniqueId().toString(), player.getUsername());
                 redisController.setHashField("rv-players-ip", player.getUniqueId().toString(), player.getRemoteAddress().toString().split(":")[0].substring(1));
