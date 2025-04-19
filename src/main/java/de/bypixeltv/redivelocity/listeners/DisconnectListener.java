@@ -18,9 +18,10 @@ package de.bypixeltv.redivelocity.listeners;
 
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
+import de.bypixeltv.redivelocity.RediVelocity;
+import de.bypixeltv.redivelocity.RediVelocityLogger;
 import de.bypixeltv.redivelocity.config.Config;
 import de.bypixeltv.redivelocity.jedisWrapper.RedisController;
-import de.bypixeltv.redivelocity.RediVelocity;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
@@ -34,13 +35,15 @@ public class DisconnectListener {
     private final RedisController redisController;
     private final String proxyId;
     private final RediVelocity rediVelocity;
+    private final RediVelocityLogger logger;
 
     @Inject
-    public DisconnectListener(Config config, RedisController redisController, RediVelocity rediVelocity) {
+    public DisconnectListener(Config config, RedisController redisController, RediVelocity rediVelocity, RediVelocityLogger logger) {
         this.config = config;
         this.redisController = redisController;
         this.proxyId = rediVelocity.getProxyId();
         this.rediVelocity = rediVelocity;
+        this.logger = logger;
     }
 
     @SuppressWarnings("unused")
@@ -76,7 +79,7 @@ public class DisconnectListener {
             int sum = proxyPlayersMap.size();
             redisController.setString("rv-global-playercount", String.valueOf(sum));
         }).exceptionally(ex -> {
-            ex.printStackTrace();
+            logger.sendErrorLogs("Error while sending disconnect Redis message " + ex.getMessage());
             return null;
         });
     }

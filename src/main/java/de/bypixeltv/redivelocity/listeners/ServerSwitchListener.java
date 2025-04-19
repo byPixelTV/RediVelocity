@@ -19,10 +19,10 @@ package de.bypixeltv.redivelocity.listeners;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import de.bypixeltv.redivelocity.RediVelocity;
+import de.bypixeltv.redivelocity.RediVelocityLogger;
 import de.bypixeltv.redivelocity.config.Config;
 import de.bypixeltv.redivelocity.jedisWrapper.RedisController;
 import jakarta.inject.Inject;
-import java.util.concurrent.CompletableFuture;
 import jakarta.inject.Singleton;
 
 import java.util.concurrent.CompletableFuture;
@@ -36,12 +36,14 @@ public class ServerSwitchListener {
     private final Config config;
     private final RedisController redisController;
     private final ExecutorService redisExecutor = Executors.newFixedThreadPool(5);
+    private final RediVelocityLogger logger;
 
     @Inject
-    public ServerSwitchListener(RediVelocity rediVelocity, Config config, RedisController redisController) {
+    public ServerSwitchListener(RediVelocity rediVelocity, Config config, RedisController redisController, RediVelocityLogger logger) {
         this.rediVelocity = rediVelocity;
         this.config = config;
         this.redisController = redisController;
+        this.logger = logger;
     }
 
     @SuppressWarnings("unused")
@@ -66,7 +68,7 @@ public class ServerSwitchListener {
 
             redisController.setHashField("rv-players-server", player.getUniqueId().toString(), event.getServer().getServerInfo().getName());
         }, redisExecutor).exceptionally(ex -> {
-            ex.printStackTrace();
+            logger.sendErrorLogs("Error while sending server switch Redis message " + ex.getMessage());
             return null;
         });
     }

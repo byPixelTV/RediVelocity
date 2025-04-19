@@ -65,6 +65,11 @@ sourceSets {
     }
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_23
+    targetCompatibility = JavaVersion.VERSION_23
+}
+
 tasks {
     compileJava {
         options.encoding = "UTF-8"

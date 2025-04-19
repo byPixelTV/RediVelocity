@@ -34,6 +34,9 @@ import de.bypixeltv.redivelocity.listeners.PostLoginListener;
 import de.bypixeltv.redivelocity.listeners.ProxyPingListener;
 import de.bypixeltv.redivelocity.listeners.ServerSwitchListener;
 import de.bypixeltv.redivelocity.pubsub.MessageListener;
+import de.bypixeltv.redivelocity.services.HeartbeatCheckService;
+import de.bypixeltv.redivelocity.services.HeartbeatService;
+import de.bypixeltv.redivelocity.services.PlayerCalcService;
 import de.bypixeltv.redivelocity.utils.CloudUtils;
 import de.bypixeltv.redivelocity.utils.ProxyIdGenerator;
 import dev.jorel.commandapi.CommandAPI;
@@ -72,12 +75,14 @@ public class RediVelocity {
     private String proxyId;
 
     @Inject
-    public RediVelocity(ProxyServer proxy,
-                        ProxyIdGenerator proxyIdGenerator,
-                        UpdateManager updateManager,
-                        Provider<RediVelocityCommand> rediVelocityCommandProvider,
-                        RedisController redisController,
-                        RediVelocityLogger rediVelocityLogger) {
+    public RediVelocity(
+            ProxyServer proxy,
+            ProxyIdGenerator proxyIdGenerator,
+            UpdateManager updateManager,
+            Provider<RediVelocityCommand> rediVelocityCommandProvider,
+            RedisController redisController,
+            RediVelocityLogger rediVelocityLogger
+    ) {
         this.proxy = proxy;
         this.proxyIdGenerator = proxyIdGenerator;
         this.updateManager = updateManager;
@@ -114,7 +119,6 @@ public class RediVelocity {
         }).repeat(5, TimeUnit.SECONDS).schedule();
     }
 
-
     public void stop() {
         if (Objects.nonNull(globalPlayerCountTask)) {
             globalPlayerCountTask.cancel();
@@ -131,69 +135,85 @@ public class RediVelocity {
                 (CloudUtils.getServiceName(config.getCloud().getCloudSystem()) != null ? CloudUtils.getServiceName(config.getCloud().getCloudSystem()) : proxyIdGenerator.generate()) :
                 proxyIdGenerator.generate();
 
-        CommandAPI.onEnable();
-
-        Optional<PluginContainer> pluginContainer = proxy.getPluginManager().getPlugin("redivelocity");
-
-        if (!redisController.exists(RV_PROXIES)) {
-            redisController.deleteHash(RV_PROXIES);
+        if (Objects.equals(proxyId, "Proxy-1")) {
             redisController.deleteHash("rv-proxy-players");
-            redisController.deleteHash(RV_PLAYERS_NAME);
-            redisController.deleteHash(RV_GLOBAL_PLAYERCOUNT);
+            redisController.deleteHash("rv-players-proxy");
+            redisController.deleteHash("rv-proxy-heartbeat");
+            redisController.deleteHash("rv-players-server");
+            redisController.deleteHash("rv-proxies");
+            redisController.deleteString("rv-global-playercount");
         }
 
-        redisController.setHashField(RV_PROXIES, proxyId, proxyId);
-        redisController.setHashField("rv-proxy-players", proxyId, "0");
-        if (redisController.getString(RV_GLOBAL_PLAYERCOUNT) == null) {
-            redisController.setString(RV_GLOBAL_PLAYERCOUNT, "0");
-        }
-        rediVelocityLogger.sendLogs("Creating new Proxy with ID: " + proxyId);
+        proxy.getScheduler().buildTask(this, () -> {
+            CommandAPI.onEnable();
 
-        RedisManager redisManager = new RedisManager(rediVelocityLogger, redisController.getJedisPool());
+            Optional<PluginContainer> pluginContainer = proxy.getPluginManager().getPlugin("redivelocity");
 
-        boolean isBeta = false;
-        if (pluginContainer.isPresent()) {
-            String version = pluginContainer.get().getDescription().getVersion().toString();
-            if (version.contains("-")) {
-                rediVelocityLogger.sendConsoleMessage("<yellow>This is a <color:#ff0000><b>BETA build,</b></color> things may not work as expected, please report any bugs on <aqua>GitHub</aqua></yellow>");
-                rediVelocityLogger.sendConsoleMessage("<aqua><b>https://github.com/byPixelTV/RediVelocity/issues</b></aqua>");
-                isBeta = true;
+            if (!redisController.exists(RV_PROXIES)) {
+                redisController.deleteHash(RV_PROXIES);
+                redisController.deleteHash("rv-proxy-players");
+                redisController.deleteHash(RV_PLAYERS_NAME);
+                redisController.deleteHash(RV_GLOBAL_PLAYERCOUNT);
             }
-        } else {
-            rediVelocityLogger.sendErrorLogs("RediVelocity plugin not found (soo, this is really bad, please report this issue on GitHub)");
-        }
 
-        if (!isBeta) {
-            updateManager.checkForUpdate();
-        } else {
-            rediVelocityLogger.sendConsoleMessage("<yellow>The <aqua>update checker</aqua> is disabled because you are using a <aqua>beta build</aqua> of <aqua>RediVelocity!</aqua></yellow>");
-        }
+            redisController.setHashField(RV_PROXIES, proxyId, proxyId);
+            redisController.setHashField("rv-proxy-players", proxyId, "0");
+            if (redisController.getString(RV_GLOBAL_PLAYERCOUNT) == null) {
+                redisController.setString(RV_GLOBAL_PLAYERCOUNT, "0");
+            }
+            rediVelocityLogger.sendLogs("Creating new Proxy with ID: " + proxyId);
 
-        proxy.getEventManager().register(this, new ServerSwitchListener(this, config, redisController));
-        proxy.getEventManager().register(this, new PostLoginListener(this, config, redisController));
-        proxy.getEventManager().register(this, new DisconnectListener(config, redisController, this));
-        // proxy.getEventManager().register(this, new ResourcePackListeners(proxy, config));
+            RedisManager redisManager = new RedisManager(rediVelocityLogger, redisController.getJedisPool());
 
-        if (config.isPlayerCountSync()) {
-            proxy.getEventManager().register(this, new ProxyPingListener(redisController));
-        }
-
-        new MessageListener(redisManager, this.proxy);
-
-        rediVelocityCommandProvider.get().register();
-
-        calculateGlobalPlayers();
-
-        if (config.getJoingate().getAllowBedrockClients()) {
-            if (!config.getJoingate().getFloodgateHook()) {
-                rediVelocityLogger.sendErrorLogs("You currently allow Bedrock clients to connect, but the Floodgate hook is disabled, please enable the Floodgate hook in the config");
+            boolean isBeta = false;
+            if (pluginContainer.isPresent()) {
+                String version = pluginContainer.get().getDescription().getVersion().toString();
+                if (version.contains("-")) {
+                    rediVelocityLogger.sendConsoleMessage("<yellow>This is a <color:#ff0000><b>BETA build,</b></color> things may not work as expected, please report any bugs on <aqua>GitHub</aqua></yellow>");
+                    rediVelocityLogger.sendConsoleMessage("<aqua><b>https://github.com/byPixelTV/RediVelocity/issues</b></aqua>");
+                    isBeta = true;
+                }
             } else {
-                // check if geyser and floodgate are installed
-                if (proxy.getPluginManager().getPlugin("floodgate").isEmpty() && proxy.getPluginManager().getPlugin("geyser").isEmpty()) {
-                    rediVelocityLogger.sendErrorLogs("You currently allow Bedrock clients to connect, but Floodgate and GeyserMC are <color:#ff0000>NOT</color> installed, you should fix this issue.");
+                rediVelocityLogger.sendErrorLogs("RediVelocity plugin not found (soo, this is really bad, please report this issue on GitHub)");
+            }
+
+            if (!isBeta) {
+                updateManager.checkForUpdate();
+            } else {
+                rediVelocityLogger.sendConsoleMessage("<yellow>The <aqua>update checker</aqua> is disabled because you are using a <aqua>beta build</aqua> of <aqua>RediVelocity!</aqua></yellow>");
+            }
+
+            proxy.getEventManager().register(this, new ServerSwitchListener(this, config, redisController, rediVelocityLogger));
+            proxy.getEventManager().register(this, new PostLoginListener(this, config, redisController, rediVelocityLogger));
+            proxy.getEventManager().register(this, new DisconnectListener(config, redisController, this, rediVelocityLogger));
+            // proxy.getEventManager().register(this, new ResourcePackListeners(proxy, config));
+
+            if (config.isPlayerCountSync()) {
+                proxy.getEventManager().register(this, new ProxyPingListener(redisController));
+            }
+
+            new MessageListener(redisManager, this.proxy);
+
+            rediVelocityCommandProvider.get().register();
+
+            new PlayerCalcService(redisController, proxyId, rediVelocityLogger, this, proxy).startCalc();
+
+            calculateGlobalPlayers();
+
+            new HeartbeatService(redisController, proxyId, rediVelocityLogger, this).startHeartbeat();
+            new HeartbeatCheckService(redisController, proxyId, rediVelocityLogger, this).startHeartbeatCheck();
+
+            if (config.getJoingate().getAllowBedrockClients()) {
+                if (!config.getJoingate().getFloodgateHook()) {
+                    rediVelocityLogger.sendErrorLogs("You currently allow Bedrock clients to connect, but the Floodgate hook is disabled, please enable the Floodgate hook in the config");
+                } else {
+                    // check if geyser and floodgate are installed
+                    if (proxy.getPluginManager().getPlugin("floodgate").isEmpty() && proxy.getPluginManager().getPlugin("geyser").isEmpty()) {
+                        rediVelocityLogger.sendErrorLogs("You currently allow Bedrock clients to connect, but Floodgate and GeyserMC are <color:#ff0000>NOT</color> installed, you should fix this issue.");
+                    }
                 }
             }
-        }
+        }).delay(2, TimeUnit.SECONDS).schedule();
     }
 
     @Subscribe

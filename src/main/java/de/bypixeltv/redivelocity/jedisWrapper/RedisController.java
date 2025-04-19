@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.CompletableFuture;
 
 @Singleton
 public class RedisController extends BinaryJedisPubSub implements Runnable {
@@ -122,6 +121,16 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
         }
     }
 
+    public boolean isProxyAlive(String proxyId) {
+        String heartbeatKey = "rv-heartbeat-" + proxyId;
+        String lastHeartbeat = getString(heartbeatKey);
+        if (lastHeartbeat == null) {
+            return false; // Proxy ist nicht aktiv
+        }
+        long lastHeartbeatTime = Long.parseLong(lastHeartbeat);
+        return (System.currentTimeMillis() - lastHeartbeatTime) < 10000; // 10 Sekunden Timeout
+    }
+
     public void sendServerSwitchMessage(String event, String proxyId, String username, String useruuid, String clientbrand, String userip, String serverName, String previousServer, String channel) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("action", event);
@@ -159,6 +168,27 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
         }
     }
 
+    public void setTtlOfKey(String key, long ttl) {
+        try (var jedis = jedisPool.getResource()) {
+            jedis.expire(key, ttl);
+        }
+    }
+
+    public void setHashFieldWithTTL(String hashKey, String field, String value, long ttlInSeconds) {
+        try (var jedis = jedisPool.getResource()) {
+            jedis.hset(hashKey, field, value);
+            jedis.eval("redis.call('expire', KEYS[1], ARGV[1])",
+                    1, hashKey, String.valueOf(ttlInSeconds));
+        }
+    }
+
+    public void setTtlOfHashField(String hashKey, String field, long ttl) {
+        try (var jedis = jedisPool.getResource()) {
+            jedis.eval("redis.call('expire', KEYS[1], ARGV[1])",
+                    1, hashKey, String.valueOf(ttl));
+        }
+    }
+
     public void setHashField(String hashName, String fieldName, String value) {
         try (var jedis = jedisPool.getResource()) {
             String type = jedis.type(hashName);
@@ -180,9 +210,26 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
         }
     }
 
+    public long increment(String key) {
+        try (var jedis = jedisPool.getResource()) {
+            return jedis.incr(key);
+        }
+    }
+
     public void deleteHash(String hashName) {
         try (var jedis = jedisPool.getResource()) {
             jedis.del(hashName);
+        }
+    }
+
+    public void deleteHashKeyByValue(String hashName, String value) {
+        try (var jedis = jedisPool.getResource()) {
+            Set<String> keys = jedis.hkeys(hashName);
+            for (String key : keys) {
+                if (jedis.hget(hashName, key).equals(value)) {
+                    jedis.hdel(hashName, key);
+                }
+            }
         }
     }
 
@@ -200,6 +247,12 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
     public void setString(String key, String value) {
         try (var jedis = jedisPool.getResource()) {
             jedis.set(key, value);
+        }
+    }
+
+    public void deleteString(String key) {
+        try (var jedis = jedisPool.getResource()) {
+            jedis.del(key);
         }
     }
 

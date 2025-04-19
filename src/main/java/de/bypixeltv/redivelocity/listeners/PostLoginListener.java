@@ -19,6 +19,7 @@ package de.bypixeltv.redivelocity.listeners;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.PostLoginEvent;
 import de.bypixeltv.redivelocity.RediVelocity;
+import de.bypixeltv.redivelocity.RediVelocityLogger;
 import de.bypixeltv.redivelocity.config.Config;
 import de.bypixeltv.redivelocity.jedisWrapper.RedisController;
 import jakarta.inject.Inject;
@@ -29,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.CompletableFuture;
 
 @Singleton
 public class PostLoginListener {
@@ -40,13 +40,15 @@ public class PostLoginListener {
     private final String proxyId;
     private final RediVelocity rediVelocity;
     private final ExecutorService redisExecutor = Executors.newFixedThreadPool(5);
+    private final RediVelocityLogger logger;
 
     @Inject
-    public PostLoginListener(RediVelocity rediVelocity, Config config, RedisController redisController) {
+    public PostLoginListener(RediVelocity rediVelocity, Config config, RedisController redisController, RediVelocityLogger logger) {
         this.config = config;
         this.redisController = redisController;
         this.proxyId = rediVelocity.getProxyId();
         this.rediVelocity = rediVelocity;
+        this.logger = logger;
     }
 
     @Subscribe
@@ -92,7 +94,7 @@ public class PostLoginListener {
                 int sum = proxyPlayersMap.size();
                 redisController.setString("rv-global-playercount", String.valueOf(sum));
             } catch (Exception ex) {
-                ex.printStackTrace();
+                logger.sendErrorLogs("Error while sending post login Redis message " + ex.getMessage());
             }
         });
     }
