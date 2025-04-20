@@ -20,13 +20,17 @@ import de.bypixeltv.redivelocity.RediVelocityLogger;
 import de.bypixeltv.redivelocity.jedisWrapper.RedisController;
 import jakarta.inject.Inject;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class HeartbeatCheckService {
+
+    private static final String RV_PROXY_HEARTBEAT = "rv-proxy-heartbeat";
+    private static final String RV_PROXIES = "rv-proxies";
+    private static final String RV_PROXY_LEADER = "rv-proxy-leader";
 
     private final RedisController redisController;
     private final String proxyId;
@@ -44,22 +48,36 @@ public class HeartbeatCheckService {
     public void startHeartbeatCheck() {
         rediVelocity.proxy.getScheduler().buildTask(rediVelocity, () -> {
             try {
-                ArrayList<Integer> proxiesList = new java.util.ArrayList<>(List.of());
-                redisController.getAllHashFields("rv-proxies").forEach(proxy -> {
-                    proxiesList.add(Integer.parseInt(proxy.replace("Proxy-", "")));
-                });
-                if (Collections.min(proxiesList) == Integer.parseInt(proxyId.split("-")[1])) {
-                    redisController.getAllHashFields("rv-proxy-heartbeat").forEach(proxy -> {
-                        long timestamp = Long.parseLong(redisController.getHashField("rv-proxy-heartbeat", proxy));
-                        long currentTimestamp = System.currentTimeMillis() / 1000;
-                        boolean isOlder = (currentTimestamp - timestamp) > 10;
-                        if (isOlder) {
-                            redisController.deleteHashField("rv-proxy-heartbeat", proxy);
+                String leaderProxy = redisController.getString(RV_PROXY_LEADER);
+
+                if (leaderProxy == null || leaderProxy.isEmpty()) {
+                    Set<String> activeProxies = redisController.getAllHashFields(RV_PROXIES);
+                    if (!activeProxies.isEmpty()) {
+                        List<String> proxyList = new ArrayList<>(activeProxies);
+                        String newLeader = proxyList.get(new SecureRandom().nextInt(proxyList.size()));
+                        redisController.setString(RV_PROXY_LEADER, newLeader);
+                        logger.sendLogs("No leader found. New leader: " + newLeader);
+                        leaderProxy = newLeader;
+                    }
+                }
+
+                final String finalLeaderProxy = leaderProxy;
+                if (proxyId.equals(finalLeaderProxy)) {
+                    redisController.getAllHashFields(RV_PROXY_HEARTBEAT).forEach(proxy -> {
+                        String heartbeatValue = redisController.getHashField(RV_PROXY_HEARTBEAT, proxy);
+                        if (heartbeatValue != null) {
+                            long timestamp = Long.parseLong(heartbeatValue);
+                            long currentTimestamp = System.currentTimeMillis();
+                            boolean isOlder = (currentTimestamp - timestamp) > 10000;
+                            if (isOlder) {
+                                logger.sendLogs("Proxy " + proxy + " is inactive for more than 10 seconds. Removing from Redis.");
+                                redisController.deleteHashField(RV_PROXY_HEARTBEAT, proxy);
+                            }
                         }
                     });
 
-                    Set<String> proxyNameList = redisController.getAllHashFields("rv-proxies");
-                    Set<String> activeProxies = redisController.getAllHashFields("rv-proxy-heartbeat");
+                    Set<String> proxyNameList = redisController.getAllHashFields(RV_PROXIES);
+                    Set<String> activeProxies = redisController.getAllHashFields(RV_PROXY_HEARTBEAT);
 
                     List<String> missingValues = new ArrayList<>(proxyNameList);
                     missingValues.removeAll(activeProxies);
@@ -67,13 +85,24 @@ public class HeartbeatCheckService {
                     missingValues.forEach(proxy -> {
                         logger.sendErrorLogs("Proxy " + proxy + " is not responding. Removing from Redis.");
                         redisController.deleteHashField("rv-proxy-players", proxy);
-                        redisController.deleteHashKeyByValue("rv-proxy-heartbeat", proxy);
-                        redisController.deleteHashKeyByValue("rv-players-proxy", proxy);
-                        redisController.deleteHashKeyByValue("rv-proxies", proxy);
+                        redisController.deleteHashField(RV_PROXY_HEARTBEAT, proxy);
+                        redisController.deleteHashField(RV_PROXIES, proxy);
+
+                        if (proxy.equals(finalLeaderProxy)) {
+                            Set<String> remainingProxies = redisController.getAllHashFields(RV_PROXIES);
+                            if (!remainingProxies.isEmpty()) {
+                                List<String> proxyList = new ArrayList<>(remainingProxies);
+                                String newLeader = proxyList.get(new SecureRandom().nextInt(proxyList.size()));
+                                redisController.setString(RV_PROXY_LEADER, newLeader);
+                                logger.sendLogs("New leader proxy: " + newLeader);
+                            }
+                        }
+
+                        redisController.deleteHashFieldByBalue("rv-players-proxy", proxy);
                     });
                 }
             } catch (Exception e) {
-                logger.sendErrorLogs("Error while sending heartbeat " + e.getMessage());
+                logger.sendErrorLogs("Error during heartbeat check: " + e.getMessage());
             }
         }).repeat(15, TimeUnit.SECONDS).schedule();
     }

@@ -47,10 +47,10 @@ import jakarta.inject.Singleton;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.security.SecureRandom;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Singleton
 @Plugin(id = "redivelocity", name = "RediVelocity", version = "1.1.1-Beta", description = "A fast, modern and clean alternative to RedisBungee on Velocity.", authors = {"byPixelTV"}, url = "https://github.com/byPixelTV/RediVelocity")
@@ -59,6 +59,8 @@ public class RediVelocity {
     private static final String RV_PLAYERS_NAME = "rv-players-name";
     private static final String RV_GLOBAL_PLAYERCOUNT = "rv-global-playercount";
     private static final String RV_PROXIES = "rv-proxies";
+    private static final String RV_PROXY_VOTES = "rv-proxy-votes";
+    private static final String RV_PROXY_LEADER = "rv-proxy-leader";
 
     public final ProxyServer proxy;
     private final ProxyIdGenerator proxyIdGenerator;
@@ -73,6 +75,9 @@ public class RediVelocity {
     private String jsonFormat;
     @Getter
     private String proxyId;
+
+    private ScheduledTask globalPlayerCountTask;
+    private ScheduledTask leaderElectionTask;
 
     @Inject
     public RediVelocity(
@@ -109,8 +114,6 @@ public class RediVelocity {
         this.jsonFormat = String.valueOf(config.isJsonFormat());
     }
 
-    private ScheduledTask globalPlayerCountTask;
-
     public void calculateGlobalPlayers() {
         globalPlayerCountTask = this.proxy.getScheduler().buildTask(this, () -> {
             List<Integer> proxyPlayersMap = redisController.getAllHashValues("rv-proxy-players").stream()
@@ -121,14 +124,76 @@ public class RediVelocity {
         }).repeat(5, TimeUnit.SECONDS).schedule();
     }
 
+    public void startLeaderElection() {
+        leaderElectionTask = this.proxy.getScheduler().buildTask(this, () -> {
+            Set<String> activeProxies = redisController.getAllHashFields(RV_PROXIES);
+            if (activeProxies.isEmpty()) {
+                return;
+            }
+
+            String previousVote = redisController.getHashField(RV_PROXY_VOTES, proxyId);
+            if (previousVote != null) {
+                redisController.deleteHashField(RV_PROXY_VOTES, proxyId);
+            }
+
+            String voteFor;
+            if (activeProxies.size() > 1) {
+                List<String> otherProxies = activeProxies.stream()
+                        .filter(proxy -> !proxy.equals(proxyId))
+                        .toList();
+                voteFor = otherProxies.get(new SecureRandom().nextInt(otherProxies.size()));
+            } else {
+                voteFor = proxyId;
+            }
+
+            redisController.setHashField(RV_PROXY_VOTES, proxyId, voteFor);
+
+            Map<String, String> allVotes = redisController.getHashValuesAsPair(RV_PROXY_VOTES);
+            Map<String, Long> voteCount = allVotes.values().stream()
+                    .collect(Collectors.groupingBy(proxy -> proxy, Collectors.counting()));
+
+            Map.Entry<String, Long> leader = voteCount.entrySet().stream()
+                    .filter(entry -> entry.getValue() >= 2)
+                    .max(Map.Entry.comparingByValue())
+                    .orElse(null);
+
+            if (leader == null) {
+                leader = voteCount.entrySet().stream()
+                        .max(Map.Entry.comparingByValue())
+                        .orElse(null);
+            }
+
+            String newLeader;
+            if (leader != null) {
+                newLeader = leader.getKey();
+            } else if (!activeProxies.isEmpty()) {
+                newLeader = activeProxies.iterator().next();
+            } else {
+                return;
+            }
+
+            redisController.setString(RV_PROXY_LEADER, newLeader);
+
+            if (newLeader.equals(proxyId)) {
+                rediVelocityLogger.sendLogs("This proxy (" + proxyId + ") is now the leader.");
+            }
+        }).repeat(15, TimeUnit.SECONDS).schedule();
+    }
+
     public void stop() {
         if (Objects.nonNull(globalPlayerCountTask)) {
             globalPlayerCountTask.cancel();
+        }
+
+        if (Objects.nonNull(leaderElectionTask)) {
+            leaderElectionTask.cancel();
         }
     }
 
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
+        redisController.setString("rv-init-process", "true");
+
         configLoader.load();
         Config config = configLoader.getConfig();
         jsonFormat = String.valueOf(config.isJsonFormat());
@@ -201,6 +266,7 @@ public class RediVelocity {
             new PlayerCalcService(redisController, proxyId, rediVelocityLogger, this, proxy).startCalc();
 
             calculateGlobalPlayers();
+            startLeaderElection();
 
             new HeartbeatService(redisController, proxyId, rediVelocityLogger, this).startHeartbeat();
             new HeartbeatCheckService(redisController, proxyId, rediVelocityLogger, this).startHeartbeatCheck();
@@ -216,17 +282,39 @@ public class RediVelocity {
                 }
             }
         }).delay(2, TimeUnit.SECONDS).schedule();
+
+        redisController.deleteString("rv-init-process");
     }
 
     @Subscribe
     public void onProxyShutdown(ProxyShutdownEvent event) {
         stop();
 
+        redisController.deleteHashField(RV_PROXY_VOTES, proxyId);
+
+        String currentLeader = redisController.getString(RV_PROXY_LEADER);
+        if (proxyId.equals(currentLeader)) {
+            Set<String> activeProxies = redisController.getAllHashFields(RV_PROXIES);
+            activeProxies.remove(proxyId);
+
+            if (!activeProxies.isEmpty()) {
+                List<String> otherProxies = new ArrayList<>(activeProxies);
+                String newLeader = otherProxies.get(new SecureRandom().nextInt(otherProxies.size()));
+                redisController.setString(RV_PROXY_LEADER, newLeader);
+                rediVelocityLogger.sendLogs("New proxy leader selected (this proxy (the current leader) died): " + newLeader);
+            } else {
+                redisController.deleteString(RV_PROXY_LEADER);
+            }
+        }
+
         redisController.deleteHashField(RV_PROXIES, proxyId);
         redisController.deleteHashField("rv-proxy-players", proxyId);
 
         if (redisController.getAllHashFields(RV_PROXIES).isEmpty() || redisController.getAllHashFields(RV_PROXIES).size() == 1) {
             redisController.deleteHash(RV_PLAYERS_NAME);
+            redisController.deleteHash("rv-proxy-players");
+            redisController.deleteHash("rv-proxy-heartbeat");
+            redisController.deleteString("rv-proxies-counter");
         }
 
         if (!redisController.exists(RV_PROXIES)) {

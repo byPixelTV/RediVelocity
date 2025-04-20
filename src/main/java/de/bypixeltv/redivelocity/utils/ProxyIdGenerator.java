@@ -20,11 +20,17 @@ import de.bypixeltv.redivelocity.jedisWrapper.RedisController;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
-import java.util.List;
+import java.security.SecureRandom;
+import java.util.Set;
 
 @Singleton
 public class ProxyIdGenerator {
+    private static final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private static final int ID_LENGTH = 8;
+    private static final String PROXIES_KEY = "rv-proxies";
+
     private final RedisController redisController;
+    private final SecureRandom random = new SecureRandom();
 
     @Inject
     public ProxyIdGenerator(RedisController redisController) {
@@ -32,14 +38,22 @@ public class ProxyIdGenerator {
     }
 
     public String generate() {
-        List<String> proxies = redisController.getAllHashValues("rv-proxies");
+        Set<String> existingProxies = redisController.getAllHashFields(PROXIES_KEY);
+        String proxyKey;
 
-        if (proxies.isEmpty()) {
-            redisController.deleteString("rv-proxies-counter");
+        // Generiere einen eindeutigen zufälligen ID-String
+        do {
+            proxyKey = "Proxy-" + generateRandomString();
+        } while (existingProxies.contains(proxyKey));
+
+        return proxyKey;
+    }
+
+    private String generateRandomString() {
+        StringBuilder sb = new StringBuilder(ID_LENGTH);
+        for (int i = 0; i < ID_LENGTH; i++) {
+            sb.append(CHARS.charAt(random.nextInt(CHARS.length())));
         }
-
-        long newId = redisController.increment("rv-proxies-counter");
-
-        return "Proxy-" + newId;
+        return sb.toString();
     }
 }

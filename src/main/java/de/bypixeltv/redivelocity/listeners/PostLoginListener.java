@@ -29,6 +29,7 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -57,6 +58,11 @@ public class PostLoginListener {
     @Subscribe
     public void onPostLogin(PostLoginEvent event) {
         var player = event.getPlayer();
+
+        if (Objects.equals(redisController.getString("rv-init-process"), "true")) {
+            player.disconnect(MiniMessage.miniMessage().deserialize("<red>Proxy is booting up, please wait..."));
+            return;
+        }
 
         if (config.getVersionControl().isEnabled()) {
             int playerProtocolVersion = player.getProtocolVersion().getProtocol();

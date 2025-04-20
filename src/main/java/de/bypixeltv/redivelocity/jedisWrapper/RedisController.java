@@ -26,12 +26,14 @@ import org.json.JSONObject;
 import redis.clients.jedis.BinaryJedisPubSub;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.params.SetParams;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Singleton
@@ -250,9 +252,34 @@ public class RedisController extends BinaryJedisPubSub implements Runnable {
         }
     }
 
+    public boolean setStringIfNotExists(String key, String value) {
+        try (var jedis = jedisPool.getResource()) {
+            SetParams params = SetParams.setParams().nx();
+            return jedis.set(key, value, params) != null;
+        }
+    }
+
+    public boolean setStringIfNotExistsWithTtl(String key, String value, long ttl, TimeUnit timeUnit) {
+        try (var jedis = jedisPool.getResource()) {
+            SetParams params = SetParams.setParams().nx().ex(timeUnit.toSeconds(ttl));
+            return jedis.set(key, value, params) != null;
+        }
+    }
+
     public void deleteString(String key) {
         try (var jedis = jedisPool.getResource()) {
             jedis.del(key);
+        }
+    }
+
+    public void deleteHashFieldByBalue(String hashName, String value) {
+        try (var jedis = jedisPool.getResource()) {
+            Set<String> keys = jedis.hkeys(hashName);
+            for (String key : keys) {
+                if (jedis.hget(hashName, key).equals(value)) {
+                    jedis.hdel(hashName, key);
+                }
+            }
         }
     }
 

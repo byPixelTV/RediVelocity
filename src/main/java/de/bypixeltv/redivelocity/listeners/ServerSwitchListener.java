@@ -24,7 +24,9 @@ import de.bypixeltv.redivelocity.config.Config;
 import de.bypixeltv.redivelocity.jedisWrapper.RedisController;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -50,6 +52,12 @@ public class ServerSwitchListener {
     @Subscribe
     public void onServerSwitch(ServerConnectedEvent event) {
         var player = event.getPlayer();
+
+        if (Objects.equals(redisController.getString("rv-init-process"), "true")) {
+            player.disconnect(MiniMessage.miniMessage().deserialize("<red>Proxy is booting up, please wait..."));
+            return;
+        }
+
         var previousServerName = event.getPreviousServer().map(server -> server.getServerInfo().getName()).orElse("null");
         var redisConfig = config.getRedis();
 
