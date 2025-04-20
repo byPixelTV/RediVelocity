@@ -287,7 +287,7 @@ public class RediVelocityCommand {
                             .map(server -> CompletableFuture.supplyAsync(() -> {
                                 try {
                                     ServerPing result = server.ping().get();
-                                    return prefix + " <color:#0dbf00>●</color> <aqua>" + server.getServerInfo().getName() + "</aqua> <dark_gray>(<grey>Address: <aqua>" + server.getServerInfo().getAddress() + "</aqua>, Playercount: <aqua>" + server.getPlayersConnected().size() + "</aqua>, Version: <aqua>" + result.getVersion().getProtocol() + ", " + result.getVersion().getName() + "</aqua></grey>)</dark_gray>";
+                                    return prefix + " <color:#0dbf00>●</color> <aqua>" + server.getServerInfo().getName() + "</aqua> <dark_gray>(<grey>Address: <aqua>" + server.getServerInfo().getAddress() + "</aqua>, Version: <aqua>" + result.getVersion().getProtocol() + ", " + result.getVersion().getName() + "</aqua></grey>)</dark_gray>";
                                 } catch (Exception e) {
                                     return prefix + " <color:#f00000>●</color> <aqua>" + server.getServerInfo().getName() + "</aqua> <dark_gray>(<grey>Address: <aqua>" + server.getServerInfo().getAddress() + "</aqua></grey>)</dark_gray>";
                                 }
