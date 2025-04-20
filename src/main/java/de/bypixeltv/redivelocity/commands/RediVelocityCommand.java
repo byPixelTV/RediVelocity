@@ -198,7 +198,8 @@ public class RediVelocityCommand {
                         createProxyListCommand(),
                         createProxyPlayersCommand(),
                         createProxyPlayerCountCommand(),
-                        createProxyServersCommand()
+                        createProxyServersCommand(),
+                        createProxyLeaderCommand()
                 );
     }
 
@@ -251,6 +252,23 @@ public class RediVelocityCommand {
                         } else {
                             sender.sendMessage(miniMessage.deserialize(prefix + " <gray>Currently online players:<br>" + playersPrettyString + "</gray>"));
                         }
+                    }
+                });
+    }
+
+    private CommandAPICommand createProxyLeaderCommand() {
+        return new CommandAPICommand("leader")
+                .withPermission("redivelocity.admin.proxy.leader")
+                .executes((sender, args) -> {
+                    String leaderProxy = redisController.getString("rv-proxy-leader");
+
+                    if (leaderProxy != null && !leaderProxy.isEmpty()) {
+                        String playerCount = redisController.getHashField("rv-proxy-players", leaderProxy);
+                        if (playerCount == null) playerCount = "0";
+
+                        sender.sendMessage(miniMessage.deserialize(prefix + " <gray>Current leader proxy: <aqua>" + leaderProxy +  "</aqua> (<aqua>" + playerCount + " players online</aqua>)</gray>"));
+                    } else {
+                        sender.sendMessage(miniMessage.deserialize(prefix + " <red>There is no leader proxy.</red>"));
                     }
                 });
     }
