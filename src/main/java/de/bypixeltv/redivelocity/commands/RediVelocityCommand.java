@@ -259,7 +259,7 @@ public class RediVelocityCommand {
     private CommandAPICommand createProxyLeaderCommand() {
         return new CommandAPICommand("leader")
                 .withPermission("redivelocity.admin.proxy.leader")
-                .executes((sender, args) -> {
+                .executes((sender, _) -> {
                     String leaderProxy = redisController.getString("rv-proxy-leader");
 
                     if (leaderProxy != null && !leaderProxy.isEmpty()) {
