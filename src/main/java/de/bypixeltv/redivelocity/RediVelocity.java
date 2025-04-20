@@ -34,8 +34,6 @@ import de.bypixeltv.redivelocity.listeners.PostLoginListener;
 import de.bypixeltv.redivelocity.listeners.ProxyPingListener;
 import de.bypixeltv.redivelocity.listeners.ServerSwitchListener;
 import de.bypixeltv.redivelocity.pubsub.MessageListener;
-import de.bypixeltv.redivelocity.services.HeartbeatCheckService;
-import de.bypixeltv.redivelocity.services.HeartbeatService;
 import de.bypixeltv.redivelocity.services.PlayerCalcService;
 import de.bypixeltv.redivelocity.utils.CloudUtils;
 import de.bypixeltv.redivelocity.utils.ProxyIdGenerator;
@@ -125,57 +123,64 @@ public class RediVelocity {
     }
 
     public void startLeaderElection() {
+        final int[] electionCounter = {0};
+
         leaderElectionTask = this.proxy.getScheduler().buildTask(this, () -> {
             Set<String> activeProxies = redisController.getAllHashFields(RV_PROXIES);
             if (activeProxies.isEmpty()) {
                 return;
             }
 
-            String previousVote = redisController.getHashField(RV_PROXY_VOTES, proxyId);
-            if (previousVote != null) {
-                redisController.deleteHashField(RV_PROXY_VOTES, proxyId);
-            }
+            String currentLeader = redisController.getString(RV_PROXY_LEADER);
+            boolean forceNewElection = (electionCounter[0]++ % 20 == 0);
+            boolean needNewLeader = currentLeader == null || !activeProxies.contains(currentLeader) || forceNewElection;
 
-            String voteFor;
-            if (activeProxies.size() > 1) {
-                List<String> otherProxies = activeProxies.stream()
-                        .filter(proxy -> !proxy.equals(proxyId))
-                        .toList();
-                voteFor = otherProxies.get(new SecureRandom().nextInt(otherProxies.size()));
-            } else {
-                voteFor = proxyId;
-            }
+            if (needNewLeader) {
+                String reason = currentLeader == null ? "No leader found" :
+                        (!activeProxies.contains(currentLeader) ? "Leader " + currentLeader + " is not active" :
+                                "Scheduled forced election");
+                rediVelocityLogger.sendLogs("Selecting new leader: " + reason);
 
-            redisController.setHashField(RV_PROXY_VOTES, proxyId, voteFor);
+                redisController.deleteHash(RV_PROXY_VOTES);
 
-            Map<String, String> allVotes = redisController.getHashValuesAsPair(RV_PROXY_VOTES);
-            Map<String, Long> voteCount = allVotes.values().stream()
-                    .collect(Collectors.groupingBy(proxy -> proxy, Collectors.counting()));
+                for (String voter : activeProxies) {
+                    List<String> candidates = new ArrayList<>(activeProxies);
+                    if (candidates.size() > 1) {
+                        candidates.remove(voter);
+                    }
+                    String candidate = candidates.get(new SecureRandom().nextInt(candidates.size()));
+                    redisController.setHashField(RV_PROXY_VOTES, voter, candidate);
+                }
 
-            Map.Entry<String, Long> leader = voteCount.entrySet().stream()
-                    .filter(entry -> entry.getValue() >= 2)
-                    .max(Map.Entry.comparingByValue())
-                    .orElse(null);
+                Map<String, String> allVotes = redisController.getHashValuesAsPair(RV_PROXY_VOTES);
+                Map<String, Long> voteCount = allVotes.values().stream()
+                        .collect(Collectors.groupingBy(proxy -> proxy, Collectors.counting()));
 
-            if (leader == null) {
-                leader = voteCount.entrySet().stream()
-                        .max(Map.Entry.comparingByValue())
-                        .orElse(null);
-            }
+                List<String> topCandidates = voteCount.entrySet().stream()
+                        .filter(entry -> entry.getValue() >= 2)
+                        .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                        .map(Map.Entry::getKey)
+                        .collect(Collectors.toList());
 
-            String newLeader;
-            if (leader != null) {
-                newLeader = leader.getKey();
-            } else if (!activeProxies.isEmpty()) {
-                newLeader = activeProxies.iterator().next();
-            } else {
-                return;
-            }
+                String newLeader;
+                if (!topCandidates.isEmpty()) {
+                    newLeader = topCandidates.get(new SecureRandom().nextInt(topCandidates.size()));
+                } else if (!voteCount.isEmpty()) {
+                    List<String> candidates = voteCount.entrySet().stream()
+                            .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                            .map(Map.Entry::getKey)
+                            .collect(Collectors.toList());
+                    newLeader = candidates.get(0);
+                } else {
+                    List<String> proxyList = new ArrayList<>(activeProxies);
+                    newLeader = proxyList.get(new SecureRandom().nextInt(proxyList.size()));
+                }
 
-            redisController.setString(RV_PROXY_LEADER, newLeader);
+                redisController.setString(RV_PROXY_LEADER, newLeader);
 
-            if (newLeader.equals(proxyId)) {
-                rediVelocityLogger.sendLogs("This proxy (" + proxyId + ") is now the leader.");
+                if (newLeader.equals(proxyId)) {
+                    rediVelocityLogger.sendLogs("This proxy (" + proxyId + ") is now the leader.");
+                }
             }
         }).repeat(15, TimeUnit.SECONDS).schedule();
     }
@@ -267,9 +272,6 @@ public class RediVelocity {
 
             calculateGlobalPlayers();
             startLeaderElection();
-
-            new HeartbeatService(redisController, proxyId, rediVelocityLogger, this).startHeartbeat();
-            new HeartbeatCheckService(redisController, proxyId, rediVelocityLogger, this).startHeartbeatCheck();
 
             if (config.getJoingate().getAllowBedrockClients()) {
                 if (!config.getJoingate().getFloodgateHook()) {
