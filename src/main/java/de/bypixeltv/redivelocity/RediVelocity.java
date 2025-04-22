@@ -155,31 +155,34 @@ public class RediVelocity {
                 Map<String, String> allVotes = redisController.getHashValuesAsPair(RV_PROXY_VOTES);
                 Map<String, Long> voteCount = allVotes.values().stream()
                         .collect(Collectors.groupingBy(proxy -> proxy, Collectors.counting()));
-
-                List<String> topCandidates = voteCount.entrySet().stream()
-                        .filter(entry -> entry.getValue() >= 2)
-                        .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                        .map(Map.Entry::getKey)
-                        .collect(Collectors.toList());
-
-                String newLeader;
-                if (!topCandidates.isEmpty()) {
-                    newLeader = topCandidates.get(new SecureRandom().nextInt(topCandidates.size()));
-                } else if (!voteCount.isEmpty()) {
-                    List<String> candidates = voteCount.entrySet().stream()
-                            .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                            .map(Map.Entry::getKey)
-                            .collect(Collectors.toList());
-                    newLeader = candidates.get(0);
-                } else {
+                
+                if (voteCount.isEmpty()) {
                     List<String> proxyList = new ArrayList<>(activeProxies);
-                    newLeader = proxyList.get(new SecureRandom().nextInt(proxyList.size()));
+                    String newLeader = proxyList.get(new SecureRandom().nextInt(proxyList.size()));
+                    redisController.setString(RV_PROXY_LEADER, newLeader);
+
+                    if (newLeader.equals(proxyId)) {
+                        rediVelocityLogger.sendLogs("This proxy (" + proxyId + ") is now the leader (random selection).");
+                    }
+                    return;
                 }
 
+                Map<Long, List<String>> groupedByVotes = new HashMap<>();
+                voteCount.forEach((proxy, count) ->
+                        groupedByVotes.computeIfAbsent(count, k -> new ArrayList<>()).add(proxy)
+                );
+
+                Long maxVotes = groupedByVotes.keySet().stream()
+                        .max(Long::compare)
+                        .orElse(0L);
+
+                List<String> topCandidates = groupedByVotes.get(maxVotes);
+
+                String newLeader = topCandidates.get(new SecureRandom().nextInt(topCandidates.size()));
                 redisController.setString(RV_PROXY_LEADER, newLeader);
 
                 if (newLeader.equals(proxyId)) {
-                    rediVelocityLogger.sendLogs("This proxy (" + proxyId + ") is now the leader.");
+                    rediVelocityLogger.sendLogs("This proxy (" + proxyId + ") is now the leader with " + maxVotes + " votes.");
                 }
             }
         }).repeat(15, TimeUnit.SECONDS).schedule();
