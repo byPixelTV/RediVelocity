@@ -169,7 +169,7 @@ public class RediVelocity {
 
                 Map<Long, List<String>> groupedByVotes = new HashMap<>();
                 voteCount.forEach((proxy, count) ->
-                        groupedByVotes.computeIfAbsent(count, k -> new ArrayList<>()).add(proxy)
+                        groupedByVotes.computeIfAbsent(count, _ -> new ArrayList<>()).add(proxy)
                 );
 
                 Long maxVotes = groupedByVotes.keySet().stream()
