@@ -32,11 +32,11 @@ dependencies {
     compileOnly("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
 
     // Jedis and SnakeYAML
-    implementation("redis.clients:jedis:5.2.0")
+    implementation("redis.clients:jedis:6.0.0")
     implementation("org.yaml:snakeyaml:2.4")
 
     // CommandAPI
-    implementation("dev.jorel:commandapi-velocity-shade:10.0.0")
+    implementation("dev.jorel:commandapi-velocity-shade:10.0.1")
 
     implementation("org.json:json:20250107")
 
