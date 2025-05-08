@@ -34,6 +34,7 @@ import de.bypixeltv.redivelocity.listeners.PostLoginListener;
 import de.bypixeltv.redivelocity.listeners.ProxyPingListener;
 import de.bypixeltv.redivelocity.listeners.ServerSwitchListener;
 import de.bypixeltv.redivelocity.pubsub.MessageListener;
+import de.bypixeltv.redivelocity.services.HeartbeatService;
 import de.bypixeltv.redivelocity.services.PlayerCalcService;
 import de.bypixeltv.redivelocity.utils.CloudUtils;
 import de.bypixeltv.redivelocity.utils.ProxyIdGenerator;
@@ -139,7 +140,9 @@ public class RediVelocity {
                 String reason = currentLeader == null ? "No leader found" :
                         (!activeProxies.contains(currentLeader) ? "Leader " + currentLeader + " is not active" :
                                 "Scheduled forced election");
-                rediVelocityLogger.sendLogs("Selecting new leader: " + reason);
+                if (configLoader.getConfig().isDebugMode()) {
+                    rediVelocityLogger.sendLogs("Selecting new leader: " + reason);
+                }
 
                 redisController.deleteHash(RV_PROXY_VOTES);
 
@@ -162,7 +165,9 @@ public class RediVelocity {
                     redisController.setString(RV_PROXY_LEADER, newLeader);
 
                     if (newLeader.equals(proxyId)) {
-                        rediVelocityLogger.sendLogs("This proxy (" + proxyId + ") is now the leader (random selection).");
+                        if (configLoader.getConfig().isDebugMode()) {
+                            rediVelocityLogger.sendLogs("This proxy (" + proxyId + ") is now the leader (random selection).");
+                        }
                     }
                     return;
                 }
@@ -182,7 +187,9 @@ public class RediVelocity {
                 redisController.setString(RV_PROXY_LEADER, newLeader);
 
                 if (newLeader.equals(proxyId)) {
-                    rediVelocityLogger.sendLogs("This proxy (" + proxyId + ") is now the leader with " + maxVotes + " votes.");
+                    if (configLoader.getConfig().isDebugMode()) {
+                        rediVelocityLogger.sendLogs("This proxy (" + proxyId + ") is now the leader with " + maxVotes + " votes.");
+                    }
                 }
             }
         }).repeat(15, TimeUnit.SECONDS).schedule();
@@ -272,6 +279,7 @@ public class RediVelocity {
             rediVelocityCommandProvider.get().register();
 
             new PlayerCalcService(redisController, proxyId, rediVelocityLogger, this, proxy).startCalc();
+            new HeartbeatService(redisController, proxyId, rediVelocityLogger, this, proxy, config.isDebugMode()).startHeartbeatService();
 
             calculateGlobalPlayers();
             startLeaderElection();
@@ -306,7 +314,9 @@ public class RediVelocity {
                 List<String> otherProxies = new ArrayList<>(activeProxies);
                 String newLeader = otherProxies.get(new SecureRandom().nextInt(otherProxies.size()));
                 redisController.setString(RV_PROXY_LEADER, newLeader);
-                rediVelocityLogger.sendLogs("New proxy leader selected (this proxy (the current leader) died): " + newLeader);
+                if (configLoader.getConfig().isDebugMode()) {
+                    rediVelocityLogger.sendLogs("New proxy leader selected (this proxy (the current leader) died): " + newLeader);
+                }
             } else {
                 redisController.deleteString(RV_PROXY_LEADER);
             }

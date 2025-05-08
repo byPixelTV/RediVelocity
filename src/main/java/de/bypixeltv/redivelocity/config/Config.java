@@ -24,7 +24,7 @@ import java.util.List;
 @Getter
 @Setter
 public class Config {
-    private int configVersion = 9;
+    private int configVersion = 10;
     private RedisConfig redis = new RedisConfig();
     private CloudSupportConfig cloud = new CloudSupportConfig();
     private VersionControlConfig versionControl = new VersionControlConfig();
@@ -33,6 +33,7 @@ public class Config {
     private JoingateConfig joingate = new JoingateConfig();
     private boolean jsonFormat;
     private boolean playerCountSync;
+    private boolean debugMode;
 
     @Getter
     @Setter
@@ -49,14 +50,14 @@ public class Config {
     @Setter
     public static class CloudSupportConfig {
         private boolean enabled = false;
-        private String cloudSystem = "simplecloud";
+        private String cloudSystem = "cloudnet";
     }
 
     @Getter
     @Setter
     public static class VersionControlConfig {
         private boolean enabled = false;
-        private List<Integer> allowedVersions = List.of(768, 767, 766);
+        private List<Integer> allowedVersions = List.of(769, 768, 767, 770);
         private String kickMessage = "<dark_grey>- <dark_red>Version</dark_red> -</dark_grey><br><br><grey>You have to use the <aqua>Version</aqua> <blue>1.21+</blue> to play on <aqua>Example.net</aqua>.<br>Please update your <aqua>Version</aqua> to join the <aqua>Server</aqua>!</grey>";
     }
 
