@@ -16,7 +16,7 @@
 
 package de.bypixeltv.redivelocity.utils;
 
-import de.vulpescloud.wrapper.Wrapper;
+import de.vulpescloud.bridge.VulpesBridge;
 import eu.cloudnetservice.driver.inject.InjectionLayer;
 import eu.cloudnetservice.wrapper.holder.ServiceInfoHolder;
 
@@ -26,10 +26,9 @@ public class CloudUtils {
             final ServiceInfoHolder serviceInfoHolder = InjectionLayer.ext().instance(ServiceInfoHolder.class);
             return serviceInfoHolder.serviceInfo().name();
         } else if (cloud.equalsIgnoreCase("vulpescloud")) {
-            return Wrapper.instance.getServiceName();
+            return VulpesBridge.INSTANCE.getServiceProvider().getLocalService().getName();
         } else {
             return null;
         }
     }
-
 }
