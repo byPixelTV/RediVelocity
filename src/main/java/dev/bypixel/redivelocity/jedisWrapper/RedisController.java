@@ -14,11 +14,11 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package de.bypixeltv.redivelocity.jedisWrapper;
+package dev.bypixel.redivelocity.jedisWrapper;
 
-import de.bypixeltv.redivelocity.RediVelocityLogger;
-import de.bypixeltv.redivelocity.config.Config;
-import de.bypixeltv.redivelocity.config.ConfigLoader;
+import dev.bypixel.redivelocity.RediVelocityLogger;
+import dev.bypixel.redivelocity.config.Config;
+import dev.bypixel.redivelocity.config.ConfigLoader;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.Getter;

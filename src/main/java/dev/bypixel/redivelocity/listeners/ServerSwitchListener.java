@@ -14,14 +14,14 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package de.bypixeltv.redivelocity.listeners;
+package dev.bypixel.redivelocity.listeners;
 
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
-import de.bypixeltv.redivelocity.RediVelocity;
-import de.bypixeltv.redivelocity.RediVelocityLogger;
-import de.bypixeltv.redivelocity.config.Config;
-import de.bypixeltv.redivelocity.jedisWrapper.RedisController;
+import dev.bypixel.redivelocity.RediVelocity;
+import dev.bypixel.redivelocity.RediVelocityLogger;
+import dev.bypixel.redivelocity.config.Config;
+import dev.bypixel.redivelocity.jedisWrapper.RedisController;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import net.kyori.adventure.text.minimessage.MiniMessage;

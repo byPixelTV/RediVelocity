@@ -14,11 +14,11 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package de.bypixeltv.redivelocity.listeners;
+package dev.bypixel.redivelocity.listeners;
 
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyPingEvent;
-import de.bypixeltv.redivelocity.jedisWrapper.RedisController;
+import dev.bypixel.redivelocity.jedisWrapper.RedisController;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 

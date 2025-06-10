@@ -14,14 +14,14 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package de.bypixeltv.redivelocity.jedisWrapper;
+package dev.bypixel.redivelocity.jedisWrapper;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.proxy.ProxyServer;
-import de.bypixeltv.redivelocity.RediVelocityLogger;
-import de.bypixeltv.redivelocity.utils.Version;
+import dev.bypixel.redivelocity.RediVelocityLogger;
+import dev.bypixel.redivelocity.utils.Version;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 

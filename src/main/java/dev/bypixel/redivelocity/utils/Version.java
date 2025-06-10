@@ -14,7 +14,7 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package de.bypixeltv.redivelocity.utils;
+package dev.bypixel.redivelocity.utils;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;

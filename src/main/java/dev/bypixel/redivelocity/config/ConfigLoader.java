@@ -14,9 +14,9 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package de.bypixeltv.redivelocity.config;
+package dev.bypixel.redivelocity.config;
 
-import de.bypixeltv.redivelocity.RediVelocityLogger;
+import dev.bypixel.redivelocity.RediVelocityLogger;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.Getter;

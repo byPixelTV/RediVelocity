@@ -14,7 +14,7 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package de.bypixeltv.redivelocity;
+package dev.bypixel.redivelocity;
 
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
@@ -23,21 +23,21 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.scheduler.ScheduledTask;
-import de.bypixeltv.redivelocity.commands.RediVelocityCommand;
-import de.bypixeltv.redivelocity.config.Config;
-import de.bypixeltv.redivelocity.config.ConfigLoader;
-import de.bypixeltv.redivelocity.jedisWrapper.RedisController;
-import de.bypixeltv.redivelocity.jedisWrapper.RedisManager;
-import de.bypixeltv.redivelocity.jedisWrapper.UpdateManager;
-import de.bypixeltv.redivelocity.listeners.DisconnectListener;
-import de.bypixeltv.redivelocity.listeners.PostLoginListener;
-import de.bypixeltv.redivelocity.listeners.ProxyPingListener;
-import de.bypixeltv.redivelocity.listeners.ServerSwitchListener;
-import de.bypixeltv.redivelocity.pubsub.MessageListener;
-import de.bypixeltv.redivelocity.services.HeartbeatService;
-import de.bypixeltv.redivelocity.services.PlayerCalcService;
-import de.bypixeltv.redivelocity.utils.CloudUtils;
-import de.bypixeltv.redivelocity.utils.ProxyIdGenerator;
+import dev.bypixel.redivelocity.commands.RediVelocityCommand;
+import dev.bypixel.redivelocity.config.Config;
+import dev.bypixel.redivelocity.config.ConfigLoader;
+import dev.bypixel.redivelocity.jedisWrapper.RedisController;
+import dev.bypixel.redivelocity.jedisWrapper.RedisManager;
+import dev.bypixel.redivelocity.jedisWrapper.UpdateManager;
+import dev.bypixel.redivelocity.listeners.DisconnectListener;
+import dev.bypixel.redivelocity.listeners.PostLoginListener;
+import dev.bypixel.redivelocity.listeners.ProxyPingListener;
+import dev.bypixel.redivelocity.listeners.ServerSwitchListener;
+import dev.bypixel.redivelocity.pubsub.MessageListener;
+import dev.bypixel.redivelocity.services.HeartbeatService;
+import dev.bypixel.redivelocity.services.PlayerCalcService;
+import dev.bypixel.redivelocity.utils.CloudUtils;
+import dev.bypixel.redivelocity.utils.ProxyIdGenerator;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPIVelocityConfig;
 import jakarta.inject.Inject;

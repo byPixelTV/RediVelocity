@@ -14,12 +14,12 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package de.bypixeltv.redivelocity.services;
+package dev.bypixel.redivelocity.services;
 
 import com.velocitypowered.api.proxy.ProxyServer;
-import de.bypixeltv.redivelocity.RediVelocity;
-import de.bypixeltv.redivelocity.RediVelocityLogger;
-import de.bypixeltv.redivelocity.jedisWrapper.RedisController;
+import dev.bypixel.redivelocity.RediVelocity;
+import dev.bypixel.redivelocity.RediVelocityLogger;
+import dev.bypixel.redivelocity.jedisWrapper.RedisController;
 import jakarta.inject.Inject;
 
 import java.security.SecureRandom;

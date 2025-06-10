@@ -14,7 +14,7 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package de.bypixeltv.redivelocity.config;
+package dev.bypixel.redivelocity.config;
 
 import lombok.Getter;
 import lombok.Setter;

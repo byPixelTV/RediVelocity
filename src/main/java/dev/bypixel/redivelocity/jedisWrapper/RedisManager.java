@@ -14,9 +14,9 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package de.bypixeltv.redivelocity.jedisWrapper;
+package dev.bypixel.redivelocity.jedisWrapper;
 
-import de.bypixeltv.redivelocity.RediVelocityLogger;
+import dev.bypixel.redivelocity.RediVelocityLogger;
 import jakarta.inject.Inject;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;

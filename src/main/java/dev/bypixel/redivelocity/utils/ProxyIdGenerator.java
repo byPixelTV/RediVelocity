@@ -14,9 +14,9 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package de.bypixeltv.redivelocity.utils;
+package dev.bypixel.redivelocity.utils;
 
-import de.bypixeltv.redivelocity.jedisWrapper.RedisController;
+import dev.bypixel.redivelocity.jedisWrapper.RedisController;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 

@@ -14,7 +14,7 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package de.bypixeltv.redivelocity;
+package dev.bypixel.redivelocity;
 
 import com.velocitypowered.api.proxy.ProxyServer;
 import jakarta.inject.Inject;

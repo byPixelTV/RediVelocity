@@ -14,7 +14,7 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package de.bypixeltv.redivelocity.listeners;
+package dev.bypixel.redivelocity.listeners;
 
 import com.velocitypowered.api.event.Continuation;
 import com.velocitypowered.api.event.Subscribe;
@@ -22,7 +22,7 @@ import com.velocitypowered.api.event.player.configuration.PlayerFinishConfigurat
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.player.ResourcePackInfo;
-import de.bypixeltv.redivelocity.config.Config;
+import dev.bypixel.redivelocity.config.Config;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import net.kyori.adventure.text.minimessage.MiniMessage;

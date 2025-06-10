@@ -1,9 +1,9 @@
 {
   "id": "redivelocity",
   "name": "RediVelocity",
-  "version": "1.1.1-Beta",
-  "main": "de.bypixeltv.redivelocity.RediVelocity",
+  "version": "1.1.1",
+  "main": "dev.bypixel.redivelocity.RediVelocity",
   "authors": ["byPixelTV"],
   "description": "A fast, modern and clean alternative to RedisBungee on Velocity.",
-  "url": "https://bypixeltv.de"
+  "url": "https://github.com/byPixelTV/RediVelocity"
 }

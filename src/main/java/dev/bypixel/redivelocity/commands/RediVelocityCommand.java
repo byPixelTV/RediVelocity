@@ -14,13 +14,13 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package de.bypixeltv.redivelocity.commands;
+package dev.bypixel.redivelocity.commands;
 
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.ServerPing;
-import de.bypixeltv.redivelocity.RediVelocityLogger;
-import de.bypixeltv.redivelocity.config.ConfigLoader;
-import de.bypixeltv.redivelocity.jedisWrapper.RedisController;
+import dev.bypixel.redivelocity.RediVelocityLogger;
+import dev.bypixel.redivelocity.config.ConfigLoader;
+import dev.bypixel.redivelocity.jedisWrapper.RedisController;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import dev.jorel.commandapi.arguments.StringArgument;

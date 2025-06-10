@@ -14,10 +14,10 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package de.bypixeltv.redivelocity.pubsub;
+package dev.bypixel.redivelocity.pubsub;
 
 import com.velocitypowered.api.proxy.ProxyServer;
-import de.bypixeltv.redivelocity.jedisWrapper.RedisManager;
+import dev.bypixel.redivelocity.jedisWrapper.RedisManager;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import net.kyori.adventure.text.minimessage.MiniMessage;
