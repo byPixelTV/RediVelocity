@@ -1,6 +1,6 @@
 <div align="center">
 
-![Jenkins Build](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.bypixeltv.de%2Fjob%2Fpublic-skredis%2F&style=for-the-badge)
+![Jenkins Build](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.bypixel.dev%2Fjob%2Fpublic-skredis%2F&style=for-the-badge)
 ![GitHub issues](https://img.shields.io/github/issues-raw/byPixelTV/RediVelocity?style=for-the-badge)
 ![GitHub All Downloads](https://img.shields.io/github/downloads/byPixelTV/RediVelocity/total?style=for-the-badge)
 <br>
@@ -20,10 +20,10 @@
 
 ### 📑 Requirements
 
-* **Java 23+**
+* **Java 21+**
 * **Velocity 3.4.0-SNAPSHOT**
 * **Redis Server**
-* **CloudNet or VulpesCloud (optional)**
+* **SimpleCloud or VulpesCloud (optional)**
 
 ### 🆘 Where can I get help?
 
