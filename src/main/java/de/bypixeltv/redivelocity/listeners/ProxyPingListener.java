@@ -23,7 +23,6 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Singleton
 public class ProxyPingListener {

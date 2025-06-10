@@ -16,15 +16,19 @@
 
 package de.bypixeltv.redivelocity.utils;
 
+import app.simplecloud.controller.api.ControllerApi;
 import de.vulpescloud.bridge.VulpesBridge;
-import eu.cloudnetservice.driver.inject.InjectionLayer;
-import eu.cloudnetservice.wrapper.holder.ServiceInfoHolder;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class CloudUtils {
-    public static String getServiceName(String cloud) {
-        if (cloud.equalsIgnoreCase("cloudnet")) {
-            final ServiceInfoHolder serviceInfoHolder = InjectionLayer.ext().instance(ServiceInfoHolder.class);
-            return serviceInfoHolder.serviceInfo().name();
+    private static final ControllerApi.Future controllerApi = ControllerApi.createFutureApi();
+
+    public static @Nullable String getServiceName(@NotNull String cloud) {
+        if (cloud.equalsIgnoreCase("simplecloud")) {
+            String group = controllerApi.getServers().getServerById(System.getenv("SIMPLECLOUD_UNIQUE_ID")).join().getGroup();
+            int serverId = controllerApi.getServers().getServerById(System.getenv("SIMPLECLOUD_UNIQUE_ID")).join().getNumericalId();
+            return group + "-" + serverId;
         } else if (cloud.equalsIgnoreCase("vulpescloud")) {
             return VulpesBridge.INSTANCE.getServiceProvider().getLocalService().getName();
         } else {

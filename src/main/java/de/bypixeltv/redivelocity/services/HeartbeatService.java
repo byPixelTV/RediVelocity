@@ -26,7 +26,6 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import de.bypixeltv.redivelocity.RediVelocity;
 import java.util.concurrent.TimeUnit;
 
 public class HeartbeatService {

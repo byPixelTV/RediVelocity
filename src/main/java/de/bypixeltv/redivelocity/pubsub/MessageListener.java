@@ -18,10 +18,9 @@ package de.bypixeltv.redivelocity.pubsub;
 
 import com.velocitypowered.api.proxy.ProxyServer;
 import de.bypixeltv.redivelocity.jedisWrapper.RedisManager;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.json.JSONObject;
 
 import java.util.List;
@@ -43,7 +42,7 @@ public class MessageListener {
     }
 
     private void init() {
-        redisManager.subscribe(channels, (_, channel, msg) -> {
+        redisManager.subscribe(channels, (event, channel, msg) -> {
             if ("redivelocity-kick".equals(channel)) {
                 JSONObject message = new JSONObject(msg);
                 String messagesString = message.getString("messages");

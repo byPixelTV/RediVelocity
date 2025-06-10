@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Singleton
-@Plugin(id = "redivelocity", name = "RediVelocity", version = "1.1.1-Beta", description = "A fast, modern and clean alternative to RedisBungee on Velocity.", authors = {"byPixelTV"}, url = "https://github.com/byPixelTV/RediVelocity")
+@Plugin(id = "redivelocity", name = "RediVelocity", version = "1.1.1", description = "A fast, modern and clean alternative to RedisBungee on Velocity.", authors = {"byPixelTV"}, url = "https://github.com/byPixelTV/RediVelocity")
 public class RediVelocity {
 
     private static final String RV_PLAYERS_NAME = "rv-players-name";
@@ -174,7 +174,7 @@ public class RediVelocity {
 
                 Map<Long, List<String>> groupedByVotes = new HashMap<>();
                 voteCount.forEach((proxy, count) ->
-                        groupedByVotes.computeIfAbsent(count, _ -> new ArrayList<>()).add(proxy)
+                        groupedByVotes.computeIfAbsent(count, votes -> new ArrayList<>()).add(proxy)
                 );
 
                 Long maxVotes = groupedByVotes.keySet().stream()

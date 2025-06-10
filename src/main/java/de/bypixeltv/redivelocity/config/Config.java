@@ -24,7 +24,7 @@ import java.util.List;
 @Getter
 @Setter
 public class Config {
-    private int configVersion = 10;
+    private int configVersion = 11;
     private RedisConfig redis = new RedisConfig();
     private CloudSupportConfig cloud = new CloudSupportConfig();
     private VersionControlConfig versionControl = new VersionControlConfig();
@@ -50,7 +50,7 @@ public class Config {
     @Setter
     public static class CloudSupportConfig {
         private boolean enabled = false;
-        private String cloudSystem = "cloudnet";
+        private String cloudSystem = "simplecloud"; // Options: simplecloud, vulpescloud
     }
 
     @Getter
