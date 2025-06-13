@@ -66,7 +66,6 @@ public class RediVelocityCommand {
         return new CommandAPICommand("player")
                 .withSubcommands(
                         createPlayerProxyCommand(),
-                        createPlayerLastSeenCommand(),
                         createPlayerIpCommand(),
                         createPlayerUuidCommand(),
                         createPlayerServerCommand(),
@@ -90,32 +89,6 @@ public class RediVelocityCommand {
                         sender.sendMessage(miniMessage.deserialize(prefix + " <gray>The player <aqua>" + playerName + "</aqua> is connected to proxy: <aqua>" + playerProxy + "</aqua></gray>"));
                     } else {
                         sender.sendMessage(miniMessage.deserialize(prefix + " <gray>The player <aqua>" + playerName + "</aqua> is <red>offline</red>.</gray>"));
-                    }
-                });
-    }
-
-    private CommandAPICommand createPlayerLastSeenCommand() {
-        return new CommandAPICommand("lastseen")
-                .withArguments(new StringArgument("player").replaceSuggestions(ArgumentSuggestions.stringCollection(input -> redisController.getAllHashValues("rv-players-name"))))
-                .withPermission("redivelocity.admin.player.lastseen")
-                .executes((sender, args) -> {
-                    String playerName = (String) args.get(0);
-                    String playerKey = redisController.getHashKeyByValue("rv-players-name", playerName);
-                    if (playerKey == null) {
-                        sender.sendMessage(miniMessage.deserialize(prefix + " <gray>The player <aqua>" + playerName + "</aqua> does not exist.</gray>"));
-                        return;
-                    }
-                    String lastSeen = redisController.getHashField("rv-players-lastseen", playerKey);
-                    assert playerName != null;
-                    boolean isOnline = redisController.getHashField("rv-players-name", playerKey).contains(playerName);
-                    if (!isOnline) {
-                        if (lastSeen != null) {
-                            sender.sendMessage(miniMessage.deserialize(prefix + " <gray>The player <aqua>" + playerName + "</aqua> was last seen <aqua>" + lastSeen + "</aqua>.</gray>"));
-                        } else {
-                            sender.sendMessage(miniMessage.deserialize(prefix + " <gray>The player <aqua>" + playerName + "</aqua> was never seen before.</gray>"));
-                        }
-                    } else {
-                        sender.sendMessage(miniMessage.deserialize(prefix + " <gray>The player <aqua>" + playerName + "</aqua> is currently <green>online</green>.</gray>"));
                     }
                 });
     }
