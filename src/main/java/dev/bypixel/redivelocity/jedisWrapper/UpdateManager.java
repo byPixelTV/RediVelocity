@@ -55,13 +55,15 @@ public class UpdateManager {
             Optional<?> pluginOptional = proxy.getPluginManager().getPlugin("redivelocity");
             if (pluginOptional.isPresent()) {
                 PluginContainer plugin = (PluginContainer) pluginOptional.get();
-                String currentVersionString = plugin.getDescription().getVersion().orElse("0"); // Default to "0" if not present
+                String currentVersionString = plugin.getDescription().getVersion().orElse("0");
                 try {
                     Version currentVersion = Version.fromString(currentVersionString);
                     Version latestVersion = Version.fromString(version);
-                    // Compare versions and notify accordingly
-                    if (latestVersion.compareTo(currentVersion) <= 0) {
-                        getRediVelocity().sendConsoleMessage("<green>The plugin is up to date!</green>");
+                    int compare = latestVersion.compareTo(currentVersion);
+                    if (compare == 0) {
+                        getRediVelocity().sendConsoleMessage("<green>The plugin is up to date! (v" + currentVersionString + ")</green>");
+                    } else if (compare < 0) {
+                        getRediVelocity().sendConsoleMessage("<red>Your plugin version (v" + currentVersionString + ") is newer than the latest GitHub release (v" + version + ")!</red>");
                     } else {
                         getRediVelocity().sendConsoleMessage("<red>The plugin is not up to date!</red>");
                         getRediVelocity().sendConsoleMessage(" - Current version: <red>v" + currentVersionString + "</red>");

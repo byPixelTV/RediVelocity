@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Singleton
-@Plugin(id = "redivelocity", name = "RediVelocity", version = "1.1.1", description = "A fast, modern and clean alternative to RedisBungee on Velocity.", authors = {"byPixelTV"}, url = "https://github.com/byPixelTV/RediVelocity")
+@Plugin(id = "redivelocity", name = "RediVelocity", version = "1.1.2", description = "A fast, modern and clean alternative to RedisBungee on Velocity.", authors = {"byPixelTV"}, url = "https://github.com/byPixelTV/RediVelocity")
 public class RediVelocity {
 
     private static final String RV_PLAYERS_NAME = "rv-players-name";
