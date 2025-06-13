@@ -22,10 +22,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class CloudUtils {
-    private static final ControllerApi.Future controllerApi = ControllerApi.createFutureApi();
 
     public static @Nullable String getServiceName(@NotNull String cloud) {
         if (cloud.equalsIgnoreCase("simplecloud")) {
+            ControllerApi.Future controllerApi = ControllerApi.createFutureApi();
             String group = controllerApi.getServers().getServerById(System.getenv("SIMPLECLOUD_UNIQUE_ID")).join().getGroup();
             int serverId = controllerApi.getServers().getServerById(System.getenv("SIMPLECLOUD_UNIQUE_ID")).join().getNumericalId();
             return group + "-" + serverId;
