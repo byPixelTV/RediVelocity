@@ -2,8 +2,8 @@
 <a href="https://velocitypowered.com/" target="_blank">
   <img src="https://cdn.bypixel.dev/raw/dyYCKO.png" height="64" alt="paper logo" />
 </a>
-<a href="https://github.com/byPixelTV/SkRedis" target="_blank">
-  <img src="https://cdn.bypixel.dev/raw/iLt1MW.png" height="64" alt="github logo" />
+<a href="https://modrinth.com/plugin/redivelocity" target="_blank">
+  <img src="https://cdn.bypixel.dev/raw/sDbBd9.png" height="64" alt="modrinth logo" />
 </a>
 
 
