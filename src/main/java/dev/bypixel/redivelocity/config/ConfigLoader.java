@@ -168,14 +168,6 @@ public class ConfigLoader {
             writer.write("# Message format\n");
             writer.write("messages:\n");
             writer.write("  prefix: \"" + escapeString(config.getMessages().getPrefix()) + "\"\n\n");
-
-            writer.write("# Resourcepack settings\n");
-            writer.write("resourcepack:\n");
-            writer.write("  enabled: " + config.getResourcepack().isEnabled() + "\n");
-            writer.write("  forceResourcepack: " + config.getResourcepack().isForceResourcepack() + "\n");
-            writer.write("  resourcepackUrl: \"" + config.getResourcepack().getResourcepackUrl() + "\"\n");
-            writer.write("  resourcepackMessage: \"" + escapeString(config.getResourcepack().getResourcepackMessage()) + "\"\n");
-            writer.write("  resourcepackKickMessage: \"" + escapeString(config.getResourcepack().getResourcepackKickMessage()) + "\"");
         } catch (IOException e) {
             rediVelocityLogger.sendErrorLogs("<red>Config file could not be save: " + e.getMessage() + "</red>");
         }
