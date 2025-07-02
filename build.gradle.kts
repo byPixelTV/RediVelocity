@@ -41,7 +41,7 @@ dependencies {
     implementation("org.yaml:snakeyaml:2.4")
 
     // CommandAPI
-    implementation("dev.jorel:commandapi-velocity-shade:10.1.0")
+    implementation("dev.jorel:commandapi-velocity-shade:10.1.1")
 
     implementation("org.json:json:20250517")
 
