@@ -45,13 +45,20 @@ public class MessageListener {
         redisManager.subscribe(channels, (event, channel, msg) -> {
             if ("redivelocity-kick".equals(channel)) {
                 JSONObject message = new JSONObject(msg);
-                String messagesString = message.getString("messages");
-                JSONObject data = new JSONObject(messagesString);
-                if (data.has("uuid") && data.has("reason")) {
-                    UUID uuid = UUID.fromString(data.getString("uuid"));
-                    String reason = data.getString("reason");
+                if (message.has("uuid") && message.has("reason")) {
+                    UUID uuid = UUID.fromString(message.getString("uuid"));
+                    String reason = message.getString("reason");
 
                     proxyServer.getPlayer(uuid).ifPresent(player -> player.disconnect(MiniMessage.miniMessage().deserialize(reason)));
+                } else {
+                    String messagesString = message.getString("messages");
+                    JSONObject data = new JSONObject(messagesString);
+                    if (data.has("uuid") && data.has("reason")) {
+                        UUID uuid = UUID.fromString(data.getString("uuid"));
+                        String reason = data.getString("reason");
+
+                        proxyServer.getPlayer(uuid).ifPresent(player -> player.disconnect(MiniMessage.miniMessage().deserialize(reason)));
+                    }
                 }
             }
         });
