@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4.7.1
         with:
           java-version: 21
           distribution: temurin
@@ -24,6 +24,7 @@ jobs:
           VERSION=${GITHUB_REF#refs/tags/}
           VERSION=${VERSION#v}  # remove leading v
           echo "version=$VERSION" >> gradle.properties
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Build with Gradle ShadowJar
         run: ./gradlew clean shadowJar
@@ -34,7 +35,7 @@ jobs:
           token: ${{ secrets.MODRINTH_TOKEN }}
           project: 9Z08wH8I
           name: ${{ github.event.release.name }}
-          version: ${{ github.event.release.tag_name#v }}
+          version: ${{ env.VERSION }}
           changelog: ${{ github.event.release.body }}
           channel: release
           featured: true
@@ -55,4 +56,4 @@ jobs:
             1.10.x
             1.9.x
             1.8.9
-          files: build/libs/RediVelocity-${{ github.event.release.tag_name#v }}.jar
+          files: build/libs/RediVelocity-${{ env.VERSION }}.jar
