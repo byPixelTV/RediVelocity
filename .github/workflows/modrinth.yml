@@ -30,12 +30,12 @@ jobs:
           VERSION=${VERSION#v}  # remove leading v
           echo "version=$VERSION" >> gradle.properties
           echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "FETCHED VERSION: $VERSION"
 
       - name: Build with Gradle ShadowJar
-        run: bash ./gradlew clean shadowJar
+        run: bash ./gradlew shadowJar
 
       - name: Upload to Modrinth
-        if: ${{ always() && steps.build.outputs.jar_exists == 'true' }}
         uses: cloudnode-pro/modrinth-publish@v2
         with:
           token: ${{ secrets.MODRINTH_TOKEN }}
