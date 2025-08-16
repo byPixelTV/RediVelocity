@@ -19,6 +19,9 @@ jobs:
           distribution: temurin
           cache: gradle
 
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
       - name: Set version from release tag
         run: |
           VERSION=${GITHUB_REF#refs/tags/}
