@@ -139,7 +139,7 @@ public class ConfigLoader {
             writer.write("  port: " + config.getRedis().getPort() + "\n");
             writer.write("  username: \"" + config.getRedis().getUsername() + "\"\n");
             writer.write("  password: \"" + config.getRedis().getPassword() + "\"\n");
-            writer.write("  useSsl: " + config.getRedis().isUseSsl() + "\n");
+            writer.write("  cluster: " + config.getRedis().isCluster() + "\n");
             writer.write("  channel: \"" + config.getRedis().getChannel() + "\"\n\n");
 
             writer.write("# Cloud system integration (can be simplecloud, vulpescloud or cloudnet)\n");

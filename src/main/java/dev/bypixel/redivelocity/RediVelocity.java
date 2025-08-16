@@ -245,7 +245,7 @@ public class RediVelocity {
             }
             rediVelocityLogger.sendLogs("Creating new Proxy with ID: " + proxyId);
 
-            RedisManager redisManager = new RedisManager(rediVelocityLogger, redisController.getJedisPool());
+            RedisManager redisManager = new RedisManager(rediVelocityLogger, redisController.getJedisPool(), redisController.getJedisCluster());
 
             boolean isBeta = false;
             if (pluginContainer.isPresent()) {

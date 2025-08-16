@@ -19,20 +19,16 @@ package dev.bypixel.redivelocity.jedisWrapper;
 import dev.bypixel.redivelocity.RediVelocityLogger;
 import jakarta.inject.Inject;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPubSub;
 
 import java.util.List;
 
-public class RedisManager {
-
-    private final JedisPool jedisPool;
-    private final RediVelocityLogger rediVelocityLogger;
+public record RedisManager(RediVelocityLogger rediVelocityLogger, JedisPool jedisPool, JedisCluster jedisCluster) {
 
     @Inject
-    public RedisManager(RediVelocityLogger rediVelocityLogger, JedisPool jedisPool) {
-        this.jedisPool = jedisPool;
-        this.rediVelocityLogger = rediVelocityLogger;
+    public RedisManager {
     }
 
     public void subscribe(List<String> channels, RedisMessageListener onMessage) {
@@ -44,10 +40,14 @@ public class RedisManager {
         };
 
         new Thread(() -> {
-            try (Jedis jedis = jedisPool.getResource()) {
-                jedis.psubscribe(jedisPubSub, channels.toArray(new String[0]));
-            } catch (Exception e) {
-                rediVelocityLogger.sendErrorLogs(e.getMessage());
+            if (jedisCluster != null) {
+                jedisCluster.psubscribe(jedisPubSub, channels.toArray(new String[0]));
+            } else {
+                try (Jedis jedis = jedisPool.getResource()) {
+                    jedis.psubscribe(jedisPubSub, channels.toArray(new String[0]));
+                } catch (Exception e) {
+                    rediVelocityLogger.sendErrorLogs(e.getMessage());
+                }
             }
         }).start();
     }

@@ -24,7 +24,7 @@ import java.util.List;
 @Getter
 @Setter
 public class Config {
-    private int configVersion = 12;
+    private int configVersion = 13;
     private RedisConfig redis = new RedisConfig();
     private CloudSupportConfig cloud = new CloudSupportConfig();
     private VersionControlConfig versionControl = new VersionControlConfig();
@@ -41,7 +41,7 @@ public class Config {
         private int port = 6379;
         private String username = "default";
         private String password = "password";
-        private boolean useSsl = false;
+        private boolean cluster = false;
         private String channel = "redivelocity-players";
     }
 
