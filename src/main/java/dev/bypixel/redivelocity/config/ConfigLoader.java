@@ -142,7 +142,7 @@ public class ConfigLoader {
             writer.write("  useSsl: " + config.getRedis().isUseSsl() + "\n");
             writer.write("  channel: \"" + config.getRedis().getChannel() + "\"\n\n");
 
-            writer.write("# Cloud system integration (can be simplecloud or vulpescloud)\n");
+            writer.write("# Cloud system integration (can be simplecloud, vulpescloud or cloudnet)\n");
             writer.write("cloud:\n");
             writer.write("  enabled: " + config.getCloud().isEnabled() + "\n");
             writer.write("  cloudSystem: \"" + config.getCloud().getCloudSystem() + "\"\n\n");

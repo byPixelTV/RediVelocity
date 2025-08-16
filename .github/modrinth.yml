@@ -36,6 +36,8 @@ jobs:
           name: ${{ github.event.release.name }}
           version: ${{ github.event.release.tag_name#v }}
           changelog: ${{ github.event.release.body }}
+          channel: release
+          featured: true
           loaders: |-
             velocity
           game-versions: |-
