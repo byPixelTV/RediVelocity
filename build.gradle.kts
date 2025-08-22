@@ -58,7 +58,7 @@ dependencies {
     compileOnly("de.vulpescloud", "VulpesCloud-bridge", vulpesCloudVersion)
     compileOnly("de.vulpescloud", "VulpesCloud-api", vulpesCloudVersion)
 
-    val cloudnetVersion = "4.0.0-RC13"
+    val cloudnetVersion = "4.0.0-RC14"
     compileOnly("eu.cloudnetservice.cloudnet", "bridge-api", cloudnetVersion)
     compileOnly("eu.cloudnetservice.cloudnet", "driver-api", cloudnetVersion)
     compileOnly("eu.cloudnetservice.cloudnet", "wrapper-jvm-api", cloudnetVersion)
