@@ -38,7 +38,7 @@ dependencies {
 
     // Jedis and SnakeYAML
     implementation("redis.clients:jedis:6.2.0")
-    implementation("org.yaml:snakeyaml:2.4")
+    implementation("org.yaml:snakeyaml:2.5")
 
     // CommandAPI
     implementation("dev.jorel:commandapi-velocity-shade:10.1.2")
