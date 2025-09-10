@@ -1,9 +1,9 @@
 <div align="center">
 <a href="https://velocitypowered.com/" target="_blank">
-  <img src="https://cdn.bypixel.dev/raw/dyYCKO.png" height="64" alt="paper logo" />
+  <img src="https://cdn.bypixel.dev/raw/kmmRe9.png" height="64" alt="paper logo" />
 </a>
 <a href="https://modrinth.com/plugin/redivelocity" target="_blank">
-  <img src="https://cdn.bypixel.dev/raw/sDbBd9.png" height="64" alt="modrinth logo" />
+  <img src="https://cdn.bypixel.dev/raw/4dlsHJ.png" height="64" alt="modrinth logo" />
 </a>
 
 
@@ -39,7 +39,7 @@
 
 <div align="center">
   <a href="https://discord.gg/yVp7Qvhj9k" target="_blank">
-    <img src="https://cdn.bypixel.dev/raw/XQWtxy.png" height="64" alt="discord logo" />
+    <img src="https://cdn.bypixel.dev/raw/mXHMir.png" height="64" alt="discord logo" />
   </a>
 </div>
 <hr>
@@ -52,10 +52,10 @@
 
 <div align="center">
     <h3 align="center">Uses modern technology 🚀</h3>
-    <img src="https://cdn.bypixel.dev/raw/Nq8XeK.png" height="64" alt="java" />
-    <img src="https://cdn.bypixel.dev/raw/bOPP8Z.png" height="64" alt="gradle" />
-    <img src="https://cdn.bypixel.dev/raw/hGDFHd.png" height="64" alt="no bungee" />
-    <img src="https://cdn.bypixel.dev/raw/VQUb4r.png" height="64" alt="no waterfall" />
+    <img src="https://cdn.bypixel.dev/raw/oBxjKx.png" height="64" alt="java" />
+    <img src="https://cdn.bypixel.dev/raw/rptkK4.png" height="64" alt="gradle" />
+    <img src="https://cdn.bypixel.dev/raw/kah1T9.png" height="64" alt="no bungee" />
+    <img src="https://cdn.bypixel.dev/raw/lm3f9u.png" height="64" alt="no waterfall" />
 </div>
 <hr>
 
