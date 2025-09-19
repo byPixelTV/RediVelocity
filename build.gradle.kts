@@ -46,8 +46,8 @@ dependencies {
     implementation("org.json:json:20250517")
 
     // Lombok dependencies
-    annotationProcessor("org.projectlombok:lombok:1.18.40")
-    compileOnly("org.projectlombok:lombok:1.18.40")
+    annotationProcessor("org.projectlombok:lombok:1.18.42")
+    compileOnly("org.projectlombok:lombok:1.18.42")
 
     compileOnly("app.simplecloud.api.platform:velocity:0.0.5-dev.1745077021664-28517d8")
 
