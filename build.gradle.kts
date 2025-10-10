@@ -37,7 +37,7 @@ dependencies {
     annotationProcessor("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
 
     // Jedis and SnakeYAML
-    implementation("redis.clients:jedis:6.2.0")
+    implementation("redis.clients:jedis:7.0.0")
     implementation("org.yaml:snakeyaml:2.5")
 
     // CommandAPI
