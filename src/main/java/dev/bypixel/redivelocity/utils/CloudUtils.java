@@ -17,7 +17,8 @@
 package dev.bypixel.redivelocity.utils;
 
 import app.simplecloud.controller.api.ControllerApi;
-import de.vulpescloud.bridge.VulpesBridge;
+import de.vulpescloud.api.services.Service;
+import de.vulpescloud.bridge.BridgeAPI;
 import eu.cloudnetservice.driver.inject.InjectionLayer;
 import eu.cloudnetservice.wrapper.holder.ServiceInfoHolder;
 import org.jetbrains.annotations.NotNull;
@@ -31,7 +32,8 @@ public class CloudUtils {
             int serverId = controllerApi.getServers().getServerById(System.getenv("SIMPLECLOUD_UNIQUE_ID")).join().getNumericalId();
             return group + "-" + serverId;
         } else if (cloud.equalsIgnoreCase("vulpescloud")) {
-            return VulpesBridge.INSTANCE.getServiceProvider().getLocalService().getName();
+            Service service = BridgeAPI.Companion.getFutureAPI().getServicesAPI().getLocalService().join();
+            return service.getTask().getName() + "-" + service.getOrderedId();
         } else if (cloud.equalsIgnoreCase("cloudnet")) {
             final ServiceInfoHolder serviceInfoHolder = InjectionLayer.ext().instance(ServiceInfoHolder.class);
             return serviceInfoHolder.serviceInfo().name();
