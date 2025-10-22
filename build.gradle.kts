@@ -54,9 +54,9 @@ dependencies {
     compileOnly("org.geysermc.geyser:api:2.4.2-SNAPSHOT")
     compileOnly("org.geysermc.floodgate:api:2.2.3-SNAPSHOT")
 
-    val vulpesCloudVersion = "2.0.0"
-    compileOnly("de.vulpescloud", "VulpesCloud-bridge", vulpesCloudVersion)
-    compileOnly("de.vulpescloud", "VulpesCloud-api", vulpesCloudVersion)
+    val vulpesCloudVersion = "3.0.0"
+    compileOnly("de.vulpescloud", "bridge", vulpesCloudVersion)
+    compileOnly("de.vulpescloud", "api", vulpesCloudVersion)
 
     val cloudnetVersion = "4.0.0-RC15-SNAPSHOT"
     compileOnly("eu.cloudnetservice.cloudnet", "bridge-api", cloudnetVersion)
