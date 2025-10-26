@@ -1,0 +1,32 @@
+config-version: 1
+
+prefix: "<dark_grey>[<aqua>RediVelocity</aqua>]</dark_grey>"
+no_permission: "<grey>You <red>do not have permission</red> to perform this command.</grey>"
+
+playerversion_unsupported: "<grey>Your client version <red>is not supported</red> on this server.</grey>"
+
+commands:
+  send:
+    player_not_found: "<grey>The player <red><player></red> was not found on the network!</grey>"
+    sent_player: "<grey>Trying to send you to <green><server></green>...</grey>"
+    send_failed: "<grey>Failed to send you to <red><server></red>. Please try again later.</grey>"
+    sent_admin: "<grey>Trying to send <green><player></green> to <green><server></green>...</grey>"
+    sent_admin_failed: "<grey>Failed to send <red><player></red> to <red><server></red>.</grey>"
+    already_connected: "<grey><player> is already connected to <red><server></red>!</grey>"
+  alert:
+    alert_message: "<dark_grey>[<aqua>Alert</aqua>]</dark_grey> <message>"
+  alert-raw:
+    alert_message: "<message>"
+  find:
+    player_not_found: "<grey>The player <red><player></red> was not found on the network!</grey>"
+    player_info: "<grey>Player <green><player></green> is connected to <green><server></green> on proxy <green><proxy></green>.</grey>"
+  redivelocity:
+    player:
+      general:
+        not_found: "<grey>The player <red><player></red> was not found on the network!</grey>"
+      info:
+        msg: "<prefix> <grey>Player Information for <aqua><player></aqua>:</grey>"
+        uuid: "    <grey>- UUID: <aqua><uuid></aqua></grey>"
+        proxy: "   <grey>- Connected Proxy: <aqua><proxy></aqua></grey>"
+        server: "  <grey>- Connected Server: <aqua><server></aqua></grey>"
+        address: " <grey>- IP Address: <aqua><address></aqua></grey>"

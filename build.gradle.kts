@@ -1,15 +1,70 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
 plugins {
-    id("com.gradleup.shadow") version "9.2.2"
-    id("java")
+    kotlin("jvm") version "2.2.20"
+    id("com.gradleup.shadow") version "8.3.9"
+    id("org.bxteam.quark") version "1.2.0"
+    kotlin("plugin.serialization") version "2.2.20"
 }
 
+fun getLatestTag(): String {
+    try {
+        // Fetch all tags
+        ProcessBuilder("git", "fetch", "--tags")
+            .redirectErrorStream(true)
+            .start()
+            .apply {
+                inputStream.bufferedReader().use { it.readText() }
+                waitFor()
+            }
+
+        val branch = ProcessBuilder("git", "rev-parse", "--abbrev-ref", "HEAD")
+            .redirectErrorStream(true)
+            .start()
+            .inputStream
+            .bufferedReader()
+            .use { it.readText().trim() }
+
+        // Try to get latest tag
+        val tagProcess = ProcessBuilder("git", "describe", "--tags", "--abbrev=0")
+            .redirectErrorStream(true)
+            .start()
+        val rawTag = tagProcess.inputStream.bufferedReader().use { it.readText().trim() }
+        tagProcess.waitFor()
+
+        val hasTag = rawTag.isNotEmpty() && !rawTag.startsWith("fatal:")
+
+        // Always get commit hash (works even if no tag)
+        val commitProcess = ProcessBuilder("git", "rev-parse", "--short", "HEAD")
+            .redirectErrorStream(true)
+            .start()
+        val commit = commitProcess.inputStream.bufferedReader().use { it.readText().trim() }
+        commitProcess.waitFor()
+
+        // If no commit found (super rare, empty repo)
+        if (commit.isEmpty()) return "unknown"
+
+        return if (hasTag) {
+            val tag = rawTag.removePrefix("v")
+            if (branch == "release") tag else "$tag+$commit"
+        } else {
+            // no tag → default to 0.0.1 + commit
+            "0.0.1+$commit"
+        }
+    } catch (e: Exception) {
+        return "unknown"
+    }
+}
+
+val versionString = getLatestTag()
+
 group = "dev.bypixel"
-version = "1.3.0"
+version = versionString
 
 repositories {
-    // Maven central snapshots
     maven {
-        url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots")
+        name = "bypixelRepoReleases"
+        url = uri("https://repo.bypixel.dev/releases")
     }
 
     // maven central releases
@@ -21,9 +76,6 @@ repositories {
         url = uri("https://repo.papermc.io/repository/maven-public/")
     }
 
-    // geysermc & floodgate
-    maven("https://repo.opencollab.dev/main/")
-
     // vulpescloud
     maven("https://repo.vulpescloud.de/snapshots")
 
@@ -34,25 +86,27 @@ repositories {
 
 dependencies {
     compileOnly("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
-    annotationProcessor("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
 
-    // Jedis and SnakeYAML
-    implementation("redis.clients:jedis:7.0.0")
-    implementation("org.yaml:snakeyaml:2.5")
+    quark("dev.jorel:commandapi-velocity-shade:11.0.0")
 
-    // CommandAPI
-    implementation("dev.jorel:commandapi-velocity-shade:11.0.0")
+    implementation("dev.dejvokep:boosted-yaml:1.3.6")
 
-    implementation("org.json:json:20250517")
+    quark("org.json:json:20250517")
 
-    // Lombok dependencies
-    annotationProcessor("org.projectlombok:lombok:1.18.42")
-    compileOnly("org.projectlombok:lombok:1.18.42")
+    quark("com.squareup.okhttp3:okhttp:5.2.1")
+
+    implementation("dev.bypixel:LettuceWrapper:0.1.1")
+    quark("io.lettuce:lettuce-core:7.0.0.RELEASE") {
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-reactive")
+    }
+
+    quark("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+    quark("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.10.2")
+    quark("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+    implementation(kotlin("stdlib"))
 
     compileOnly("app.simplecloud.api.platform:velocity:0.0.5-dev.1745077021664-28517d8")
-
-    compileOnly("org.geysermc.geyser:api:2.4.2-SNAPSHOT")
-    compileOnly("org.geysermc.floodgate:api:2.2.3-SNAPSHOT")
 
     val vulpesCloudVersion = "3.0.0"
     compileOnly("de.vulpescloud", "bridge", vulpesCloudVersion)
@@ -64,10 +118,30 @@ dependencies {
     compileOnly("eu.cloudnetservice.cloudnet", "wrapper-jvm-api", cloudnetVersion)
 }
 
+quark {
+    platform = "velocity"
+
+    libsFolder = "libraries"
+
+    repositories {
+        includeProjectRepositories()
+    }
+
+    // DO NOT relocate kotlinx or kotlin stdlib, it will throw errors when loading the plugin
+    relocate("org.json", "dev.bypixel.redivelocity.libs.json")
+    relocate("dev.jorel.commandapi", "dev.bypixel.redivelocity.libs.commandapi")
+    relocate("dev.dejvokep.boostedyaml", "dev.bypixel.redivelocity.libs.boostedyaml")
+    relocate("com.squareup.okhttp3", "dev.bypixel.redivelocity.libs.okhttp3")
+    relocate("io.lettuce", "dev.bypixel.redivelocity.libs.lettuce")
+}
+
 sourceSets {
     getByName("main") {
         java {
             srcDir("src/main/java")
+        }
+        kotlin {
+            srcDir("src/main/kotlin")
         }
     }
 }
@@ -83,15 +157,30 @@ tasks {
         options.release.set(21)
     }
 
+    processResources {
+        filteringCharset = "UTF-8"
+
+        filesMatching("velocity-plugin.json") {
+            filter<ReplaceTokens>("tokens" to mapOf("version" to versionString))
+        }
+    }
+
+    jar {
+        enabled = false
+    }
+
     shadowJar {
         archiveBaseName.set("RediVelocity")
         archiveVersion.set(version.toString())
         archiveClassifier.set("")
 
-        relocate("redis.clients", "dev.bypixel.shaded.redis.clients")
-        relocate("org.yaml.snakeyaml", "dev.bypixel.shaded.org.yaml.snakeyaml")
-        relocate("dev.jorel.commandapi", "dev.bypixel.shaded.dev.jorel.commandapi")
-        relocate("org.json", "dev.bypixel.shaded.org.json")
+        relocate("dev.bypixel.lettucewrapper", "dev.bypixel.redivelocity.libs.lettucewrapper")
+
+        manifest {
+            attributes(
+                "Implementation-Version" to rootProject.version.toString(),
+            )
+        }
     }
 
     build {

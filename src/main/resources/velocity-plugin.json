@@ -1,0 +1,12 @@
+{
+  "id": "redivelocity",
+  "name": "RediVelocity",
+  "version": "@version@",
+  "description": "A fast, modern and clean alternative to RedisBungee on Velocity.",
+  "url": "https://github.com/byPixelTV/RediVelocity",
+  "authors": [
+    "byPixelTV"
+  ],
+  "dependencies": [],
+  "main": "dev.bypixel.redivelocity.RediVelocity"
+}
