@@ -1,32 +1,41 @@
 config-version: 1
 
-prefix: "<dark_grey>[<aqua>RediVelocity</aqua>]</dark_grey>"
-no_permission: "<grey>You <red>do not have permission</red> to perform this command.</grey>"
+prefix: "<dark_grey>[<gradient:#08a8f8:#00e1ff:#08a8f8>RediVelocity</gradient>]</dark_grey>"
+no_permission: "<grey>You <#dc2626>do not have permission</#dc2626> to perform this command.</grey>"
 
-playerversion_unsupported: "<grey>Your client version <red>is not supported</red> on this server.</grey>"
+playerversion_unsupported: "<grey>Your client version <#dc2626>is not supported</#dc2626> on this server.</grey>"
 
 commands:
   send:
-    player_not_found: "<grey>The player <red><player></red> was not found on the network!</grey>"
-    sent_player: "<grey>Trying to send you to <green><server></green>...</grey>"
-    send_failed: "<grey>Failed to send you to <red><server></red>. Please try again later.</grey>"
-    sent_admin: "<grey>Trying to send <green><player></green> to <green><server></green>...</grey>"
-    sent_admin_failed: "<grey>Failed to send <red><player></red> to <red><server></red>.</grey>"
-    already_connected: "<grey><player> is already connected to <red><server></red>!</grey>"
+    player_not_found: "<grey>The player <#dc2626><player></#dc2626> was not found on the network!</grey>"
+    sent_player: "<grey>Trying to send you to <#4bfb00><server></#4bfb00>...</grey>"
+    send_failed: "<grey>Failed to send you to <#dc2626><server></#dc2626>. Please try again later.</grey>"
+    sent_admin: "<grey>Trying to send <#4bfb00><player></#4bfb00> to <#4bfb00><server></#4bfb00>...</grey>"
+    sent_admin_failed: "<grey>Failed to send <#dc2626><player></#dc2626> to <#dc2626><server></#dc2626>.</grey>"
+    already_connected: "<grey><player> is already connected to <#dc2626><server></#dc2626>!</grey>"
   alert:
-    alert_message: "<dark_grey>[<aqua>Alert</aqua>]</dark_grey> <message>"
+    alert_message: "<dark_grey>[<gradient:#08a8f8:#00e1ff:#08a8f8>RediVelocity</gradient>]</dark_grey> <message>"
   alert-raw:
     alert_message: "<message>"
   find:
-    player_not_found: "<grey>The player <red><player></red> was not found on the network!</grey>"
-    player_info: "<grey>Player <green><player></green> is connected to <green><server></green> on proxy <green><proxy></green>.</grey>"
+    player_not_found: "<grey>The player <#dc2626><player></#dc2626> was not found on the network!</grey>"
+    player_info: "<grey>Player <#4bfb00><player></#4bfb00> is connected to <#4bfb00><server></#4bfb00> on proxy <#4bfb00><proxy></#4bfb00>.</grey>"
   redivelocity:
     player:
       general:
-        not_found: "<grey>The player <red><player></red> was not found on the network!</grey>"
+        not_found: "<grey>The player <#dc2626><player></#dc2626> was not found on the network!</grey>"
       info:
-        msg: "<prefix> <grey>Player Information for <aqua><player></aqua>:</grey>"
-        uuid: "    <grey>- UUID: <aqua><uuid></aqua></grey>"
-        proxy: "   <grey>- Connected Proxy: <aqua><proxy></aqua></grey>"
-        server: "  <grey>- Connected Server: <aqua><server></aqua></grey>"
-        address: " <grey>- IP Address: <aqua><address></aqua></grey>"
+        msg: "<prefix> <grey>Player Information for <#08a8f8><player></#08a8f8>:</grey>"
+        uuid: "    <grey>- UUID: <#08a8f8><uuid></#08a8f8></grey>"
+        proxy: "   <grey>- Connected Proxy: <#08a8f8><proxy></#08a8f8></grey>"
+        server: "  <grey>- Connected Server: <#08a8f8><server></#08a8f8></grey>"
+        address: " <grey>- IP Address: <#08a8f8><address></#08a8f8></grey>"
+    proxy:
+      list:
+        msg: "<prefix> <grey>List of connected proxies (<#4bfb00><all_proxies></#4bfb00>):</grey>"
+        proxy_entry: "   <grey>- <#08a8f8><proxy></#08a8f8> (<#4bfb00><player_count></#4bfb00> players)</grey>"
+      info:
+        msg: "<prefix> <grey>Proxy Information for <#08a8f8><proxy></#08a8f8>:</grey>"
+        id: "    <grey>- ID: <#08a8f8><id></#08a8f8></grey>"
+        is_leader: "   <grey>- Is Leader: <is_leader></grey>"
+        player_count: "    <grey>- Connected Players: <#4bfb00><player_count></#4bfb00></grey>"

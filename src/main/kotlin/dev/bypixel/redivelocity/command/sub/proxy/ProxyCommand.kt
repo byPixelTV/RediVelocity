@@ -14,19 +14,17 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package dev.bypixel.redivelocity.command
+package dev.bypixel.redivelocity.command.sub.proxy
 
-import dev.bypixel.redivelocity.command.sub.player.PlayerCommand
-import dev.bypixel.redivelocity.command.sub.proxy.ProxyCommand
+import dev.bypixel.redivelocity.command.sub.player.PlayerInfoCommand
 import dev.jorel.commandapi.CommandAPICommand
 
-class RediVelocityCommand {
-    fun register() {
-        CommandAPICommand("redivelocity")
-            .withAliases("rv", "rediv")
+object ProxyCommand {
+    fun proxyCommand() : CommandAPICommand {
+        return CommandAPICommand("proxy")
             .withSubcommands(
-                PlayerCommand.playerCommand(),
-                ProxyCommand.proxyCommand()
-            ).register()
+                ProxyInfoCommand.proxyInfoCommand(),
+                ProxyListCommand.proxyListCommand()
+            )
     }
 }

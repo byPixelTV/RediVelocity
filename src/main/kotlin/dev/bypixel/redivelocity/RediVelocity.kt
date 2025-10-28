@@ -23,6 +23,7 @@ import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
 import com.velocitypowered.api.proxy.ProxyServer
 import dev.bypixel.lettucewrapper.LettuceRedisClient
 import dev.bypixel.lettucewrapper.listener.RedisListener
+import dev.bypixel.redivelocity.command.RediVelocityCommand
 import dev.bypixel.redivelocity.election.ElectionScheduler
 import dev.bypixel.redivelocity.event.DisconnectListener
 import dev.bypixel.redivelocity.event.PostLoginListener
@@ -159,6 +160,8 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
                     "redivelocity:player:names",
                 )
             }
+
+            lettuceClient.commands.hset("redivelocity:proxies", proxyId, proxyId)
         }
 
         ElectionScheduler.job.start()
@@ -179,6 +182,8 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
 
             KickListener
             LeaderElectionListener
+
+            RediVelocityCommand().register()
 
             proxy.eventManager.register(this, ProxyPingListener)
             proxy.eventManager.register(this, PostLoginListener)

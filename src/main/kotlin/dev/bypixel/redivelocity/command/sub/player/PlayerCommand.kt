@@ -19,8 +19,8 @@ package dev.bypixel.redivelocity.command.sub.player
 import dev.jorel.commandapi.CommandAPICommand
 
 object PlayerCommand {
-    fun playerCommand() {
-        CommandAPICommand("player")
+    fun playerCommand() : CommandAPICommand {
+        return CommandAPICommand("player")
             .withSubcommands(
                 PlayerInfoCommand.playerInfoCommand()
             )

@@ -19,26 +19,30 @@ package dev.bypixel.redivelocity.command.sub.proxy
 import dev.bypixel.redivelocity.RediVelocity
 import dev.bypixel.redivelocity.RediVelocityCoroutineScope
 import dev.jorel.commandapi.CommandAPICommand
-import dev.jorel.commandapi.arguments.ArgumentSuggestions
-import dev.jorel.commandapi.arguments.StringArgument
 import dev.jorel.commandapi.executors.CommandExecutor
+import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.future.future
+import kotlinx.coroutines.launch
 
-object ProxyInfoCommand {
-    fun proxyInfoCommand() : CommandAPICommand {
-        return CommandAPICommand("info")
-            .withArguments(
-                StringArgument("proxy").replaceSuggestions(ArgumentSuggestions.stringCollectionAsync {
-                    RediVelocityCoroutineScope.future(Dispatchers.IO) {
-                        RediVelocity.instance.lettuceClient.commands.hvals("redivelocity:proxies").toList()
-                    }
-                })
-            )
-            .withPermission("redivelocity.command.proxy.info")
+object ProxyListCommand {
+    @OptIn(ExperimentalLettuceCoroutinesApi::class)
+    fun proxyListCommand() : CommandAPICommand {
+        return CommandAPICommand("list")
+            .withPermission("redivelocity.command.proxy.list")
             .executes(CommandExecutor { sender, args ->
+                RediVelocityCoroutineScope.launch(Dispatchers.IO) {
+                    val proxyPlayercountMap = mutableMapOf<String, Int>()
 
+                    RediVelocity.instance.lettuceClient.commands.hgetall("redivelocity:proxy:player-counts").collect { kv ->
+                        proxyPlayercountMap[kv.key] = kv.value.toInt()
+                    }
+
+                    val proxies = proxyPlayercountMap.keys.toList()
+
+
+                }
             })
     }
 }
