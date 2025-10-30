@@ -22,11 +22,13 @@ import dev.jorel.commandapi.CommandAPICommand
 import dev.jorel.commandapi.arguments.ArgumentSuggestions
 import dev.jorel.commandapi.arguments.StringArgument
 import dev.jorel.commandapi.executors.CommandExecutor
+import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.future.future
 
 object ProxyInfoCommand {
+    @OptIn(ExperimentalLettuceCoroutinesApi::class)
     fun proxyInfoCommand() : CommandAPICommand {
         return CommandAPICommand("info")
             .withArguments(

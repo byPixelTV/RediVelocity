@@ -34,7 +34,7 @@ object ProxyIdGenerator {
             id = generateRandomString()
         } while (proxies.contains(id))
 
-        return id
+        return "proxy-$id"
     }
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)

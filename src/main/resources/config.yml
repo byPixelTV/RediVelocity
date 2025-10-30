@@ -14,7 +14,7 @@ redis:
   database: 0 # if you don't know what this is, leave it at 0
 
 cloud-support:
-  enabled: false
+  enabled: false # this will enable support for cloud systems like CloudNet, SimpleCloud or VulpesCloud. It will replace the proxy-id with the cloud system's server id automatically
   cloud-system: "cloudnet" # can be "cloudnet", "simplecloud" or "vulpescloud"
 
 update-check:
@@ -30,9 +30,9 @@ playercount-sync:
     - "server-2"
 
 playerversion-check:
-    enabled: true
-    allowed-versions:
-      - 773
+  enabled: true
+  allowed-versions:
+    - 773
 
 commands: # enable or disable specific commands
   send: true # an override for the /send command that also supports sending players from different proxies

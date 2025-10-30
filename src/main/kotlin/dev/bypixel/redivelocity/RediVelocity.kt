@@ -20,6 +20,7 @@ import com.google.inject.Inject
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
+import com.velocitypowered.api.proxy.Player
 import com.velocitypowered.api.proxy.ProxyServer
 import dev.bypixel.lettucewrapper.LettuceRedisClient
 import dev.bypixel.lettucewrapper.listener.RedisListener
@@ -30,6 +31,8 @@ import dev.bypixel.redivelocity.event.PostLoginListener
 import dev.bypixel.redivelocity.event.ProxyPingListener
 import dev.bypixel.redivelocity.event.ServerSwitchListener
 import dev.bypixel.redivelocity.feature.globalPlayercount.PlayercountScheduler
+import dev.bypixel.redivelocity.heartbeat.HeartbeatScheduler
+import dev.bypixel.redivelocity.pluginInterop.GlobalPlayerCache
 import dev.bypixel.redivelocity.pubsub.KickListener
 import dev.bypixel.redivelocity.pubsub.LeaderElectionListener
 import dev.bypixel.redivelocity.util.CloudUtil
@@ -51,8 +54,14 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import org.bxteam.quark.velocity.VelocityLibraryManager
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.lang.reflect.InvocationHandler
+import java.lang.reflect.Method
+import java.lang.reflect.Proxy
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.Path
 
@@ -116,6 +125,8 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
 
         lettuceClient = LettuceRedisClient(redisHost, redisPort, redisPassword, RediVelocityCoroutineScope, redisUser, redisDatabase)
 
+        RedisListener.setLettuceClient(lettuceClient)
+
         if (lettuceClient.connection.isOpen) {
             RediVelocityLogger.success("Connected to Redis at $redisHost:$redisPort")
         } else {
@@ -147,7 +158,7 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
 
             val proxyIdsSize = ProxyIdGenerator.getExistingIds().size
 
-            wasFirstProxy = proxyIdsSize == 1 || proxyIdsSize == 0
+            wasFirstProxy = proxyIdsSize == 0
 
             if (wasFirstProxy) {
                 lettuceClient.commands.del(
@@ -158,11 +169,14 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
                     "redivelocity:proxies",
                     "redivelocity:global:playercount",
                     "redivelocity:player:names",
+                    "redivelocity:leader"
                 )
             }
 
             lettuceClient.commands.hset("redivelocity:proxies", proxyId, proxyId)
         }
+
+        HeartbeatScheduler.job.start()
 
         ElectionScheduler.job.start()
 
@@ -185,6 +199,8 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
 
             RediVelocityCommand().register()
 
+            GlobalPlayerCache.register()
+
             proxy.eventManager.register(this, ProxyPingListener)
             proxy.eventManager.register(this, PostLoginListener)
             proxy.eventManager.register(this, ServerSwitchListener)
@@ -192,14 +208,27 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
         }).delay(2, TimeUnit.SECONDS).schedule()
     }
 
+    @OptIn(ExperimentalLettuceCoroutinesApi::class)
     @Subscribe
     fun onProxyShutdown(event: ProxyShutdownEvent) {
         RediVelocityCoroutineScope.launch(Dispatchers.IO) {
             CommandAPI.onDisable()
 
+            RediVelocityCoroutineScope.launch(Dispatchers.IO) {
+                lettuceClient.commands.hdel("redivelocity:proxies", proxyId)
+                lettuceClient.deleteHashFieldByValueAsync("redivelocity:proxy:players", proxyId)
+                lettuceClient.commands.hdel("redivelocity:heartbeats", proxyId)
+                lettuceClient.commands.hdel("redivelocity:proxy:player-counts", proxyId)
+                lettuceClient.commands.srem("redivelocity:existing-proxy-ids", proxyId)
+                if (lettuceClient.commands.get("redivelocity:leader") == proxyId) {
+                    lettuceClient.commands.del("redivelocity:leader")
+                }
+            }
+
             RedisListener.unregisterListener(KickListener)
             RedisListener.unregisterListener(LeaderElectionListener)
             ElectionScheduler.job.cancelAndJoin()
+            HeartbeatScheduler.job.cancelAndJoin()
             if (config.getBoolean(Route.fromString("playercount-sync.enabled"))) {
                 PlayercountScheduler.proxyPlayerCountUpdateScheduler.cancelAndJoin()
                 PlayercountScheduler.globalPlayerCountCalcScheduler.cancelAndJoin()

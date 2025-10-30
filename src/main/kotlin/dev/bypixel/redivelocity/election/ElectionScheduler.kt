@@ -92,9 +92,11 @@ object ElectionScheduler {
 
                     RediVelocity.instance.lettuceClient.commands.set("redivelocity:leader", newLeader)
 
-                    RediVelocity.instance.lettuceClient.sendMessage(JSONObject(
-                        Json.encodeToString(LeaderRemovedMsg(action = "REMOVED", recipient = currentLeader))
-                    ), "redivelocity:leader-election")
+                    if (newLeader != currentLeader) {
+                        RediVelocity.instance.lettuceClient.sendMessage(JSONObject(
+                            Json.encodeToString(LeaderRemovedMsg(action = "REMOVED", recipient = currentLeader))
+                        ), "redivelocity:leader-election")
+                    }
 
                     if (newLeader == RediVelocity.instance.proxyId) {
                         if (RediVelocity.instance.config.getBoolean(Route.fromString("debug-mode"))) {

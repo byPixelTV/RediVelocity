@@ -22,8 +22,6 @@ import dev.jorel.commandapi.CommandAPICommand
 import dev.jorel.commandapi.executors.CommandExecutor
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.forEach
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 
 object ProxyListCommand {

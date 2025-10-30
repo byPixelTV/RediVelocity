@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2025.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- *  along with this program. If not, see <https://www.gnu.org/licenses/>.
- */
-
 package dev.bypixel.redivelocity.pubsub
 
 import dev.bypixel.lettucewrapper.listener.RedisListener
@@ -50,10 +34,22 @@ object LeaderElectionListener : RedisListener("redivelocity:leader-election") {
             "VOTE_REQUEST" -> {
                 RediVelocityCoroutineScope.launch(Dispatchers.IO) {
                     val allProxies = ProxyIdGenerator.getExistingIds().filter { it != RediVelocity.instance.proxyId }
-                    val randomProxy = allProxies[SecureRandom().nextInt(allProxies.size)]
-                    delay(SecureRandom().nextLong(50, 250))
-                    val votesForProxy = RediVelocity.instance.lettuceClient.commands.hget("redivelocity:votes", randomProxy)?.toIntOrNull() ?: 0
-                    RediVelocity.instance.lettuceClient.commands.hset("redivelocity:votes", randomProxy, ((votesForProxy) +1).toString())
+
+                    if (allProxies.isEmpty()) {
+                        return@launch
+                    }
+
+                    val rnd = SecureRandom()
+                    val randomProxy = allProxies[rnd.nextInt(allProxies.size)]
+                    val delayMs = 50L + rnd.nextInt(201) // 50..250 ms
+                    delay(delayMs)
+
+                    val votesForProxy = RediVelocity.instance.lettuceClient.commands
+                        .hget("redivelocity:votes", randomProxy)
+                        ?.toIntOrNull() ?: 0
+
+                    RediVelocity.instance.lettuceClient.commands
+                        .hset("redivelocity:votes", randomProxy, (votesForProxy + 1).toString())
                 }
             }
         }
