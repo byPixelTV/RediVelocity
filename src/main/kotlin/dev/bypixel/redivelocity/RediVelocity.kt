@@ -191,10 +191,8 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
         RediVelocityLogger.success("RediVelocity v${proxy.pluginManager.getPlugin("redivelocity").get().description.version.orElse("unknown")} has been enabled!")
 
         proxy.scheduler.buildTask(this, Runnable {
-            if (config.getBoolean(Route.fromString("playercount-sync.enabled"))) {
-                PlayercountScheduler.proxyPlayerCountUpdateScheduler.start()
-                PlayercountScheduler.globalPlayerCountCalcScheduler.start()
-            }
+            PlayercountScheduler.proxyPlayerCountUpdateScheduler.start()
+            PlayercountScheduler.globalPlayerCountCalcScheduler.start()
 
             if (config.getBoolean(Route.fromString("update-check.enabled"))) {
                 RediVelocityCoroutineScope.launch(Dispatchers.IO) {
@@ -211,7 +209,9 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
             PlayerCache.register()
             ProxyCache.register()
 
-            proxy.eventManager.register(this, ProxyPingListener)
+            if (config.getBoolean(Route.fromString("playercount-sync.enabled"))) {
+                proxy.eventManager.register(this, ProxyPingListener)
+            }
             proxy.eventManager.register(this, PostLoginListener)
             proxy.eventManager.register(this, ServerSwitchListener)
             proxy.eventManager.register(this, DisconnectListener)

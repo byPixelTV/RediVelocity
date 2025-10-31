@@ -15,9 +15,9 @@ commands:
       info:
         msg: "<prefix> <grey>Player Information for <#08a8f8><player></#08a8f8>:</grey>"
         uuid: "    <grey>● UUID: <#08a8f8><uuid></#08a8f8></grey>"
-        proxy: "   <grey>● Connected Proxy: <#08a8f8><proxy></#08a8f8></grey>"
-        server: "  <grey>● Connected Server: <#08a8f8><server></#08a8f8></grey>"
-        address: " <grey>● IP Address: <#08a8f8><address></#08a8f8></grey>"
+        proxy: "    <grey>● Connected Proxy: <#08a8f8><proxy></#08a8f8></grey>"
+        server: "    <grey>● Connected Server: <#08a8f8><server></#08a8f8></grey>"
+        address: "    <grey>● IP Address: <#08a8f8><ip></#08a8f8></grey>"
     proxy:
       list:
         msg: "<prefix> <grey>List of connected proxies (<#4bfb00><all_proxies></#4bfb00>):</grey>"
