@@ -35,7 +35,4 @@ playerversion-check:
     - 773
 
 commands: # enable or disable specific commands
-  send: true # an override for the /send command that also supports sending players from different proxies
-  alert: true # a global chat alert command
-  alert-raw: true # a global chat alert command that supports raw message formatting using MiniMessage or legacy formatting
   find: true # find players across all proxies and display some information about them
