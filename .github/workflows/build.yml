@@ -85,7 +85,7 @@ jobs:
 
           echo "> # ☁️ Information 🚩:" > RELEASE_NOTES.md
           echo "> - You will need a Redis Database" >> RELEASE_NOTES.md
-          echo "> - > - You will only receive support if you are using the latest versions of Velocity, and RediVelocity. Additionally, you must have a basic understanding of Redis. I will not provide assistance with Redis in any way." >> RELEASE_NOTES.md
+          echo "> - You will only receive support if you are using the latest versions of Velocity, and RediVelocity. Additionally, you must have a basic understanding of Redis. I will not provide assistance with Redis in any way." >> RELEASE_NOTES.md
           echo "" >> RELEASE_NOTES.md
           echo "# 🍽️ Patches & Fixes 🧑🏼‍🍳:" >> RELEASE_NOTES.md
           echo "" >> RELEASE_NOTES.md
