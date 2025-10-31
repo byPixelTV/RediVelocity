@@ -23,6 +23,9 @@ import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
 import com.velocitypowered.api.proxy.ProxyServer
 import dev.bypixel.lettucewrapper.LettuceRedisClient
 import dev.bypixel.lettucewrapper.listener.RedisListener
+import dev.bypixel.redivelocity.cache.PlayerCache
+import dev.bypixel.redivelocity.cache.ProxyCache
+import dev.bypixel.redivelocity.command.FindCommand
 import dev.bypixel.redivelocity.command.RediVelocityCommand
 import dev.bypixel.redivelocity.election.ElectionScheduler
 import dev.bypixel.redivelocity.event.DisconnectListener
@@ -31,9 +34,6 @@ import dev.bypixel.redivelocity.event.ProxyPingListener
 import dev.bypixel.redivelocity.event.ServerSwitchListener
 import dev.bypixel.redivelocity.feature.globalPlayercount.PlayercountScheduler
 import dev.bypixel.redivelocity.heartbeat.HeartbeatScheduler
-import dev.bypixel.redivelocity.cache.PlayerCache
-import dev.bypixel.redivelocity.cache.ProxyCache
-import dev.bypixel.redivelocity.command.FindCommand
 import dev.bypixel.redivelocity.pubsub.KickListener
 import dev.bypixel.redivelocity.pubsub.LeaderElectionListener
 import dev.bypixel.redivelocity.util.CloudUtil
@@ -50,11 +50,7 @@ import dev.dejvokep.boostedyaml.settings.updater.UpdaterSettings
 import dev.jorel.commandapi.CommandAPI
 import dev.jorel.commandapi.CommandAPIVelocityConfig
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.cancelChildren
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.bxteam.quark.velocity.VelocityLibraryManager
 import org.json.JSONObject
 import org.slf4j.LoggerFactory
@@ -194,7 +190,7 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
         proxy.scheduler.buildTask(this, Runnable {
             if (config.getBoolean(Route.fromString("update-check.enabled"))) {
                 RediVelocityCoroutineScope.launch(Dispatchers.IO) {
-                    UpdateUtil.checkForUpdate()
+                    UpdateUtil.updateJob.start()
                 }
             }
 
@@ -241,6 +237,9 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
             RedisListener.unregisterListener(LeaderElectionListener)
             ElectionScheduler.job.cancelAndJoin()
             HeartbeatScheduler.job.cancelAndJoin()
+            if (config.getBoolean(Route.fromString("update-check.enabled"))) {
+                UpdateUtil.updateJob.cancelAndJoin()
+            }
             PlayercountScheduler.proxyPlayerCountUpdateScheduler.cancelAndJoin()
             PlayercountScheduler.globalPlayerCountCalcScheduler.cancelAndJoin()
             PlayerCache.unregister()

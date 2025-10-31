@@ -17,7 +17,6 @@
 package dev.bypixel.redivelocity.feature.globalPlayercount
 
 import dev.bypixel.redivelocity.RediVelocity
-import dev.bypixel.redivelocity.util.RediVelocityLogger
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.*
 
@@ -32,7 +31,6 @@ object PlayercountScheduler {
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
     val proxyPlayerCountUpdateScheduler = CoroutineScope(Dispatchers.IO).launch {
         while (isActive) {
-            RediVelocityLogger.info("Updating player count for proxy ${RediVelocity.instance.proxyId} to ${RediVelocity.instance.proxy.allPlayers.size}")
             RediVelocity.instance.lettuceClient.commands.hset("redivelocity:proxy:player-counts", RediVelocity.instance.proxyId, RediVelocity.instance.proxy.allPlayers.size.toString())
             delay(2000L)
         }

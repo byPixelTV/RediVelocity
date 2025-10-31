@@ -19,7 +19,7 @@ cloud-support:
 
 update-check:
   enabled: true
-  notify-admins: true # notify users with the permission "redivelocity.update" about available updates
+  notify-admins: true # notify users with the permission "redivelocity.admin.updatecheck" about available updates
   check-interval: 3600 # in seconds
 
 playercount-sync:

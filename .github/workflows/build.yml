@@ -50,6 +50,10 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           release_branches: release
           tag_prefix: "v"
+          custom_release_rules: |
+            major:major:Breaking Changes
+            minor:minor:Features
+            patch:patch:Bug Fixes or other non-feature changes
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5

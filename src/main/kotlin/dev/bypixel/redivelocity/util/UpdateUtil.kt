@@ -17,38 +17,48 @@
 package dev.bypixel.redivelocity.util
 
 import dev.bypixel.redivelocity.RediVelocity
+import dev.dejvokep.boostedyaml.route.Route
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.json.JSONObject
 
 object UpdateUtil {
-    suspend fun checkForUpdate() : Boolean {
-        RediVelocityLogger.info("Checking for updates...")
-        val latestVersionString = getLatestVersion()
-        val currentVersionString = RediVelocity.server.pluginManager.getPlugin("redivelocity").get().description.version.orElse("0.0.0")
-        val latestVersion = Version.fromString(latestVersionString)
-        val currentVersion = Version.fromString(currentVersionString)
-        val compare = latestVersion.compareTo(currentVersion)
+    private var latestVersionCache: String? = null
 
-        if (currentVersionString.contains("+")) {
-            RediVelocityLogger.consoleMessage("<yellow>Skipping update check for <color:#ff0000><b>development build,</b></color> things may not work as expected, please report any bugs on <aqua>GitHub</aqua></yellow>")
-            RediVelocityLogger.consoleMessage("<aqua><b>https://github.com/byPixelTV/RediVelocity/issues</b></aqua>")
-            return false
-        }
+    val updateJob = CoroutineScope(Dispatchers.IO).launch {
+        while (isActive) {
+            RediVelocityLogger.info("Checking for updates...")
+            val latestVersionString = getLatestVersion()
+            val currentVersionString = RediVelocity.server.pluginManager.getPlugin("redivelocity").get().description.version.orElse("0.0.0")
+            val latestVersion = Version.fromString(latestVersionString)
+            val currentVersion = Version.fromString(currentVersionString)
+            val compare = latestVersion.compareTo(currentVersion)
 
-        return if (compare == 0) {
-            RediVelocityLogger.success("<green>The plugin is up to date! (v$currentVersionString)</green>")
-            false
-        } else if (compare < 0) {
-            RediVelocityLogger.success("<yellow>You are running a newer version ($currentVersionString) than the latest release (v$latestVersionString).</yellow>")
-            false
-        } else {
-            RediVelocityLogger.consoleMessage("<red>The plugin is not up to date!</red>")
-            RediVelocityLogger.consoleMessage(" - Current version: <red>v currentVersionString</red>")
-            RediVelocityLogger.consoleMessage(" - Available update: <green>v version</green>")
-            RediVelocityLogger.consoleMessage(" - Download available at: <aqua>https://github.com/byPixelTV/RediVelocity/releases</aqua>")
-            true
+            latestVersionCache = latestVersionString
+
+            if (currentVersionString.contains("+")) {
+                RediVelocityLogger.consoleMessage("<yellow>Skipping update check for <color:#ff0000><b>development build,</b></color> things may not work as expected, please report any bugs on <aqua>GitHub</aqua></yellow>")
+                RediVelocityLogger.consoleMessage("<aqua><b>https://github.com/byPixelTV/RediVelocity/issues</b></aqua>")
+                delay(30 * 60 * 1000L)
+                continue
+            }
+
+            if (compare == 0) {
+                RediVelocityLogger.success("<green>The plugin is up to date! (v$currentVersionString)</green>")
+            } else if (compare < 0) {
+                RediVelocityLogger.success("<yellow>You are running a newer version ($currentVersionString) than the latest release (v$latestVersionString).</yellow>")
+            } else {
+                RediVelocityLogger.consoleMessage("<red>The plugin is not up to date!</red>")
+                RediVelocityLogger.consoleMessage(" - Current version: <red>v$currentVersionString</red>")
+                RediVelocityLogger.consoleMessage(" - Available update: <green>v$latestVersionString</green>")
+                RediVelocityLogger.consoleMessage(" - Download available at: <aqua>https://github.com/byPixelTV/RediVelocity/releases</aqua>")
+            }
+            delay(RediVelocity.instance.config.getInt(Route.fromString("update-check.check-interval")) * 1000L) // Check every n seconds
         }
     }
 
@@ -60,6 +70,10 @@ object UpdateUtil {
         val compare = latestVersion.compareTo(currentVersion)
 
         return compare > 0
+    }
+
+    fun getLatestCachedVersion(): String? {
+        return latestVersionCache
     }
 
     suspend fun getLatestVersion(): String = withContext(Dispatchers.IO) {

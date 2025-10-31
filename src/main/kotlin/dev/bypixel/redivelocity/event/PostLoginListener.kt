@@ -20,11 +20,15 @@ import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.connection.PostLoginEvent
 import dev.bypixel.redivelocity.RediVelocity
 import dev.bypixel.redivelocity.RediVelocityCoroutineScope
+import dev.bypixel.redivelocity.util.UpdateUtil
+import dev.bypixel.redivelocity.util.Version
 import dev.dejvokep.boostedyaml.route.Route
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.kyori.adventure.text.minimessage.MiniMessage
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.json.JSONObject
 
 object PostLoginListener {
@@ -39,6 +43,36 @@ object PostLoginListener {
             if (!allowedVersions.contains(player.protocolVersion.protocol) && !player.hasPermission("redivelocity.admin.versionbypass")) {
                 player.disconnect(MiniMessage.miniMessage().deserialize(RediVelocity.instance.messageConfig.getString(Route.fromString("playerversion_unsupported"))))
                 return
+            }
+        }
+
+        if (RediVelocity.instance.config.getBoolean(Route.fromString("update-check.enabled")) && RediVelocity.instance.config.getBoolean(Route.fromString("update-check.notify-admins"))) {
+            if (player.hasPermission("redivelocity.admin.updatecheck")) {
+                val cachedVersion = UpdateUtil.getLatestCachedVersion()
+                if (cachedVersion != null) {
+                    RediVelocityCoroutineScope.launch(Dispatchers.IO) {
+                        val currentVersionString = RediVelocity.server.pluginManager.getPlugin("redivelocity").get().description.version.orElse("0.0.0")
+                        val latestVersion = Version.fromString(cachedVersion)
+                        val currentVersion = Version.fromString(currentVersionString)
+                        val compare = latestVersion.compareTo(currentVersion)
+
+                        if (currentVersionString.contains("+")) {
+                            return@launch
+                        }
+
+                        if (compare > 0) {
+                            delay(2000L) // Delay to ensure the player has fully logged in
+                            player.sendMessage(
+                                MiniMessage.miniMessage().deserialize(
+                                    "<prefix> An <#08a8f8>update</#08a8f8> is available! You are running version <#dc2626><current_version></#dc2626>, latest version is <#4bfb00><latest_version></#4bfb00>. Download it on <click:open_url:'https://www.github.com/byPixelTV/RediVelocity/releases'><u><#08a8f8>GitHub (click)</#08a8f8></u></click>.",
+                                    Placeholder.unparsed("current_version", currentVersionString),
+                                    Placeholder.unparsed("latest_version", cachedVersion),
+                                    Placeholder.parsed("prefix", RediVelocity.instance.messageConfig.getString(Route.fromString("prefix")))
+                                )
+                            )
+                        }
+                    }
+                }
             }
         }
 
