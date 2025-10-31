@@ -7,7 +7,7 @@ playerversion_unsupported: "<grey>Your client version <#dc2626>is not supported<
 commands:
   find:
     player_not_found: "<prefix> <grey>The player <#dc2626><player></#dc2626> was not found on the network!</grey>"
-    player_info: "<prefix> <grey>Player <#4bfb00><player></#4bfb00> is connected to <#4bfb00><server></#4bfb00> on proxy <#4bfb00><proxy></#4bfb00>.</grey>"
+    player_info: "<prefix> <grey>Player <#08a8f8><player></#08a8f8> is connected to <#4bfb00><server></#4bfb00> on proxy <#08a8f8><proxy></#08a8f8>.</grey>"
   redivelocity:
     player:
       general:

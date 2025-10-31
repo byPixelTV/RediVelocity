@@ -185,15 +185,13 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
         }
 
         HeartbeatScheduler.job.start()
-
         ElectionScheduler.job.start()
+        PlayercountScheduler.proxyPlayerCountUpdateScheduler.start()
+        PlayercountScheduler.globalPlayerCountCalcScheduler.start()
 
         RediVelocityLogger.success("RediVelocity v${proxy.pluginManager.getPlugin("redivelocity").get().description.version.orElse("unknown")} has been enabled!")
 
         proxy.scheduler.buildTask(this, Runnable {
-            PlayercountScheduler.proxyPlayerCountUpdateScheduler.start()
-            PlayercountScheduler.globalPlayerCountCalcScheduler.start()
-
             if (config.getBoolean(Route.fromString("update-check.enabled"))) {
                 RediVelocityCoroutineScope.launch(Dispatchers.IO) {
                     UpdateUtil.checkForUpdate()
@@ -243,12 +241,10 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
             RedisListener.unregisterListener(LeaderElectionListener)
             ElectionScheduler.job.cancelAndJoin()
             HeartbeatScheduler.job.cancelAndJoin()
+            PlayercountScheduler.proxyPlayerCountUpdateScheduler.cancelAndJoin()
+            PlayercountScheduler.globalPlayerCountCalcScheduler.cancelAndJoin()
             PlayerCache.unregister()
             ProxyCache.unregister()
-            if (config.getBoolean(Route.fromString("playercount-sync.enabled"))) {
-                PlayercountScheduler.proxyPlayerCountUpdateScheduler.cancelAndJoin()
-                PlayercountScheduler.globalPlayerCountCalcScheduler.cancelAndJoin()
-            }
 
             lettuceClient.close()
             RediVelocityCoroutineScope.coroutineContext.cancelChildren()
