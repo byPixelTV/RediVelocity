@@ -1,0 +1,166 @@
+name: Build, Release & Publish Modrinth
+
+permissions:
+  contents: write
+  packages: write
+  actions: write
+
+on:
+  push:
+    branches:
+      - release
+      - nightly
+
+jobs:
+  build_release:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all Git tags
+        run: git fetch --tags
+
+      - name: Check for new commits since last tag
+        if: github.ref == 'refs/heads/release'
+        id: check_commits
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "last_tag=$LAST_TAG" >> $GITHUB_OUTPUT
+
+          if [ -z "$LAST_TAG" ]; then
+            echo "no_last_tag=true" >> $GITHUB_OUTPUT
+          else
+            NEW_COMMITS=$(git log ${LAST_TAG}..HEAD --oneline)
+            if [ -z "$NEW_COMMITS" ]; then
+              echo "no_new_commits=true" >> $GITHUB_OUTPUT
+            else
+              echo "no_new_commits=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Get next version
+        if: github.ref == 'refs/heads/release' && steps.check_commits.outputs.no_new_commits != 'true'
+        id: version
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          release_branches: release
+          tag_prefix: "v"
+          custom_release_rules: |
+            major:major:Breaking Changes
+            minor:minor:Features
+            patch:patch:Bug Fixes or other non-feature changes
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: 21
+          distribution: temurin
+          cache: gradle
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Build Gradle projects
+        run: bash ./gradlew shadowJar
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: build/libs/*.jar
+
+      - name: Generate changelog
+        if: github.ref == 'refs/heads/release' && steps.check_commits.outputs.no_new_commits != 'true'
+        id: changelog
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PREV_TAG=${{ steps.check_commits.outputs.last_tag }}
+          CURR_TAG=${{ steps.version.outputs.new_tag }}
+
+          echo "> # ☁️ Information 🚩:" > RELEASE_NOTES.md
+          echo "> - You will need a Redis Database" >> RELEASE_NOTES.md
+          echo "> - > - You will only receive support if you are using the latest versions of Velocity, and RediVelocity. Additionally, you must have a basic understanding of Redis. I will not provide assistance with Redis in any way." >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "# 🍽️ Patches & Fixes 🧑🏼‍🍳:" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+
+          git log ${PREV_TAG}..HEAD --pretty=format:"%H|%s" | while IFS="|" read -r COMMIT_HASH MESSAGE; do
+            AUTHOR_LOGIN=$(gh api repos/${{ github.repository }}/commits/$COMMIT_HASH --jq '.author.login // empty')
+            AUTHOR_NAME=$(gh api repos/${{ github.repository }}/commits/$COMMIT_HASH --jq '.commit.author.name // empty')
+
+            if [[ "$AUTHOR_LOGIN" == *"bot"* ]]; then
+              echo "- $MESSAGE ([${COMMIT_HASH:0:7}](https://github.com/${{ github.repository }}/commit/$COMMIT_HASH)) by $AUTHOR_NAME" >> RELEASE_NOTES.md
+            else
+              if [[ -n "$AUTHOR_LOGIN" ]]; then
+                echo "- $MESSAGE ([${COMMIT_HASH:0:7}](https://github.com/${{ github.repository }}/commit/$COMMIT_HASH)) by @$AUTHOR_LOGIN" >> RELEASE_NOTES.md
+              else
+                echo "- $MESSAGE ([${COMMIT_HASH:0:7}](https://github.com/${{ github.repository }}/commit/$COMMIT_HASH)) by $AUTHOR_NAME" >> RELEASE_NOTES.md
+              fi
+            fi
+          done
+
+          echo "" >> RELEASE_NOTES.md
+          echo "- **Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${CURR_TAG}" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "> # 📝 Velocity & Java Support 📑:" >> RELEASE_NOTES.md
+          echo "> - This version requires Velocity 3.4.0+ to correctly run on your proxy" >> RELEASE_NOTES.md
+          echo "> - You have to use Java 21+ to run this plugin" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "> # 🔥 Other stuff 🎉:" >> RELEASE_NOTES.md
+          echo "> - If you find any bugs tell me on [Discord](https://dsc.gg/byPixelTV) or use the GitHub issue tracker." >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "> # 💻 Development Builds 🌐:" >> RELEASE_NOTES.md
+          echo "> - **Development  Builds:** https://github.com/byPixelTV/RediVelocity/actions" >> RELEASE_NOTES.md
+
+      - name: Create GitHub Release
+        if: github.ref == 'refs/heads/release' && steps.check_commits.outputs.no_new_commits != 'true'
+        id: github_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.new_tag }}
+          name: "RediVelocity | ${{ steps.version.outputs.new_tag }} Release"
+          body_path: RELEASE_NOTES.md
+          files: build/libs/*.jar
+
+      - name: Prepare artifact filename
+        if: github.ref == 'refs/heads/release' && steps.check_commits.outputs.no_new_commits != 'true'
+        id: artifact_name
+        run: |
+          TAG=${{ steps.version.outputs.new_tag }}
+          STRIPPED=${TAG#v}
+
+          cp build/libs/*.jar "RediVelocity-${STRIPPED}.jar"
+          
+          echo "jar=RediVelocity-${STRIPPED}.jar" >> $GITHUB_OUTPUT
+
+      - name: Publish to Modrinth
+        if: github.ref == 'refs/heads/release' && steps.check_commits.outputs.no_new_commits != 'true'
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          modrinth-id: 9Z08wH8I
+          modrinth-featured: true
+
+          changelog-file: RELEASE_NOTES.md
+
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          files: ${{ steps.artifact_name.outputs.jar }}
+
+          name: RediVelocity ${{ steps.version.outputs.new_tag }}
+          version-type: release
+          version: ${{ steps.version.outputs.new_tag }}
+          loaders: |
+            velocity
+          game-versions: |
+            1.21.x
+            1.20.x
+          java: |
+            Java 21
+          retry-attempts: 2
+          retry-delay: 10000
+          fail-mode: fail

@@ -1,0 +1,30 @@
+config-version: 1
+
+prefix: "<dark_grey>[<gradient:#08a8f8:#00e1ff:#08a8f8>RediVelocity</gradient>]</dark_grey>"
+
+playerversion_unsupported: "<white>Your client version <#dc2626>is not supported</#dc2626> on this server.</white>"
+
+commands:
+  find:
+    player_not_found: "<prefix> <white>The player <#dc2626><player></#dc2626> was not found on the network!</white>"
+    player_info: "<prefix> <white>Player <#08a8f8><player></#08a8f8> is connected to <#4bfb00><server></#4bfb00> on proxy <#08a8f8><proxy></#08a8f8>.</white>"
+  redivelocity:
+    player:
+      general:
+        not_found: "<prefix> <white>The player <#dc2626><player></#dc2626> was not found on the network!</white>"
+      info:
+        msg: "<prefix> <white>Player Information for <#08a8f8><player></#08a8f8>:</white>"
+        uuid: "    <white>● UUID: <#08a8f8><uuid></#08a8f8></white>"
+        proxy: "    <white>● Connected Proxy: <#08a8f8><proxy></#08a8f8></white>"
+        server: "    <white>● Connected Server: <#08a8f8><server></#08a8f8></white>"
+        address: "    <white>● IP Address: <#08a8f8><ip></#08a8f8></white>"
+    proxy:
+      list:
+        msg: "<prefix> <white>List of connected proxies (<#4bfb00><all_proxies></#4bfb00>):</white>"
+        proxy_entry: "   <white>● <#08a8f8><proxy></#08a8f8> (<#4bfb00><player_count></#4bfb00> players)</white>"
+      info:
+        proxy_not_found: "<prefix> <white>The proxy <#dc2626><proxy></#dc2626> was not found!</white>"
+        msg: "<prefix> <white>Proxy Information for <#08a8f8><proxy></#08a8f8>:</white>"
+        id: "    <white>● ID: <#08a8f8><proxy></#08a8f8></white>"
+        is_leader: "    <white>● Is Leader: <is_leader></white>"
+        player_count: "    <white>● Connected Players: <#4bfb00><player_count></#4bfb00></white>"
