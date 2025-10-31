@@ -62,11 +62,11 @@ object ElectionScheduler {
                 continue
             }
 
-            val forceNewElection = (electionCounter[0]++ % 20 == 0)
+            val forceNewElection = electionCounter[0]++ % 20 == 0
             val needNewLeader = !activeProxies.contains(currentLeader) || forceNewElection
 
             if (needNewLeader) {
-                val reason = (if (!activeProxies.contains(currentLeader)) "Leader $currentLeader is not active" else "Scheduled forced election")
+                val reason = if (!activeProxies.contains(currentLeader)) "Leader $currentLeader is not active" else "Scheduled forced election"
 
                 if (RediVelocity.instance.config.getBoolean(Route.fromString("debug-mode"))) {
                     RediVelocityLogger.info("Starting leader election. Reason: $reason")
