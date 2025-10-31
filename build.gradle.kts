@@ -93,7 +93,7 @@ dependencies {
 
     quark("org.json:json:20250517")
 
-    quark("com.squareup.okhttp3:okhttp:5.2.1")
+    quark("com.squareup.okhttp3:okhttp:5.3.0")
 
     implementation("dev.bypixel:LettuceWrapper:0.1.1")
     quark("io.lettuce:lettuce-core:7.0.0.RELEASE") {
