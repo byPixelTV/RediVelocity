@@ -1,10 +1,10 @@
 import org.apache.tools.ant.filters.ReplaceTokens
 
 plugins {
-    kotlin("jvm") version "2.2.20"
+    kotlin("jvm") version "2.2.21"
     id("com.gradleup.shadow") version "9.2.2"
     id("org.bxteam.quark") version "1.2.1"
-    kotlin("plugin.serialization") version "2.2.20"
+    kotlin("plugin.serialization") version "2.2.21"
 }
 
 fun getLatestTag(): String {
@@ -89,7 +89,7 @@ dependencies {
 
     implementation("dev.jorel:commandapi-velocity-shade:11.0.0")
 
-    implementation("dev.dejvokep:boosted-yaml:1.3.6")
+    implementation("dev.dejvokep:boosted-yaml:1.3.7")
 
     quark("org.json:json:20250517")
 
