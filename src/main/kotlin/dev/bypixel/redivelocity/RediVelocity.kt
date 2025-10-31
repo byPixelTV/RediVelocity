@@ -33,6 +33,7 @@ import dev.bypixel.redivelocity.feature.globalPlayercount.PlayercountScheduler
 import dev.bypixel.redivelocity.heartbeat.HeartbeatScheduler
 import dev.bypixel.redivelocity.cache.PlayerCache
 import dev.bypixel.redivelocity.cache.ProxyCache
+import dev.bypixel.redivelocity.command.FindCommand
 import dev.bypixel.redivelocity.pubsub.KickListener
 import dev.bypixel.redivelocity.pubsub.LeaderElectionListener
 import dev.bypixel.redivelocity.util.CloudUtil
@@ -205,6 +206,7 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
             LeaderElectionListener
 
             RediVelocityCommand().register()
+            FindCommand().register()
 
             PlayerCache.register()
             ProxyCache.register()

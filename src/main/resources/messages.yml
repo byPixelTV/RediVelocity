@@ -5,17 +5,6 @@ prefix: "<dark_grey>[<gradient:#08a8f8:#00e1ff:#08a8f8>RediVelocity</gradient>]<
 playerversion_unsupported: "<grey>Your client version <#dc2626>is not supported</#dc2626> on this server.</grey>"
 
 commands:
-  send:
-    player_not_found: "<prefix> <grey>The player <#dc2626><player></#dc2626> was not found on the network!</grey>"
-    sent_player: "<prefix> <grey>Trying to send you to <#4bfb00><server></#4bfb00>...</grey>"
-    send_failed: "<prefix> <grey>Failed to send you to <#dc2626><server></#dc2626>. Please try again later.</grey>"
-    sent_admin: "<prefix> <grey>Trying to send <#4bfb00><player></#4bfb00> to <#4bfb00><server></#4bfb00>...</grey>"
-    sent_admin_failed: "<prefix> <grey>Failed to send <#dc2626><player></#dc2626> to <#dc2626><server></#dc2626>.</grey>"
-    already_connected: "<prefix> <grey><player> is already connected to <#dc2626><server></#dc2626>!</grey>"
-  alert:
-    alert_message: "<prefix> <message>"
-  alert-raw:
-    alert_message: "<message>"
   find:
     player_not_found: "<prefix> <grey>The player <#dc2626><player></#dc2626> was not found on the network!</grey>"
     player_info: "<prefix> <grey>Player <#4bfb00><player></#4bfb00> is connected to <#4bfb00><server></#4bfb00> on proxy <#4bfb00><proxy></#4bfb00>.</grey>"
