@@ -14,21 +14,32 @@
  *  along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package dev.bypixel.redivelocity.pluginInterop
+package dev.bypixel.redivelocity.cache
 
 import dev.bypixel.lettucewrapper.listener.RedisListener
 import dev.bypixel.redivelocity.RediVelocity
 import dev.bypixel.redivelocity.RediVelocityCoroutineScope
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.json.JSONObject
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 @OptIn(ExperimentalLettuceCoroutinesApi::class)
-object GlobalPlayerCache {
+object PlayerCache {
     private val players = ConcurrentHashMap<UUID, String>()
+
+    private val job = CoroutineScope(Dispatchers.IO).launch {
+        while (isActive) {
+            players.clear()
+
+            RediVelocity.instance.lettuceClient.commands.hgetall("redivelocity:player:names").collect { kv ->
+                players[UUID.fromString(kv.key)] = kv.value
+            }
+
+            delay(5 * 60 * 1000L) // Refresh every 5 minutes
+        }
+    }
 
     private object GlobalPlayerCacheListener : RedisListener("redivelocity:players") {
         override fun onMessage(message: String) {
@@ -40,32 +51,31 @@ object GlobalPlayerCache {
                         val uuid = UUID.fromString(jMsg.getString("uuid"))
                         val username = jMsg.getString("username")
 
-                        GlobalPlayerCache.players[uuid] = username
+                        players[uuid] = username
                     }
                     "DISCONNECT" -> {
                         val uuid = UUID.fromString(jMsg.getString("uuid"))
 
-                        GlobalPlayerCache.players.remove(uuid)
+                        players.remove(uuid)
                     }
                 }
             }
         }
     }
 
-    init {
+    fun register() {
+        GlobalPlayerCacheListener
         RediVelocityCoroutineScope.launch(Dispatchers.IO) {
             RediVelocity.instance.lettuceClient.commands.hgetall("redivelocity:player:names").collect { kv ->
                 players[UUID.fromString(kv.key)] = kv.value
             }
         }
+        job.start()
     }
 
-    fun register() {
-        GlobalPlayerCacheListener
-    }
-
-    fun unregister() {
+    suspend fun unregister() {
         RedisListener.unregisterListener(GlobalPlayerCacheListener)
+        job.cancelAndJoin()
     }
 
     fun getPlayers(): ConcurrentHashMap<UUID, String> = players

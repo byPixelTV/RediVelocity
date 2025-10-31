@@ -17,6 +17,7 @@
 package dev.bypixel.redivelocity.heartbeat
 
 import dev.bypixel.redivelocity.RediVelocity
+import dev.bypixel.redivelocity.util.RediVelocityLogger
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,8 +36,11 @@ object HeartbeatScheduler {
             RediVelocity.instance.lettuceClient.commands.hset("redivelocity:heartbeats", RediVelocity.instance.proxyId, System.currentTimeMillis().toString())
 
             val leaderProxy = RediVelocity.instance.lettuceClient.commands.get("redivelocity:leader")
-                ?: // No leader present, skip heartbeat check
+
+            if (leaderProxy == null) {
+                delay(10000L)
                 continue
+            }
 
             if (RediVelocity.instance.proxyId == leaderProxy) {
                 cleanupProxies()
@@ -47,17 +51,15 @@ object HeartbeatScheduler {
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
     private suspend fun cleanupProxies() {
-        val activeProxies = RediVelocity.instance.lettuceClient.commands.hkeys("redivelocity:proxies").toList()
         val heartbeats = mutableMapOf<String, Long?>()
 
         RediVelocity.instance.lettuceClient.commands.hgetall("redivelocity:heartbeats").collect {
             heartbeats[it.key] = it.value.toLongOrNull()
         }
 
-
         val currentTime = System.currentTimeMillis()
 
-        for (proxyId in activeProxies) {
+        for (proxyId in heartbeats.keys) {
             val heartbeatStr = heartbeats[proxyId]
 
             if (heartbeatStr == null || currentTime - heartbeatStr > 30000) {

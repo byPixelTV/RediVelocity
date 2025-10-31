@@ -18,18 +18,22 @@ package dev.bypixel.redivelocity.command.sub.proxy
 
 import dev.bypixel.redivelocity.RediVelocity
 import dev.bypixel.redivelocity.RediVelocityCoroutineScope
+import dev.bypixel.redivelocity.cache.ProxyCache
+import dev.dejvokep.boostedyaml.route.Route
 import dev.jorel.commandapi.CommandAPICommand
 import dev.jorel.commandapi.executors.CommandExecutor
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import net.kyori.adventure.text.minimessage.MiniMessage
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 
 object ProxyListCommand {
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
     fun proxyListCommand() : CommandAPICommand {
         return CommandAPICommand("list")
             .withPermission("redivelocity.command.proxy.list")
-            .executes(CommandExecutor { sender, args ->
+            .executes(CommandExecutor { sender, _ ->
                 RediVelocityCoroutineScope.launch(Dispatchers.IO) {
                     val proxyPlayercountMap = mutableMapOf<String, Int>()
 
@@ -37,9 +41,31 @@ object ProxyListCommand {
                         proxyPlayercountMap[kv.key] = kv.value.toInt()
                     }
 
-                    val proxies = proxyPlayercountMap.keys.toList()
+                    val proxies = ProxyCache.getProxies()
 
+                    val proxyMsgComponentStrings = mutableListOf<String>()
 
+                    proxyMsgComponentStrings.add(
+                        RediVelocity.instance.messageConfig.getString(Route.fromString("commands.redivelocity.proxy.list.msg"))
+                    )
+
+                    proxies.forEach { proxy ->
+                        val playercount = proxyPlayercountMap[proxy] ?: 0
+
+                        proxyMsgComponentStrings.add(
+                            RediVelocity.instance.messageConfig.getString(Route.fromString("commands.redivelocity.proxy.list.proxy_entry"))
+                                .replace("<proxy>", proxy)
+                                .replace("<player_count>", playercount.toString())
+                        )
+                    }
+
+                    sender.sendMessage(
+                        MiniMessage.miniMessage().deserialize(
+                            proxyMsgComponentStrings.joinToString("<br>"),
+                            Placeholder.parsed("prefix", RediVelocity.instance.messageConfig.getString(Route.fromString("prefix"))),
+                            Placeholder.unparsed("all_proxies", proxies.size.toString()),
+                        )
+                    )
                 }
             })
     }

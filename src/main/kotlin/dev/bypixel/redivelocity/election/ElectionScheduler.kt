@@ -41,6 +41,7 @@ object ElectionScheduler {
 
             if (activeProxies.isEmpty()) {
                 // No active proxies, skip election and wait for the next cycle
+                delay(15000)
                 continue
             }
 
@@ -57,6 +58,7 @@ object ElectionScheduler {
             }
 
             if (currentLeader != RediVelocity.instance.proxyId) {
+                delay(15000)
                 continue
             }
 
@@ -110,6 +112,7 @@ object ElectionScheduler {
                         ), "redivelocity:leader-election")
                     }
 
+                    delay(15000)
                     continue
                 }
 
