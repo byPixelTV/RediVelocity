@@ -51,6 +51,7 @@ import dev.jorel.commandapi.CommandAPI
 import dev.jorel.commandapi.CommandAPIVelocityConfig
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.toList
 import org.bxteam.quark.velocity.VelocityLibraryManager
 import org.json.JSONObject
 import org.slf4j.LoggerFactory
@@ -230,6 +231,19 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
             if (lettuceClient.commands.get("redivelocity:leader") == proxyId) {
                 lettuceClient.commands.del("redivelocity:leader")
             }
+            if (lettuceClient.commands.hvals("redivelocity:proxies").toList().isEmpty()) {
+                RediVelocityLogger.info("Last proxy shutting down, clearing all RediVelocity data...")
+                lettuceClient.commands.del(
+                    "redivelocity:proxy:players",
+                    "redivelocity:proxy:player-counts",
+                    "redivelocity:proxy:heartbeats",
+                    "redivelocity:player:servers",
+                    "redivelocity:proxies",
+                    "redivelocity:global:playercount",
+                    "redivelocity:player:names",
+                    "redivelocity:leader",
+                )
+            }
 
             CommandAPI.onDisable()
 
@@ -246,7 +260,6 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
             ProxyCache.unregister()
 
             lettuceClient.close()
-            RediVelocityCoroutineScope.coroutineContext.cancelChildren()
         }
     }
 }
