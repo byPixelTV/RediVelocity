@@ -1,4 +1,4 @@
-config-version: 1
+config-version: 2
 
 debug-mode: false # enable to log additional debug information to the console
 
@@ -23,7 +23,7 @@ update-check:
   check-interval: 3600 # in seconds
 
 playercount-sync:
-  enable: true
+  enabled: true
   use-backend-server-count: false # if enabled, the global player count will be the sum of players on the specified backend servers instead of the proxies
   backend-server-names: # list of backend server names to include in the player count (only used if use-backend-server-count is true). add an entry contain '*' to include all backend servers. regex is supported
     - "server-1"
