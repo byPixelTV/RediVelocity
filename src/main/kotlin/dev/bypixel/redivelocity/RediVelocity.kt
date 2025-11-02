@@ -179,12 +179,12 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
                     put("action", "ADD")
                     put("id", proxyId)
                 }, "redivelocity:proxy-events")
-        }
 
-        HeartbeatScheduler.job.start()
-        ElectionScheduler.job.start()
-        PlayercountScheduler.proxyPlayerCountUpdateScheduler.start()
-        PlayercountScheduler.globalPlayerCountCalcScheduler.start()
+            HeartbeatScheduler.job.start()
+            ElectionScheduler.job.start()
+            PlayercountScheduler.proxyPlayerCountUpdateScheduler.start()
+            PlayercountScheduler.globalPlayerCountCalcScheduler.start()
+        }
 
         RediVelocityLogger.success("RediVelocity v${proxy.pluginManager.getPlugin("redivelocity").get().description.version.orElse("unknown")} has been enabled!")
 
