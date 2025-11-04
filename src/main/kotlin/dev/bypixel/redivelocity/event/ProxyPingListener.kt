@@ -27,7 +27,7 @@ object ProxyPingListener {
     fun onProxyPing(event: ProxyPingEvent) {
         if (RediVelocity.instance.config.getBoolean(Route.fromString("playercount-sync.use-backend-server-count"))) {
             val includedBackendServers = RediVelocity.instance.config.getStringList(
-                Route.fromString("playercount-sync.included-backend-servers")
+                Route.fromString("playercount-sync.backend-server-names")
             )
 
             val allServers = RediVelocity.instance.proxy.allServers
