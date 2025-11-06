@@ -95,7 +95,7 @@ dependencies {
 
     quark("com.squareup.okhttp3:okhttp:5.3.0")
 
-    implementation("dev.bypixel:LettuceWrapper:0.1.1")
+    implementation("dev.bypixel:LettuceWrapper:0.2.0")
     quark("io.lettuce:lettuce-core:7.0.0.RELEASE") {
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-reactive")
