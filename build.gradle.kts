@@ -93,7 +93,7 @@ dependencies {
 
     quark("org.json:json:20250517")
 
-    quark("com.squareup.okhttp3:okhttp:5.3.0")
+    quark("com.squareup.okhttp3:okhttp:5.3.1")
 
     implementation("dev.bypixel:LettuceWrapper:0.2.0")
     quark("io.lettuce:lettuce-core:7.0.0.RELEASE") {
@@ -112,7 +112,7 @@ dependencies {
     compileOnly("de.vulpescloud", "bridge", vulpesCloudVersion)
     compileOnly("de.vulpescloud", "api", vulpesCloudVersion)
 
-    val cloudnetVersion = "4.0.0-RC15-SNAPSHOT"
+    val cloudnetVersion = "4.0.0-RC16-SNAPSHOT"
     compileOnly("eu.cloudnetservice.cloudnet", "bridge-api", cloudnetVersion)
     compileOnly("eu.cloudnetservice.cloudnet", "driver-api", cloudnetVersion)
     compileOnly("eu.cloudnetservice.cloudnet", "wrapper-jvm-api", cloudnetVersion)
