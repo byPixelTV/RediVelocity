@@ -51,7 +51,7 @@ fun getLatestTag(): String {
             // no tag → default to 0.0.1 + commit
             "0.0.1+$commit"
         }
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         return "unknown"
     }
 }
@@ -120,8 +120,6 @@ dependencies {
 
 quark {
     platform = "velocity"
-
-    libsFolder = "libraries"
 
     repositories {
         includeProjectRepositories()
