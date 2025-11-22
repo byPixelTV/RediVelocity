@@ -22,6 +22,7 @@ import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
 import com.velocitypowered.api.proxy.ProxyServer
 import dev.bypixel.lettucewrapper.LettuceRedisClient
+import dev.bypixel.lettucewrapper.RedisCredentials
 import dev.bypixel.lettucewrapper.listener.RedisListener
 import dev.bypixel.redivelocity.cache.PlayerCache
 import dev.bypixel.redivelocity.cache.ProxyCache
@@ -117,7 +118,13 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
         val redisDatabase = config.getInt(Route.fromString("redis.database"), 0)
         val redisUser = config.getString(Route.fromString("redis.username"), null)
 
-        lettuceClient = LettuceRedisClient(redisHost, redisPort, redisPassword, RediVelocityCoroutineScope, redisUser, redisDatabase)
+        lettuceClient = LettuceRedisClient(RedisCredentials(
+            redisHost,
+            redisPort,
+            redisUser,
+            redisPassword,
+            redisDatabase
+        ), RediVelocityCoroutineScope)
 
         RedisListener.setLettuceClient(lettuceClient)
 
