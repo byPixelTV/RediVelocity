@@ -80,6 +80,10 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
     }
 
     init {
+        System.setProperty("io.lettuce.core.epoll", "false");
+        System.setProperty("io.lettuce.core.iouring", "false");
+        System.setProperty("io.lettuce.core.kqueue", "false");
+
         CommandAPI.onLoad(CommandAPIVelocityConfig(proxy, this).silentLogs(true).verboseOutput(true).setNamespace("redivelocity"))
     }
 
