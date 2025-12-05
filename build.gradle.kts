@@ -2,7 +2,7 @@ import org.apache.tools.ant.filters.ReplaceTokens
 
 plugins {
     kotlin("jvm") version "2.2.21"
-    id("com.gradleup.shadow") version "9.2.2"
+    id("com.gradleup.shadow") version "9.3.0"
     id("org.bxteam.quark") version "1.3.0"
     kotlin("plugin.serialization") version "2.2.21"
 }
