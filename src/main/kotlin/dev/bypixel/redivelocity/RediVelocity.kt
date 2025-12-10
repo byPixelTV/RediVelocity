@@ -37,6 +37,7 @@ import dev.bypixel.redivelocity.feature.globalPlayercount.PlayercountScheduler
 import dev.bypixel.redivelocity.heartbeat.HeartbeatScheduler
 import dev.bypixel.redivelocity.pubsub.KickListener
 import dev.bypixel.redivelocity.pubsub.LeaderElectionListener
+import dev.bypixel.redivelocity.pubsub.PlayercountListener
 import dev.bypixel.redivelocity.util.CloudUtil
 import dev.bypixel.redivelocity.util.ProxyIdGenerator
 import dev.bypixel.redivelocity.util.RediVelocityLogger
@@ -51,8 +52,11 @@ import dev.dejvokep.boostedyaml.settings.updater.UpdaterSettings
 import dev.jorel.commandapi.CommandAPI
 import dev.jorel.commandapi.CommandAPIVelocityConfig
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import org.bxteam.quark.velocity.VelocityLibraryManager
 import org.json.JSONObject
 import org.slf4j.LoggerFactory
@@ -80,9 +84,9 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
     }
 
     init {
-        System.setProperty("io.lettuce.core.epoll", "false");
-        System.setProperty("io.lettuce.core.iouring", "false");
-        System.setProperty("io.lettuce.core.kqueue", "false");
+        System.setProperty("io.lettuce.core.epoll", "false")
+        System.setProperty("io.lettuce.core.iouring", "false")
+        System.setProperty("io.lettuce.core.kqueue", "false")
 
         CommandAPI.onLoad(CommandAPIVelocityConfig(proxy, this).silentLogs(true).verboseOutput(true).setNamespace("redivelocity"))
     }
@@ -153,9 +157,11 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
                 if (ProxyIdGenerator.getExistingIds().contains(configId)) {
                     RediVelocityLogger.error("The configured proxy ID '$configId' is already in use by another proxy! Please choose a unique ID. Will generate a random ID instead.")
                     proxyId = ProxyIdGenerator.generate()
+                    RediVelocityLogger.success("Generated random proxy ID: $proxyId")
+                } else {
+                    proxyId = configId
+                    RediVelocityLogger.success("Using configured proxy ID: $proxyId")
                 }
-                proxyId = configId
-                RediVelocityLogger.success("Using configured proxy ID: $proxyId")
             } else {
                 proxyId = ProxyIdGenerator.generate()
                 RediVelocityLogger.success("Generated random proxy ID: $proxyId")
@@ -208,6 +214,7 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
 
             KickListener
             LeaderElectionListener
+            PlayercountListener
 
             RediVelocityCommand().register()
             FindCommand().register()
@@ -260,6 +267,7 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
 
             RedisListener.unregisterListener(KickListener)
             RedisListener.unregisterListener(LeaderElectionListener)
+            RedisListener.unregisterListener(PlayercountListener)
             ElectionScheduler.job.cancelAndJoin()
             HeartbeatScheduler.job.cancelAndJoin()
             if (config.getBoolean(Route.fromString("update-check.enabled"))) {

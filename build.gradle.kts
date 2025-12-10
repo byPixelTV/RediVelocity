@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2024-present byPixelTV & contributors.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ *  along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
 import org.apache.tools.ant.filters.ReplaceTokens
 
 plugins {
@@ -66,6 +82,10 @@ repositories {
         name = "bypixelRepoReleases"
         url = uri("https://repo.bypixel.dev/releases")
     }
+    maven {
+        name = "bypixelRepoSnapshots"
+        url = uri("https://repo.bypixel.dev/snapshots")
+    }
 
     // maven central releases
     mavenCentral()
@@ -95,7 +115,7 @@ dependencies {
 
     quark("com.squareup.okhttp3:okhttp:5.3.2")
 
-    implementation("dev.bypixel:LettuceWrapper:0.3.2")
+    implementation("dev.bypixel:LettuceWrapper:0.3.2+13f806a")
     quark("io.lettuce:lettuce-core:7.2.0.RELEASE") {
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-reactive")

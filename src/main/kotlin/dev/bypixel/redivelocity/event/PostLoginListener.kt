@@ -20,6 +20,7 @@ import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.connection.PostLoginEvent
 import dev.bypixel.redivelocity.RediVelocity
 import dev.bypixel.redivelocity.RediVelocityCoroutineScope
+import dev.bypixel.redivelocity.feature.globalPlayercount.PlayercountUtil
 import dev.bypixel.redivelocity.util.UpdateUtil
 import dev.bypixel.redivelocity.util.Version
 import dev.dejvokep.boostedyaml.route.Route
@@ -81,6 +82,12 @@ object PostLoginListener {
                 "redivelocity:proxy:players", player.uniqueId.toString(),
                 RediVelocity.instance.proxyId
             )
+
+            RediVelocity.instance.lettuceClient.sendMessage(JSONObject().apply {
+                put("action", "UPDATE")
+            }, "redivelocity:global-player-updates")
+
+            PlayercountUtil.setProxyPlayercount()
 
             RediVelocity.instance.lettuceClient.sendMessage(JSONObject().apply {
                 put("action", "POST_LOGIN")

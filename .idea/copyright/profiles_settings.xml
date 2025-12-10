@@ -1,3 +1,7 @@
 <component name="CopyrightManager">
-  <settings default="RediVelocity" />
+  <settings default="RediVelocity">
+    <module2copyright>
+      <element module="All" copyright="RediVelocity" />
+    </module2copyright>
+  </settings>
 </component>

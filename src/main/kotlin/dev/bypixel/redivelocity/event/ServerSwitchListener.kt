@@ -37,6 +37,9 @@ object ServerSwitchListener {
 
         RediVelocityCoroutineScope.launch(Dispatchers.IO) {
             RediVelocity.instance.lettuceClient.sendMessage(JSONObject().apply {
+                put("action", "UPDATE")
+            }, "redivelocity:global-player-updates")
+            RediVelocity.instance.lettuceClient.sendMessage(JSONObject().apply {
                 put("action", "SERVER_SWITCH")
                 put("uuid", player.uniqueId.toString())
                 put("username", player.username)

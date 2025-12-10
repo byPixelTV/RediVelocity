@@ -18,32 +18,41 @@ package dev.bypixel.redivelocity.feature.globalPlayercount
 
 import dev.bypixel.redivelocity.RediVelocity
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.withContext
 
 object PlayercountUtil {
     var globalPlayercountCache = 0L
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
-    suspend fun calcGlobalPlayercount() : Long {
+    suspend fun calcGlobalPlayercount() : Long = withContext(Dispatchers.IO) {
         var playercount = 0L
 
         RediVelocity.instance.lettuceClient.commands.hvals("redivelocity:proxy:player-counts").toList().forEach {
             playercount += it.toLong()
         }
 
+        globalPlayercountCache = 0L
+
         globalPlayercountCache = playercount
 
-        return playercount
+        playercount
     }
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
-    suspend fun getProxyPlayercount(proxyId: String) : Long {
+    suspend fun setProxyPlayercount() = withContext(Dispatchers.IO) {
+        RediVelocity.instance.lettuceClient.commands.hset("redivelocity:proxy:player-counts", RediVelocity.instance.proxyId, RediVelocity.instance.proxy.allPlayers.size.toString())
+    }
+
+    @OptIn(ExperimentalLettuceCoroutinesApi::class)
+    suspend fun getProxyPlayercount(proxyId: String) : Long = withContext(Dispatchers.IO) {
         val count = RediVelocity.instance.lettuceClient.commands.hget("redivelocity:proxy:player-counts", proxyId)
-        return count?.toLong() ?: 0L
+        count?.toLong() ?: 0L
     }
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
-    suspend fun getPlayercountMap() : Map<String, Long> {
+    suspend fun getPlayercountMap() : Map<String, Long> = withContext(Dispatchers.IO) {
         val result = mutableMapOf<String, Long>()
 
         RediVelocity.instance.lettuceClient.commands.hgetall("redivelocity:proxy:player-counts")
@@ -51,6 +60,6 @@ object PlayercountUtil {
                 result[kv.key] = kv.value.toLong()
             }
 
-        return result
+        result
     }
 }

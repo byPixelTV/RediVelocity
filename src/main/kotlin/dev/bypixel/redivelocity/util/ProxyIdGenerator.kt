@@ -18,7 +18,9 @@ package dev.bypixel.redivelocity.util
 
 import dev.bypixel.redivelocity.RediVelocity
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.withContext
 
 object ProxyIdGenerator {
     private const val CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
@@ -26,7 +28,7 @@ object ProxyIdGenerator {
     private const val PROXIES_KEY = "redivelocity:proxies"
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
-    suspend fun generate(): String {
+    suspend fun generate(): String = withContext(Dispatchers.IO) {
         val proxies = RediVelocity.instance.lettuceClient.commands.hvals(PROXIES_KEY).toList()
 
         var id: String
@@ -34,12 +36,12 @@ object ProxyIdGenerator {
             id = generateRandomString()
         } while (proxies.contains(id))
 
-        return "proxy-$id"
+        "proxy-$id"
     }
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
-    suspend fun getExistingIds(): List<String> {
-        return RediVelocity.instance.lettuceClient.commands.hvals(PROXIES_KEY).toList()
+    suspend fun getExistingIds(): List<String> = withContext(Dispatchers.IO) {
+        RediVelocity.instance.lettuceClient.commands.hvals(PROXIES_KEY).toList()
     }
 
     fun generateRandomString(): String {
