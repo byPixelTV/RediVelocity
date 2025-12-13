@@ -20,6 +20,7 @@ import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.player.ServerConnectedEvent
 import dev.bypixel.redivelocity.RediVelocity
 import dev.bypixel.redivelocity.RediVelocityCoroutineScope
+import dev.bypixel.redivelocity.feature.globalPlayercount.PlayercountUtil
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -32,10 +33,11 @@ object ServerSwitchListener {
         val player = event.player
 
         val previousServer =
-            event.previousServer.map { server -> server.serverInfo.name }.orElse("null");
+            event.previousServer.map { server -> server.serverInfo.name }.orElse("null")
         val newServer = event.server
 
         RediVelocityCoroutineScope.launch(Dispatchers.IO) {
+            PlayercountUtil.setProxyPlayercount()
             RediVelocity.instance.lettuceClient.sendMessage(JSONObject().apply {
                 put("action", "UPDATE")
             }, "redivelocity:global-player-updates")

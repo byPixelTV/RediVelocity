@@ -20,6 +20,7 @@ import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.connection.DisconnectEvent
 import dev.bypixel.redivelocity.RediVelocity
 import dev.bypixel.redivelocity.RediVelocityCoroutineScope
+import dev.bypixel.redivelocity.feature.globalPlayercount.PlayercountUtil
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -32,6 +33,7 @@ object DisconnectListener {
         val player = event.player
 
         RediVelocityCoroutineScope.launch(Dispatchers.IO) {
+            PlayercountUtil.setProxyPlayercount()
             RediVelocity.instance.lettuceClient.sendMessage(JSONObject().apply {
                 put("action", "UPDATE")
             }, "redivelocity:global-player-updates")
@@ -45,7 +47,6 @@ object DisconnectListener {
                 put("clientBrand", player.clientBrand)
                 put("timestamp", System.currentTimeMillis())
             }, "redivelocity:players")
-
             RediVelocity.instance.lettuceClient.commands.hdel(
                 "redivelocity:proxy:players", player.uniqueId.toString()
             )
