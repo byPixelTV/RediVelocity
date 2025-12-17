@@ -107,7 +107,7 @@ repositories {
 dependencies {
     compileOnly("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
 
-    implementation("dev.jorel:commandapi-velocity-shade:11.0.0")
+    implementation("dev.jorel:commandapi-velocity-shade:11.1.0")
 
     implementation("dev.dejvokep:boosted-yaml:1.3.7")
 
