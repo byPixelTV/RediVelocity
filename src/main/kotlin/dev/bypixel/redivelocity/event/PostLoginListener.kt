@@ -88,6 +88,7 @@ object PostLoginListener {
             }, "redivelocity:global-player-updates")
 
             PlayercountUtil.setProxyPlayercount()
+            PlayercountUtil.calcGlobalPlayercount()
 
             RediVelocity.instance.lettuceClient.sendMessage(JSONObject().apply {
                 put("action", "POST_LOGIN")

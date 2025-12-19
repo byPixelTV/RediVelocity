@@ -34,6 +34,7 @@ object DisconnectListener {
 
         RediVelocityCoroutineScope.launch(Dispatchers.IO) {
             PlayercountUtil.setProxyPlayercount()
+            PlayercountUtil.calcGlobalPlayercount()
             RediVelocity.instance.lettuceClient.sendMessage(JSONObject().apply {
                 put("action", "UPDATE")
             }, "redivelocity:global-player-updates")
