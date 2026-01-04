@@ -28,6 +28,7 @@ import dev.bypixel.redivelocity.cache.PlayerCache
 import dev.bypixel.redivelocity.cache.ProxyCache
 import dev.bypixel.redivelocity.command.FindCommand
 import dev.bypixel.redivelocity.command.RediVelocityCommand
+import dev.bypixel.redivelocity.connection.RedisConnectionTask
 import dev.bypixel.redivelocity.election.ElectionScheduler
 import dev.bypixel.redivelocity.event.DisconnectListener
 import dev.bypixel.redivelocity.event.PostLoginListener
@@ -199,6 +200,7 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
 
             HeartbeatScheduler.job.start()
             ElectionScheduler.job.start()
+            RedisConnectionTask.job.start()
             PlayercountScheduler.proxyPlayerCountUpdateScheduler.start()
             PlayercountScheduler.globalPlayerCountCalcScheduler.start()
         }
@@ -270,6 +272,7 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
             RedisListener.unregisterListener(PlayercountListener)
             ElectionScheduler.job.cancelAndJoin()
             HeartbeatScheduler.job.cancelAndJoin()
+            RedisConnectionTask.job.cancelAndJoin()
             if (config.getBoolean(Route.fromString("update-check.enabled"))) {
                 UpdateUtil.updateJob.cancelAndJoin()
             }
