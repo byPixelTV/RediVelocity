@@ -18,7 +18,7 @@ import org.apache.tools.ant.filters.ReplaceTokens
 
 plugins {
     kotlin("jvm") version "2.3.0"
-    id("com.gradleup.shadow") version "9.3.0"
+    id("com.gradleup.shadow") version "9.3.1"
     id("org.bxteam.quark") version "1.3.0"
     kotlin("plugin.serialization") version "2.3.0"
 }
@@ -115,7 +115,7 @@ dependencies {
 
     quark("com.squareup.okhttp3:okhttp:5.3.2")
 
-    implementation("dev.bypixel:LettuceWrapper:0.3.2+94e8724")
+    implementation("dev.bypixel:LettuceWrapper:0.3.2+9882376")
     quark("io.lettuce:lettuce-core:7.2.1.RELEASE") {
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-reactive")
