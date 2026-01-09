@@ -15,10 +15,11 @@
  */
 
 import org.apache.tools.ant.filters.ReplaceTokens
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("jvm") version "2.3.0"
-    id("com.gradleup.shadow") version "9.3.0"
+    id("com.gradleup.shadow") version "9.3.1"
     id("org.bxteam.quark") version "1.3.0"
     kotlin("plugin.serialization") version "2.3.0"
 }
@@ -173,6 +174,11 @@ tasks {
     compileJava {
         options.encoding = "UTF-8"
         options.release.set(21)
+    }
+    compileKotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_21)
+        }
     }
 
     processResources {
