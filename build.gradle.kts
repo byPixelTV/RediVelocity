@@ -124,7 +124,7 @@ dependencies {
 
     quark("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     quark("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.10.2")
-    quark("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+    quark("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
     implementation(kotlin("stdlib"))
 
     compileOnly("app.simplecloud.api.platform:velocity:0.0.5-dev.1745077021664-28517d8")
