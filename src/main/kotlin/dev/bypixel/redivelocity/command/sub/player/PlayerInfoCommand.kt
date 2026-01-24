@@ -44,9 +44,9 @@ object PlayerInfoCommand {
             .executes(CommandExecutor { sender, args ->
                 RediVelocityCoroutineScope.launch(Dispatchers.IO) {
                     val playerName = args[0] as String
-                    val playerUuid = RediVelocity.instance.lettuceClient.commands.hgetall("redivelocity:player:names")
-                        .toList()
-                        .firstOrNull { it.value == playerName }?.key
+                    val playerUuid = RediVelocity.instance.lettuceClient.withCoroutines {
+                        it.hgetall("redivelocity:player:names")
+                    }.toList().firstOrNull { it.value == playerName }?.key
 
                     if (playerUuid == null) {
                         sender.sendMessage(
@@ -59,11 +59,17 @@ object PlayerInfoCommand {
                         return@launch
                     }
 
-                    val playerIp = RediVelocity.instance.lettuceClient.commands.hget("redivelocity:player:ips",
-                        playerUuid
-                    )
-                    val playerServer = RediVelocity.instance.lettuceClient.commands.hget("redivelocity:player:servers", playerUuid)
-                    val playerProxy = RediVelocity.instance.lettuceClient.commands.hget("redivelocity:proxy:players", playerUuid)
+                    val playerIp = RediVelocity.instance.lettuceClient.withCoroutines {
+                        it.hget("redivelocity:player:ips",
+                            playerUuid
+                        )
+                    }
+                    val playerServer = RediVelocity.instance.lettuceClient.withCoroutines {
+                        it.hget("redivelocity:player:servers", playerUuid)
+                    }
+                    val playerProxy = RediVelocity.instance.lettuceClient.withCoroutines {
+                        it.hget("redivelocity:proxy:players", playerUuid)
+                    }
 
                     sender.sendMessage(
                         MiniMessage.miniMessage().deserialize(

@@ -53,11 +53,15 @@ object ProxyInfoCommand {
                         return@launch
                     }
 
-                    val leaderProxy = RediVelocity.instance.lettuceClient.commands.get("redivelocity:leader")
+                    val leaderProxy = RediVelocity.instance.lettuceClient.withCoroutines {
+                        it.get("redivelocity:leader")
+                    }
                         ?: throw IllegalStateException("Leader proxy is not set in Redis.")
 
-                    val proxyPlayerCount = RediVelocity.instance.lettuceClient.commands.hget("redivelocity:proxy:player-counts", args[0] as String)
-                        ?: "0"
+                    val proxyPlayerCount = RediVelocity.instance.lettuceClient.withCoroutines {
+                        it.hget("redivelocity:proxy:player-counts", args[0] as String)
+                            ?: "0"
+                    }
 
                     sender.sendMessage(
                         MiniMessage.miniMessage().deserialize(

@@ -50,23 +50,25 @@ object LeaderElectionListener : RedisListener("redivelocity:leader-election") {
                 }
                 "VOTE_REQUEST" -> {
                     RediVelocityCoroutineScope.launch(Dispatchers.IO) {
-                        val allProxies = ProxyIdGenerator.getExistingIds().filter { it != RediVelocity.instance.proxyId }
+                        RediVelocity.instance.lettuceClient.withCoroutines { cnx ->
+                            val allProxies = ProxyIdGenerator.getExistingIds().filter { it != RediVelocity.instance.proxyId }
 
-                        if (allProxies.isEmpty()) {
-                            return@launch
+                            if (allProxies.isEmpty()) {
+                                return@withCoroutines
+                            }
+
+                            val rnd = SecureRandom()
+                            val randomProxy = allProxies[rnd.nextInt(allProxies.size)]
+                            val delayMs = 50L + rnd.nextInt(201) // 50..250 ms
+                            delay(delayMs)
+
+                            val votesForProxy = cnx
+                                .hget("redivelocity:votes", randomProxy)
+                                ?.toIntOrNull() ?: 0
+
+                            cnx
+                                .hset("redivelocity:votes", randomProxy, (votesForProxy + 1).toString())
                         }
-
-                        val rnd = SecureRandom()
-                        val randomProxy = allProxies[rnd.nextInt(allProxies.size)]
-                        val delayMs = 50L + rnd.nextInt(201) // 50..250 ms
-                        delay(delayMs)
-
-                        val votesForProxy = RediVelocity.instance.lettuceClient.commands
-                            .hget("redivelocity:votes", randomProxy)
-                            ?.toIntOrNull() ?: 0
-
-                        RediVelocity.instance.lettuceClient.commands
-                            .hset("redivelocity:votes", randomProxy, (votesForProxy + 1).toString())
                     }
                 }
             }

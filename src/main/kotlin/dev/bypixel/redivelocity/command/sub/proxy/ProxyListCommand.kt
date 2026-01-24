@@ -37,8 +37,10 @@ object ProxyListCommand {
                 RediVelocityCoroutineScope.launch(Dispatchers.IO) {
                     val proxyPlayercountMap = mutableMapOf<String, Int>()
 
-                    RediVelocity.instance.lettuceClient.commands.hgetall("redivelocity:proxy:player-counts").collect { kv ->
-                        proxyPlayercountMap[kv.key] = kv.value.toInt()
+                    RediVelocity.instance.lettuceClient.withCoroutines {
+                        it.hgetall("redivelocity:proxy:player-counts").collect { kv ->
+                            proxyPlayercountMap[kv.key] = kv.value.toInt()
+                        }
                     }
 
                     val proxies = ProxyCache.getProxies()

@@ -48,15 +48,21 @@ object DisconnectListener {
                 put("clientBrand", player.clientBrand)
                 put("timestamp", System.currentTimeMillis())
             }, "redivelocity:players")
-            RediVelocity.instance.lettuceClient.commands.hdel(
-                "redivelocity:proxy:players", player.uniqueId.toString()
-            )
-            RediVelocity.instance.lettuceClient.commands.hdel(
-                "redivelocity:player:servers", player.uniqueId.toString()
-            )
-            RediVelocity.instance.lettuceClient.commands.hdel(
-                "redivelocity:player:names", player.uniqueId.toString()
-            )
+            RediVelocity.instance.lettuceClient.withCoroutines {
+                it.hdel(
+                    "redivelocity:proxy:players", player.uniqueId.toString()
+                )
+            }
+            RediVelocity.instance.lettuceClient.withCoroutines {
+                it.hdel(
+                    "redivelocity:player:servers", player.uniqueId.toString()
+                )
+            }
+            RediVelocity.instance.lettuceClient.withCoroutines {
+                it.hdel(
+                    "redivelocity:player:names", player.uniqueId.toString()
+                )
+            }
         }
     }
 }

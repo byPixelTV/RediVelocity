@@ -54,7 +54,9 @@ object ServerSwitchListener {
                 put("toServer", newServer.serverInfo.name)
             }, "redivelocity:players")
 
-            RediVelocity.instance.lettuceClient.commands.hset("redivelocity:player:servers", player.uniqueId.toString(), newServer.serverInfo.name)
+            RediVelocity.instance.lettuceClient.withCoroutines {
+                it.hset("redivelocity:player:servers", player.uniqueId.toString(), newServer.serverInfo.name)
+            }
         }
     }
 }

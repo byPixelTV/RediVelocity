@@ -33,8 +33,10 @@ object PlayerCache {
         while (isActive) {
             players.clear()
 
-            RediVelocity.instance.lettuceClient.commands.hgetall("redivelocity:player:names").collect { kv ->
-                players[UUID.fromString(kv.key)] = kv.value
+            RediVelocity.instance.lettuceClient.withCoroutines {
+                it.hgetall("redivelocity:player:names").collect { kv ->
+                    players[UUID.fromString(kv.key)] = kv.value
+                }
             }
 
             delay(5 * 60 * 1000L) // Refresh every 5 minutes
@@ -66,8 +68,10 @@ object PlayerCache {
     fun register() {
         GlobalPlayerCacheListener
         RediVelocityCoroutineScope.launch(Dispatchers.IO) {
-            RediVelocity.instance.lettuceClient.commands.hgetall("redivelocity:player:names").collect { kv ->
-                players[UUID.fromString(kv.key)] = kv.value
+            RediVelocity.instance.lettuceClient.withCoroutines {
+                it.hgetall("redivelocity:player:names").collect { kv ->
+                    players[UUID.fromString(kv.key)] = kv.value
+                }
             }
         }
         job.start()

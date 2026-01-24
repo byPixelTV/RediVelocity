@@ -78,10 +78,12 @@ object PostLoginListener {
         }
 
         RediVelocityCoroutineScope.launch(Dispatchers.IO) {
-            RediVelocity.instance.lettuceClient.commands.hset(
-                "redivelocity:proxy:players", player.uniqueId.toString(),
-                RediVelocity.instance.proxyId
-            )
+            RediVelocity.instance.lettuceClient.withCoroutines {
+                it.hset(
+                    "redivelocity:proxy:players", player.uniqueId.toString(),
+                    RediVelocity.instance.proxyId
+                )
+            }
 
             RediVelocity.instance.lettuceClient.sendMessage(JSONObject().apply {
                 put("action", "UPDATE")
@@ -101,8 +103,12 @@ object PostLoginListener {
                 put("timestamp", System.currentTimeMillis())
             }, "redivelocity:players")
 
-            RediVelocity.instance.lettuceClient.commands.hset("redivelocity:player:ips", player.uniqueId.toString(), player.remoteAddress.toString().split(":")[0].substring(1))
-            RediVelocity.instance.lettuceClient.commands.hset("redivelocity:player:names", player.uniqueId.toString(), player.username)
+            RediVelocity.instance.lettuceClient.withCoroutines {
+                it.hset("redivelocity:player:ips", player.uniqueId.toString(), player.remoteAddress.toString().split(":")[0].substring(1))
+            }
+            RediVelocity.instance.lettuceClient.withCoroutines {
+                it.hset("redivelocity:player:names", player.uniqueId.toString(), player.username)
+            }
         }
     }
 }

@@ -31,9 +31,11 @@ object ProxyCache {
         while (isActive) {
             proxies.clear()
 
-            RediVelocity.instance.lettuceClient.commands.hgetall("redivelocity:proxies").collect { kv ->
-                if (!proxies.contains(kv.value)) {
-                    proxies.add(kv.value)
+            RediVelocity.instance.lettuceClient.withCoroutines {
+                it.hgetall("redivelocity:proxies").collect { kv ->
+                    if (!proxies.contains(kv.value)) {
+                        proxies.add(kv.value)
+                    }
                 }
             }
 
@@ -69,9 +71,11 @@ object ProxyCache {
     fun register() {
         GlobalProxyCacheListener
         RediVelocityCoroutineScope.launch(Dispatchers.IO) {
-            RediVelocity.instance.lettuceClient.commands.hgetall("redivelocity:proxies").collect { kv ->
-                if (!proxies.contains(kv.value)) {
-                    proxies.add(kv.value)
+            RediVelocity.instance.lettuceClient.withCoroutines {
+                it.hgetall("redivelocity:proxies").collect { kv ->
+                    if (!proxies.contains(kv.value)) {
+                        proxies.add(kv.value)
+                    }
                 }
             }
         }

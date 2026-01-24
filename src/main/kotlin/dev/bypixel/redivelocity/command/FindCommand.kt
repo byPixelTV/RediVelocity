@@ -45,7 +45,9 @@ class FindCommand {
             .executes(CommandExecutor { sender, args ->
                 RediVelocityCoroutineScope.launch(Dispatchers.IO) {
                     val playerName = args[0] as String
-                    val playerUuid = RediVelocity.instance.lettuceClient.commands.hgetall("redivelocity:player:names")
+                    val playerUuid = RediVelocity.instance.lettuceClient.withCoroutines {
+                        it.hgetall("redivelocity:player:names")
+                    }
                         .toList()
                         .firstOrNull { it.value == playerName }?.key
 
@@ -60,7 +62,9 @@ class FindCommand {
                         return@launch
                     }
 
-                    val currentProxy = RediVelocity.instance.lettuceClient.commands.hget("redivelocity:proxy:players", playerUuid)
+                    val currentProxy = RediVelocity.instance.lettuceClient.withCoroutines {
+                        it.hget("redivelocity:proxy:players", playerUuid)
+                    }
                         ?: run {
                             sender.sendMessage(
                                 MiniMessage.miniMessage().deserialize(
@@ -72,7 +76,9 @@ class FindCommand {
                             return@launch
                         }
 
-                    val currentServer = RediVelocity.instance.lettuceClient.commands.hget("redivelocity:player:servers", playerUuid)
+                    val currentServer = RediVelocity.instance.lettuceClient.withCoroutines {
+                        it.hget("redivelocity:player:servers", playerUuid)
+                    }
                         ?: "Unknown"
 
                     sender.sendMessage(

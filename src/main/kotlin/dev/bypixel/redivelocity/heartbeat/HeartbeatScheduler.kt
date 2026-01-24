@@ -37,21 +37,24 @@ object HeartbeatScheduler {
 
         while (isActive) {
             val proxyId = RediVelocity.instance.proxyId
-            val commands = RediVelocity.instance.lettuceClient.commands
 
             try {
                 val now = System.currentTimeMillis()
 
                 // atomic heartbeat lease
-                commands.hset("redivelocity:heartbeats", proxyId, now.toString())
-                commands.pexpire("redivelocity:heartbeats", CLEANUP_THRESHOLD_MS)
+                RediVelocity.instance.lettuceClient.withCoroutines {
+                    it.hset("redivelocity:heartbeats", proxyId, now.toString())
+                    it.pexpire("redivelocity:heartbeats", CLEANUP_THRESHOLD_MS)
+                }
 
             } catch (t: Throwable) {
                 RediVelocityLogger.warn("Heartbeat write failed: ${t.message}")
             }
 
             val leaderId = try {
-                commands.get("redivelocity:leader")
+                RediVelocity.instance.lettuceClient.withCoroutines {
+                    it.hget("redivelocity:leader-election", "leader-id")
+                }
             } catch (_: Throwable) {
                 null
             }
@@ -66,76 +69,77 @@ object HeartbeatScheduler {
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
     private suspend fun tryRunCleanupLocked() {
-        val commands = RediVelocity.instance.lettuceClient.commands
-        val leaderId = RediVelocity.instance.proxyId
-        val lock = try {
-            val args = SetArgs().nx().px(15_000)
-            commands.set(CLEANUP_LOCK_KEY, leaderId, args)
-        } catch (e: Throwable) {
-            RediVelocityLogger.warn("Failed to acquire cleanup lock: ${e.message}")
-            return
-        }
-
-        if (lock != "OK") return
-
-        try {
-            cleanupProxies()
-        } finally {
-            try {
-                val value = commands.get(CLEANUP_LOCK_KEY)
-                if (value == leaderId) {
-                    commands.del(CLEANUP_LOCK_KEY)
-                }
+        RediVelocity.instance.lettuceClient.withCoroutines { cnx ->
+            val leaderId = RediVelocity.instance.proxyId
+            val lock = try {
+                val args = SetArgs().nx().px(15_000)
+                cnx.set(CLEANUP_LOCK_KEY, leaderId, args)
             } catch (e: Throwable) {
-                RediVelocityLogger.warn("Cleanup: failed to release lock: ${e.message}")
+                RediVelocityLogger.warn("Failed to acquire cleanup lock: ${e.message}")
+                return@withCoroutines
+            }
+
+            if (lock != "OK") return@withCoroutines
+
+            try {
+                cleanupProxies()
+            } finally {
+                try {
+                    val value = cnx.get(CLEANUP_LOCK_KEY)
+                    if (value == leaderId) {
+                        cnx.del(CLEANUP_LOCK_KEY)
+                    }
+                } catch (e: Throwable) {
+                    RediVelocityLogger.warn("Cleanup: failed to release lock: ${e.message}")
+                }
             }
         }
     }
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
     private suspend fun cleanupProxies() {
-        val commands = RediVelocity.instance.lettuceClient.commands
-        val leader = RediVelocity.instance.proxyId
+        RediVelocity.instance.lettuceClient.withCoroutines { cnx ->
+            val leader = RediVelocity.instance.proxyId
 
-        // 1️⃣ Atomic snapshot
-        val entries = try {
-            commands.hgetall("redivelocity:heartbeats").toList()
-        } catch (t: Throwable) {
-            RediVelocityLogger.warn("Failed to read heartbeats: ${t.message}")
-            return
-        }
+            // 1️⃣ Atomic snapshot
+            val entries = try {
+                cnx.hgetall("redivelocity:heartbeats").toList()
+            } catch (t: Throwable) {
+                RediVelocityLogger.warn("Failed to read heartbeats: ${t.message}")
+                return@withCoroutines
+            }
 
-        val now = System.currentTimeMillis()
+            val now = System.currentTimeMillis()
 
-        for (entry in entries) {
-            val proxyId = entry.key
-            val rawHeartbeat = entry.value
+            for (entry in entries) {
+                val proxyId = entry.key
+                val rawHeartbeat = entry.value
 
-            try {
-                if (proxyId == leader) continue
+                try {
+                    if (proxyId == leader) continue
 
-                val lastSeen = rawHeartbeat.toLongOrNull() ?: continue
+                    val lastSeen = rawHeartbeat.toLongOrNull() ?: continue
 
-                if (now - lastSeen <= CLEANUP_THRESHOLD_MS) continue
+                    if (now - lastSeen <= CLEANUP_THRESHOLD_MS) continue
 
-                val latestStr = commands.hget("redivelocity:heartbeats", proxyId)
-                val latest = latestStr?.toLongOrNull()
+                    val latestStr = cnx.hget("redivelocity:heartbeats", proxyId)
+                    val latest = latestStr?.toLongOrNull()
 
-                if (latest != null && now - latest <= CLEANUP_THRESHOLD_MS) continue
+                    if (latest != null && now - latest <= CLEANUP_THRESHOLD_MS) continue
 
-                RediVelocityLogger.info("CLEANUP: Removing stale proxy: $proxyId")
+                    RediVelocityLogger.info("CLEANUP: Removing stale proxy: $proxyId")
 
-                commands.hdel("redivelocity:proxies", proxyId)
-                commands.hdel("redivelocity:heartbeats", proxyId)
-                commands.hdel("redivelocity:votes", proxyId)
-                commands.hdel("redivelocity:proxy:player-counts", proxyId)
-                RediVelocity.instance.lettuceClient.deleteHashFieldByValueAsync(
-                    "redivelocity:proxy:players", proxyId
-                )
-                commands.srem("redivelocity:existing-proxy-ids", proxyId)
-
-            } catch (e: Throwable) {
-                RediVelocityLogger.warn("Error cleaning proxy $proxyId: ${e.message}")
+                    cnx.hdel("redivelocity:proxies", proxyId)
+                    cnx.hdel("redivelocity:heartbeats", proxyId)
+                    cnx.hdel("redivelocity:votes", proxyId)
+                    cnx.hdel("redivelocity:proxy:player-counts", proxyId)
+                    RediVelocity.instance.lettuceClient.deleteHashFieldByValueAsync(
+                        "redivelocity:proxy:players", proxyId
+                    )
+                    cnx.srem("redivelocity:existing-proxy-ids", proxyId)
+                } catch (e: Throwable) {
+                    RediVelocityLogger.warn("Error cleaning proxy $proxyId: ${e.message}")
+                }
             }
         }
     }

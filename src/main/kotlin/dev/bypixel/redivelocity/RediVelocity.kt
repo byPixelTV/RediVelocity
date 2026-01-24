@@ -126,14 +126,55 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
         val redisPassword = config.getString(Route.fromString("redis.password"), null)
         val redisDatabase = config.getInt(Route.fromString("redis.database"), 0)
         val redisUser = config.getString(Route.fromString("redis.username"), null)
+        val redisSsl = config.getBoolean(Route.fromString("redis.ssl"), false)
+        val redisConnectionTimeout = config.getLong(Route.fromString("redis.connectionTimeout"), 2000L)
+        val redisConnectionPoolSize = config.getInt(Route.fromString("redis.connectionPoolSize"), 10)
+        val redisAllowSelfSignedCertificates = config.getBoolean(Route.fromString("redis.allowSelfSignedCertificates"), false)
+        val redisTrustStorePath = config.getString(Route.fromString("redis.trustStorePath"), null)
+        val redisTrustStorePassword = config.getString(Route.fromString("redis.trustStorePassword"), null)
 
-        lettuceClient = LettuceRedisClient(RedisCredentials(
-            redisHost,
-            redisPort,
-            redisUser,
-            redisPassword,
-            redisDatabase
-        ), RediVelocityCoroutineScope)
+        try {
+            lettuceClient = if (!redisSsl) {
+                LettuceRedisClient(
+                    RedisCredentials(
+                        redisHost,
+                        redisPort,
+                        redisUser,
+                        redisPassword,
+                        redisDatabase,
+                        timeoutMillis = redisConnectionTimeout,
+                    ), RediVelocityCoroutineScope, redisConnectionPoolSize)
+            } else if ((redisTrustStorePath == null || redisTrustStorePassword == null) && redisSsl) {
+                LettuceRedisClient(
+                    RedisCredentials(
+                        redisHost,
+                        redisPort,
+                        redisUser,
+                        redisPassword,
+                        redisDatabase,
+                        true,
+                        redisAllowSelfSignedCertificates,
+                        timeoutMillis = redisConnectionTimeout
+                    ), RediVelocityCoroutineScope, redisConnectionPoolSize)
+            } else {
+                LettuceRedisClient(
+                    RedisCredentials(
+                        redisHost,
+                        redisPort,
+                        redisUser,
+                        redisPassword,
+                        redisDatabase,
+                        true,
+                        redisAllowSelfSignedCertificates,
+                        timeoutMillis = redisConnectionTimeout,
+                        trustStorePath = redisTrustStorePath,
+                        trustStorePassword = redisTrustStorePassword
+                    ), RediVelocityCoroutineScope, redisConnectionPoolSize)
+            }
+        } catch (e: Exception) {
+            RediVelocityLogger.error("Could not connect to the Redis server, please check your configuration.")
+            e.printStackTrace()
+        }
 
         RedisListener.setLettuceClient(lettuceClient)
 
@@ -170,7 +211,9 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
 
             delay(500)
 
-            lettuceClient.commands.hset("redivelocity:proxies", proxyId, proxyId)
+            lettuceClient.withCoroutines {
+                it.hset("redivelocity:proxies", proxyId, proxyId)
+            }
 
             val proxyIdsSize = ProxyIdGenerator.getExistingIds().size
 
@@ -178,18 +221,24 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
 
             if (wasFirstProxy) {
                 RediVelocityLogger.info("This proxy is the first one to connect to Redis, clearing old data...")
-                lettuceClient.commands.set("redivelocity:leader", proxyId)
-                lettuceClient.commands.del(
-                    "redivelocity:proxy:players",
-                    "redivelocity:proxy:player-counts",
-                    "redivelocity:proxy:heartbeats",
-                    "redivelocity:player:servers",
-                    "redivelocity:proxies",
-                    "redivelocity:global:playercount",
-                    "redivelocity:player:names",
-                    "redivelocity:leader"
-                )
-                lettuceClient.commands.hset("redivelocity:proxies", proxyId, proxyId)
+                lettuceClient.withCoroutines {
+                    it.set("redivelocity:leader", proxyId)
+                }
+                lettuceClient.withCoroutines {
+                    it.del(
+                        "redivelocity:proxy:players",
+                        "redivelocity:proxy:player-counts",
+                        "redivelocity:proxy:heartbeats",
+                        "redivelocity:player:servers",
+                        "redivelocity:proxies",
+                        "redivelocity:global:playercount",
+                        "redivelocity:player:names",
+                        "redivelocity:leader"
+                    )
+                }
+                lettuceClient.withCoroutines {
+                    it.hset("redivelocity:proxies", proxyId, proxyId)
+                }
             }
 
             lettuceClient.sendMessage(
@@ -244,25 +293,36 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
                 }, "redivelocity:proxy-events"
             )
 
-            lettuceClient.commands.hdel("redivelocity:proxies", proxyId)
-            lettuceClient.commands.hdel("redivelocity:heartbeats", proxyId)
-            lettuceClient.deleteHashFieldByValueAsync("redivelocity:proxy:players", proxyId)
-            lettuceClient.commands.hdel("redivelocity:proxy:player-counts", proxyId)
-            if (lettuceClient.commands.get("redivelocity:leader") == proxyId) {
-                lettuceClient.commands.del("redivelocity:leader")
+            lettuceClient.withCoroutines {
+                it.hdel("redivelocity:proxies", proxyId)
             }
-            if (lettuceClient.commands.hvals("redivelocity:proxies").toList().isEmpty()) {
+            lettuceClient.withCoroutines {
+                it.hdel("redivelocity:heartbeats", proxyId)
+            }
+            lettuceClient.deleteHashFieldByValueAsync("redivelocity:proxy:players", proxyId)
+            lettuceClient.withCoroutines {
+                it.hdel("redivelocity:proxy:player-counts", proxyId)
+            }
+            if (lettuceClient.withCoroutines { it.get("redivelocity:leader") == proxyId }) {
+                lettuceClient.withCoroutines {
+                    it.del("redivelocity:leader")
+                }
+            }
+
+            if (lettuceClient.withCoroutines { it.hvals("redivelocity:proxies").toList().isEmpty() }) {
                 RediVelocityLogger.info("Last proxy shutting down, clearing all RediVelocity data...")
-                lettuceClient.commands.del(
-                    "redivelocity:proxy:players",
-                    "redivelocity:proxy:player-counts",
-                    "redivelocity:proxy:heartbeats",
-                    "redivelocity:player:servers",
-                    "redivelocity:proxies",
-                    "redivelocity:global:playercount",
-                    "redivelocity:player:names",
-                    "redivelocity:leader",
-                )
+                lettuceClient.withCoroutines {
+                    it.del(
+                        "redivelocity:proxy:players",
+                        "redivelocity:proxy:player-counts",
+                        "redivelocity:proxy:heartbeats",
+                        "redivelocity:player:servers",
+                        "redivelocity:proxies",
+                        "redivelocity:global:playercount",
+                        "redivelocity:player:names",
+                        "redivelocity:leader",
+                    )
+                }
             }
 
             CommandAPI.onDisable()

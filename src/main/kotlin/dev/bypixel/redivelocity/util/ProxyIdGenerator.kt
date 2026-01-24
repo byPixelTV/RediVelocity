@@ -29,7 +29,9 @@ object ProxyIdGenerator {
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
     suspend fun generate(): String = withContext(Dispatchers.IO) {
-        val proxies = RediVelocity.instance.lettuceClient.commands.hvals(PROXIES_KEY).toList()
+        val proxies = RediVelocity.instance.lettuceClient.withCoroutines {
+            it.hvals(PROXIES_KEY).toList()
+        }
 
         var id: String
         do {
@@ -41,7 +43,9 @@ object ProxyIdGenerator {
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
     suspend fun getExistingIds(): List<String> = withContext(Dispatchers.IO) {
-        RediVelocity.instance.lettuceClient.commands.hvals(PROXIES_KEY).toList()
+        RediVelocity.instance.lettuceClient.withCoroutines {
+            it.hvals(PROXIES_KEY).toList()
+        }
     }
 
     fun generateRandomString(): String {
