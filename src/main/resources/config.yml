@@ -30,9 +30,9 @@ playercount-sync:
     - "server-2"
 
 playerversion-check:
-  enabled: true
-  allowed-versions:
-    - 773
+  enabled: false # enable to restrict player versions
+  allowed-versions: # array of allowed Minecraft versions (protocol versions)
+    - 773 # Minecraft 1.21.10
 
 commands: # enable or disable specific commands
   find: true # find players across all proxies and display some information about them
