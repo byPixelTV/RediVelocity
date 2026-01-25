@@ -30,10 +30,7 @@ import dev.bypixel.redivelocity.command.FindCommand
 import dev.bypixel.redivelocity.command.RediVelocityCommand
 import dev.bypixel.redivelocity.connection.RedisConnectionTask
 import dev.bypixel.redivelocity.election.ElectionScheduler
-import dev.bypixel.redivelocity.event.DisconnectListener
-import dev.bypixel.redivelocity.event.PostLoginListener
-import dev.bypixel.redivelocity.event.ProxyPingListener
-import dev.bypixel.redivelocity.event.ServerSwitchListener
+import dev.bypixel.redivelocity.event.*
 import dev.bypixel.redivelocity.feature.globalPlayercount.PlayercountScheduler
 import dev.bypixel.redivelocity.heartbeat.HeartbeatScheduler
 import dev.bypixel.redivelocity.pubsub.KickListener
@@ -281,6 +278,16 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
             proxy.eventManager.register(this, PostLoginListener)
             proxy.eventManager.register(this, ServerSwitchListener)
             proxy.eventManager.register(this, DisconnectListener)
+            proxy.eventManager.register(this, ServerRegisteredListener)
+            proxy.eventManager.register(this, ServerUnregisteredListener)
+
+            val registeredServers =
+                proxy.allServers.associate { it.serverInfo.name to it.serverInfo.address.toString() }
+            RediVelocityCoroutineScope.launch(Dispatchers.IO) {
+                lettuceClient.withCoroutines {
+                    it.hset("redivelocity:registered-servers:$proxyId", registeredServers)
+                }
+            }
         }).delay(500, TimeUnit.MILLISECONDS).schedule()
     }
 
@@ -297,19 +304,14 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
 
             lettuceClient.withCoroutines {
                 it.hdel("redivelocity:proxies", proxyId)
-            }
-            lettuceClient.withCoroutines {
                 it.hdel("redivelocity:heartbeats", proxyId)
-            }
-            lettuceClient.deleteHashFieldByValueAsync("redivelocity:proxy:players", proxyId)
-            lettuceClient.withCoroutines {
                 it.hdel("redivelocity:proxy:player-counts", proxyId)
-            }
-            if (lettuceClient.withCoroutines { it.get("redivelocity:leader") == proxyId }) {
-                lettuceClient.withCoroutines {
+                it.del("redivelocity:registered-servers:$proxyId")
+                if (it.get("redivelocity:leader") == proxyId) {
                     it.del("redivelocity:leader")
                 }
             }
+            lettuceClient.deleteHashFieldByValueAsync("redivelocity:proxy:players", proxyId)
 
             if (lettuceClient.withCoroutines { it.hvals("redivelocity:proxies").toList().isEmpty() }) {
                 RediVelocityLogger.info("Last proxy shutting down, clearing all RediVelocity data...")
