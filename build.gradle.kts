@@ -106,7 +106,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
+    compileOnly("com.velocitypowered:velocity-api:3.4.0")
 
     implementation("dev.jorel:commandapi-velocity-shade:11.1.0")
 
@@ -116,7 +116,7 @@ dependencies {
 
     quark("com.squareup.okhttp3:okhttp:5.3.2")
 
-    implementation("dev.bypixel:LettuceWrapper:0.4.0+8ae7011")
+    implementation("dev.bypixel:LettuceWrapper:0.4.0+52149ca")
     quark("io.lettuce:lettuce-core:7.2.1.RELEASE") {
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-reactive")
