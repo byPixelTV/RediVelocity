@@ -33,6 +33,7 @@ import dev.bypixel.redivelocity.election.ElectionScheduler
 import dev.bypixel.redivelocity.event.*
 import dev.bypixel.redivelocity.feature.globalPlayercount.PlayercountScheduler
 import dev.bypixel.redivelocity.heartbeat.HeartbeatScheduler
+import dev.bypixel.redivelocity.pubsub.ConnectListener
 import dev.bypixel.redivelocity.pubsub.KickListener
 import dev.bypixel.redivelocity.pubsub.LeaderElectionListener
 import dev.bypixel.redivelocity.pubsub.PlayercountListener
@@ -263,6 +264,7 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
             }
 
             KickListener
+            ConnectListener
             LeaderElectionListener
             PlayercountListener
 
@@ -332,6 +334,7 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
             CommandAPI.onDisable()
 
             RedisListener.unregisterListener(KickListener)
+            RedisListener.unregisterListener(ConnectListener)
             RedisListener.unregisterListener(LeaderElectionListener)
             RedisListener.unregisterListener(PlayercountListener)
             ElectionScheduler.job.cancelAndJoin()
