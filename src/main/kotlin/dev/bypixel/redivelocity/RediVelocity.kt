@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2024-present byPixelTV & contributors.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- *  along with this program. If not, see <https://www.gnu.org/licenses/>.
- */
-
 package dev.bypixel.redivelocity
 
 import com.google.inject.Inject
@@ -99,159 +83,26 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
 
         CommandAPI.onEnable()
 
-        libraryManager = VelocityLibraryManager(
-            this,
-            logger,
-            Path("plugins/redivelocity"),
-            proxy.pluginManager
-        )
-
-        libraryManager.loadFromGradle()
-
-        val configInputStream = object {}.javaClass.getResourceAsStream("/config.yml")
-        val messagesInputStream = object {}.javaClass.getResourceAsStream("/messages.yml")
-
-        config = YamlDocument.create(File("plugins/redivelocity/config.yml"), configInputStream!!, GeneralSettings.builder().setKeyFormat(
-            GeneralSettings.KeyFormat.OBJECT).build(), LoaderSettings.builder().setAutoUpdate(true).build(), DumperSettings.DEFAULT, UpdaterSettings.builder().setVersioning(
-            BasicVersioning("config-version")
-        ).build())
-        messageConfig = YamlDocument.create(File("plugins/redivelocity/messages.yml"), messagesInputStream!!, GeneralSettings.builder().setKeyFormat(
-            GeneralSettings.KeyFormat.OBJECT).build(), LoaderSettings.builder().setAutoUpdate(true).build(), DumperSettings.DEFAULT, UpdaterSettings.builder().setVersioning(
-            BasicVersioning("config-version")
-        ).build())
-
-        val redisHost = config.getString(Route.fromString("redis.host"))
-        val redisPort = config.getInt(Route.fromString("redis.port"))
-        val redisPassword = config.getString(Route.fromString("redis.password"), null)
-        val redisDatabase = config.getInt(Route.fromString("redis.database"), 0)
-        val redisUser = config.getString(Route.fromString("redis.username"), null)
-        val redisSsl = config.getBoolean(Route.fromString("redis.ssl"), false)
-        val redisConnectionTimeout = config.getLong(Route.fromString("redis.connectionTimeout"), 2000L)
-        val redisConnectionPoolSize = config.getInt(Route.fromString("redis.connectionPoolSize"), 10)
-        val redisAllowSelfSignedCertificates = config.getBoolean(Route.fromString("redis.allowSelfSignedCertificates"), false)
-        val redisTrustStorePath = config.getString(Route.fromString("redis.trustStorePath"), null)
-        val redisTrustStorePassword = config.getString(Route.fromString("redis.trustStorePassword"), null)
-
-        try {
-            lettuceClient = if (!redisSsl) {
-                LettuceRedisClient(
-                    RedisCredentials(
-                        redisHost,
-                        redisPort,
-                        redisUser,
-                        redisPassword,
-                        redisDatabase,
-                        timeoutMillis = redisConnectionTimeout,
-                    ), RediVelocityCoroutineScope, redisConnectionPoolSize)
-            } else if ((redisTrustStorePath == null || redisTrustStorePassword == null) && redisSsl) {
-                LettuceRedisClient(
-                    RedisCredentials(
-                        redisHost,
-                        redisPort,
-                        redisUser,
-                        redisPassword,
-                        redisDatabase,
-                        true,
-                        redisAllowSelfSignedCertificates,
-                        timeoutMillis = redisConnectionTimeout
-                    ), RediVelocityCoroutineScope, redisConnectionPoolSize)
-            } else {
-                LettuceRedisClient(
-                    RedisCredentials(
-                        redisHost,
-                        redisPort,
-                        redisUser,
-                        redisPassword,
-                        redisDatabase,
-                        true,
-                        redisAllowSelfSignedCertificates,
-                        timeoutMillis = redisConnectionTimeout,
-                        trustStorePath = redisTrustStorePath,
-                        trustStorePassword = redisTrustStorePassword
-                    ), RediVelocityCoroutineScope, redisConnectionPoolSize)
-            }
-        } catch (e: Exception) {
-            RediVelocityLogger.error("Could not connect to the Redis server, please check your configuration.")
-            e.printStackTrace()
-        }
+        setupLibraryManager()
+        loadConfigs()
+        initLettuceClientFromConfig()
 
         RedisListener.setLettuceClient(lettuceClient)
 
-        if (lettuceClient.connection.isOpen) {
-            RediVelocityLogger.success("Connected to Redis at $redisHost:$redisPort")
-        } else {
-            RediVelocityLogger.error("Failed to connect to Redis at $redisHost:$redisPort.")
+        if (!lettuceClient.connection.isOpen) {
+            RediVelocityLogger.error("Failed to connect to Redis at ${config.getString(Route.fromString("redis.host"))}:${config.getInt(Route.fromString("redis.port"))}.")
             return
+        } else {
+            RediVelocityLogger.success("Connected to Redis at ${config.getString(Route.fromString("redis.host"))}:${config.getInt(Route.fromString("redis.port"))}")
         }
 
         RediVelocityCoroutineScope.launch(Dispatchers.IO) {
-            if (config.getBoolean(Route.fromString("cloud-support.enabled"))) {
-                proxyId = CloudUtil.getServiceName(config.getString(Route.fromString("cloud-support.cloud-system")))
-                RediVelocityLogger.success("Using cloud service name as proxy ID: $proxyId")
-            } else if (config.getBoolean(Route.fromString("proxy-id.auto-generate")) == false) {
-                val configId = config.getString(Route.fromString("proxy-id.id"))
-                if (configId.isNullOrBlank()) {
-                    RediVelocityLogger.error("The configured proxy ID is blank! Please choose a unique ID. Will generate a random ID instead.")
-                    proxyId = ProxyIdGenerator.generate()
-                }
-
-                if (ProxyIdGenerator.getExistingIds().contains(configId)) {
-                    RediVelocityLogger.error("The configured proxy ID '$configId' is already in use by another proxy! Please choose a unique ID. Will generate a random ID instead.")
-                    proxyId = ProxyIdGenerator.generate()
-                    RediVelocityLogger.success("Generated random proxy ID: $proxyId")
-                } else {
-                    proxyId = configId
-                    RediVelocityLogger.success("Using configured proxy ID: $proxyId")
-                }
-            } else {
-                proxyId = ProxyIdGenerator.generate()
-                RediVelocityLogger.success("Generated random proxy ID: $proxyId")
-            }
-
+            determineProxyId()
             delay(500)
-
-            lettuceClient.withCoroutines {
-                it.hset("redivelocity:proxies", proxyId, proxyId)
-            }
-
-            val proxyIdsSize = ProxyIdGenerator.getExistingIds().size
-
-            wasFirstProxy = proxyIdsSize == 1 || proxyIdsSize == 0
-
-            if (wasFirstProxy) {
-                RediVelocityLogger.info("This proxy is the first one to connect to Redis, clearing old data...")
-                lettuceClient.withCoroutines {
-                    it.set("redivelocity:leader", proxyId)
-                }
-                lettuceClient.withCoroutines {
-                    it.del(
-                        "redivelocity:proxy:players",
-                        "redivelocity:proxy:player-counts",
-                        "redivelocity:proxy:heartbeats",
-                        "redivelocity:player:servers",
-                        "redivelocity:proxies",
-                        "redivelocity:global:playercount",
-                        "redivelocity:player:names",
-                        "redivelocity:leader"
-                    )
-                }
-                lettuceClient.withCoroutines {
-                    it.hset("redivelocity:proxies", proxyId, proxyId)
-                }
-            }
-
-            lettuceClient.sendMessage(
-                JSONObject().apply {
-                    put("action", "ADD")
-                    put("id", proxyId)
-                }, "redivelocity:proxy-events")
-
-            HeartbeatScheduler.job.start()
-            ElectionScheduler.job.start()
-            RedisConnectionTask.job.start()
-            ProxyRegistrationScheduler.job.start()
-            PlayercountScheduler.proxyPlayerCountUpdateScheduler.start()
-            PlayercountScheduler.globalPlayerCountCalcScheduler.start()
+            registerProxyInRedis()
+            handleFirstProxyCleanupIfNeeded()
+            sendAddProxyEvent()
+            startBackgroundJobs()
         }
 
         RediVelocityLogger.success("RediVelocity v${proxy.pluginManager.getPlugin("redivelocity").get().description.version.orElse("unknown")} has been enabled!")
@@ -351,5 +202,167 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
 
             lettuceClient.close()
         }
+    }
+
+    private fun setupLibraryManager() {
+        libraryManager = VelocityLibraryManager(
+            this,
+            logger,
+            Path("plugins/redivelocity"),
+            proxy.pluginManager
+        )
+        libraryManager.loadFromGradle()
+    }
+
+    private fun loadConfigs() {
+        val configInputStream = object {}.javaClass.getResourceAsStream("/config.yml")
+        val messagesInputStream = object {}.javaClass.getResourceAsStream("/messages.yml")
+
+        config = YamlDocument.create(File("plugins/redivelocity/config.yml"), configInputStream!!, GeneralSettings.builder().setKeyFormat(
+            GeneralSettings.KeyFormat.OBJECT).build(), LoaderSettings.builder().setAutoUpdate(true).build(), DumperSettings.DEFAULT, UpdaterSettings.builder().setVersioning(
+            BasicVersioning("config-version")
+        ).build())
+        messageConfig = YamlDocument.create(File("plugins/redivelocity/messages.yml"), messagesInputStream!!, GeneralSettings.builder().setKeyFormat(
+            GeneralSettings.KeyFormat.OBJECT).build(), LoaderSettings.builder().setAutoUpdate(true).build(), DumperSettings.DEFAULT, UpdaterSettings.builder().setVersioning(
+            BasicVersioning("config-version")
+        ).build())
+    }
+
+    private fun initLettuceClientFromConfig() {
+        val redisHost = config.getString(Route.fromString("redis.host"))
+        val redisPort = config.getInt(Route.fromString("redis.port"))
+        val redisPassword = config.getString(Route.fromString("redis.password"), null)
+        val redisDatabase = config.getInt(Route.fromString("redis.database"), 0)
+        val redisUser = config.getString(Route.fromString("redis.username"), null)
+        val redisSsl = config.getBoolean(Route.fromString("redis.ssl"), false)
+        val redisConnectionTimeout = config.getLong(Route.fromString("redis.connectionTimeout"), 2000L)
+        val redisConnectionPoolSize = config.getInt(Route.fromString("redis.connectionPoolSize"), 10)
+        val redisAllowSelfSignedCertificates = config.getBoolean(Route.fromString("redis.allowSelfSignedCertificates"), false)
+        val redisTrustStorePath = config.getString(Route.fromString("redis.trustStorePath"), null)
+        val redisTrustStorePassword = config.getString(Route.fromString("redis.trustStorePassword"), null)
+
+        try {
+            lettuceClient = if (!redisSsl) {
+                LettuceRedisClient(
+                    RedisCredentials(
+                        redisHost,
+                        redisPort,
+                        redisUser,
+                        redisPassword,
+                        redisDatabase,
+                        timeoutMillis = redisConnectionTimeout,
+                    ), RediVelocityCoroutineScope, redisConnectionPoolSize)
+            } else if ((redisTrustStorePath == null || redisTrustStorePassword == null) && redisSsl) {
+                LettuceRedisClient(
+                    RedisCredentials(
+                        redisHost,
+                        redisPort,
+                        redisUser,
+                        redisPassword,
+                        redisDatabase,
+                        true,
+                        redisAllowSelfSignedCertificates,
+                        timeoutMillis = redisConnectionTimeout
+                    ), RediVelocityCoroutineScope, redisConnectionPoolSize)
+            } else {
+                LettuceRedisClient(
+                    RedisCredentials(
+                        redisHost,
+                        redisPort,
+                        redisUser,
+                        redisPassword,
+                        redisDatabase,
+                        true,
+                        redisAllowSelfSignedCertificates,
+                        timeoutMillis = redisConnectionTimeout,
+                        trustStorePath = redisTrustStorePath,
+                        trustStorePassword = redisTrustStorePassword
+                    ), RediVelocityCoroutineScope, redisConnectionPoolSize)
+            }
+        } catch (e: Exception) {
+            RediVelocityLogger.error("Could not connect to the Redis server, please check your configuration.")
+            e.printStackTrace()
+        }
+    }
+
+    private suspend fun determineProxyId() {
+        if (config.getBoolean(Route.fromString("cloud-support.enabled"))) {
+            proxyId = CloudUtil.getServiceName(config.getString(Route.fromString("cloud-support.cloud-system")))
+            RediVelocityLogger.success("Using cloud service name as proxy ID: $proxyId")
+            return
+        }
+
+        if (config.getBoolean(Route.fromString("proxy-id.auto-generate")) == false) {
+            val configId = config.getString(Route.fromString("proxy-id.id"))
+            if (configId.isNullOrBlank()) {
+                RediVelocityLogger.error("The configured proxy ID is blank! Please choose a unique ID. Will generate a random ID instead.")
+                proxyId = ProxyIdGenerator.generate()
+                return
+            }
+
+            if (ProxyIdGenerator.getExistingIds().contains(configId)) {
+                RediVelocityLogger.error("The configured proxy ID '$configId' is already in use by another proxy! Please choose a unique ID. Will generate a random ID instead.")
+                proxyId = ProxyIdGenerator.generate()
+                RediVelocityLogger.success("Generated random proxy ID: $proxyId")
+            } else {
+                proxyId = configId
+                RediVelocityLogger.success("Using configured proxy ID: $proxyId")
+            }
+        } else {
+            proxyId = ProxyIdGenerator.generate()
+            RediVelocityLogger.success("Generated random proxy ID: $proxyId")
+        }
+    }
+
+    @OptIn(ExperimentalLettuceCoroutinesApi::class)
+    private suspend fun registerProxyInRedis() {
+        lettuceClient.withCoroutines {
+            it.hset("redivelocity:proxies", proxyId, proxyId)
+        }
+    }
+
+    @OptIn(ExperimentalLettuceCoroutinesApi::class)
+    private suspend fun handleFirstProxyCleanupIfNeeded() {
+        val proxyIdsSize = ProxyIdGenerator.getExistingIds().size
+        wasFirstProxy = proxyIdsSize == 1 || proxyIdsSize == 0
+
+        if (wasFirstProxy) {
+            RediVelocityLogger.info("This proxy is the first one to connect to Redis, clearing old data...")
+            lettuceClient.withCoroutines {
+                it.set("redivelocity:leader", proxyId)
+            }
+            lettuceClient.withCoroutines {
+                it.del(
+                    "redivelocity:proxy:players",
+                    "redivelocity:proxy:player-counts",
+                    "redivelocity:proxy:heartbeats",
+                    "redivelocity:player:servers",
+                    "redivelocity:proxies",
+                    "redivelocity:global:playercount",
+                    "redivelocity:player:names",
+                    "redivelocity:leader"
+                )
+            }
+            lettuceClient.withCoroutines {
+                it.hset("redivelocity:proxies", proxyId, proxyId)
+            }
+        }
+    }
+
+    private fun sendAddProxyEvent() {
+        lettuceClient.sendMessage(
+            JSONObject().apply {
+                put("action", "ADD")
+                put("id", proxyId)
+            }, "redivelocity:proxy-events")
+    }
+
+    private fun startBackgroundJobs() {
+        HeartbeatScheduler.job.start()
+        ElectionScheduler.job.start()
+        RedisConnectionTask.job.start()
+        ProxyRegistrationScheduler.job.start()
+        PlayercountScheduler.proxyPlayerCountUpdateScheduler.start()
+        PlayercountScheduler.globalPlayerCountCalcScheduler.start()
     }
 }

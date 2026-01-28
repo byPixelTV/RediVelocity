@@ -18,7 +18,7 @@ object ConnectListener : RedisListener("redivelocity-connect") {
                     RediVelocity.instance.proxy.getServer(server).orElseThrow {
                         IllegalArgumentException("Server $server not found")
                     }
-                )
+                ).connectWithIndication()
             }
         }
     }
