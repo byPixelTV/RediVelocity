@@ -136,9 +136,11 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
 
             val registeredServers =
                 proxy.allServers.associate { it.serverInfo.name to it.serverInfo.address.toString() }
-            RediVelocityCoroutineScope.launch(Dispatchers.IO) {
-                lettuceClient.withCoroutines {
-                    it.hset("redivelocity:registered-servers:$proxyId", registeredServers)
+            if (registeredServers.isNotEmpty()) {
+                RediVelocityCoroutineScope.launch(Dispatchers.IO) {
+                    lettuceClient.withCoroutines {
+                        it.hset("redivelocity:registered-servers:$proxyId", registeredServers)
+                    }
                 }
             }
         }).delay(500, TimeUnit.MILLISECONDS).schedule()
@@ -178,6 +180,7 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
                         "redivelocity:global:playercount",
                         "redivelocity:player:names",
                         "redivelocity:leader",
+                        "redivelocity:registered-servers:*"
                     )
                 }
             }
@@ -340,7 +343,8 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
                     "redivelocity:proxies",
                     "redivelocity:global:playercount",
                     "redivelocity:player:names",
-                    "redivelocity:leader"
+                    "redivelocity:leader",
+                    "redivelocity:registered-servers:*"
                 )
             }
             lettuceClient.withCoroutines {
