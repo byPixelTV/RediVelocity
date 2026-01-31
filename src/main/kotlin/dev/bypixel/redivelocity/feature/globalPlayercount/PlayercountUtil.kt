@@ -27,11 +27,8 @@ object PlayercountUtil {
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
     suspend fun calcGlobalPlayercount() : Long = withContext(Dispatchers.IO) {
-        var playercount = 0L
 
-        RediVelocity.instance.lettuceClient.commands.hvals("redivelocity:proxy:player-counts").toList().forEach {
-            playercount += it.toLong()
-        }
+        val playercount = RediVelocity.instance.lettuceClient.commands.hvals("redivelocity:proxy:players").toList().size.toLong()
 
         globalPlayercountCache = 0L
 
@@ -43,23 +40,5 @@ object PlayercountUtil {
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
     suspend fun setProxyPlayercount() = withContext(Dispatchers.IO) {
         RediVelocity.instance.lettuceClient.commands.hset("redivelocity:proxy:player-counts", RediVelocity.instance.proxyId, RediVelocity.instance.proxy.allPlayers.size.toString())
-    }
-
-    @OptIn(ExperimentalLettuceCoroutinesApi::class)
-    suspend fun getProxyPlayercount(proxyId: String) : Long = withContext(Dispatchers.IO) {
-        val count = RediVelocity.instance.lettuceClient.commands.hget("redivelocity:proxy:player-counts", proxyId)
-        count?.toLong() ?: 0L
-    }
-
-    @OptIn(ExperimentalLettuceCoroutinesApi::class)
-    suspend fun getPlayercountMap() : Map<String, Long> = withContext(Dispatchers.IO) {
-        val result = mutableMapOf<String, Long>()
-
-        RediVelocity.instance.lettuceClient.commands.hgetall("redivelocity:proxy:player-counts")
-            .collect { kv ->
-                result[kv.key] = kv.value.toLong()
-            }
-
-        result
     }
 }
