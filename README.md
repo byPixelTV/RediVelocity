@@ -31,8 +31,8 @@
 
 > 
 > # ⛏️ Software Support & Requirements 🎮:
-> - RediVelocity is only compatible with the latest version of Velocity, which is **3.4.0-SNAPSHOT** at the time of writing this.
-> - I will only support the latest release of Velocity, this mean that **3.4.0-SNAPSHOT is** supported, but **3.3.0 is not!** If you want to get official support, you have to use the latest version of **Redis, RediVelocity and Velocity!**
+> - RediVelocity is only compatible with the latest version of Velocity, which is **3.5.0-SNAPSHOT** at the time of writing this.
+> - I will only support the latest release of Velocity, this mean that **3.5.0-SNAPSHOT is** supported, but **3.3.0 is not!** If you want to get official support, you have to use the latest version of **Redis, RediVelocity and Velocity!**
 > - RediVelocity requires **Redis** to be installed and running, you can find the latest version of Redis [here](https://redis.io/download).
 > - RediVelocity is built with **Java 21** and requires it to run, you can find the latest version of Java [here](https://adoptium.net/).
 > - RediVelocity also adds support for **[SimpleCloud](https://simplecloud.app)**, **[VulpesCloud](https://github.com/VulpesCloud/)** and **[CloudNet v4](https://github.com/CloudNetService/CloudNet)** to get the accurate proxy name instead of a random generated one.
