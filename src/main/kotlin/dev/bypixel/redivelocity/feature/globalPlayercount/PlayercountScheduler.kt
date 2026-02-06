@@ -16,13 +16,20 @@
 
 package dev.bypixel.redivelocity.feature.globalPlayercount
 
+import dev.bypixel.redivelocity.RediVelocity
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.*
 
 object PlayercountScheduler {
+    @OptIn(ExperimentalLettuceCoroutinesApi::class)
     val globalPlayerCountCalcScheduler = CoroutineScope(Dispatchers.IO).launch {
         while (isActive) {
             PlayercountUtil.calcGlobalPlayercount()
+
+            val playerMap = RediVelocity.instance.proxy.allPlayers.associate { it.uniqueId.toString() to it.username }
+
+            RediVelocity.instance.lettuceClient.commands.hset("redivelocity:proxy:players", playerMap)
+
             delay(5000L)
         }
     }
