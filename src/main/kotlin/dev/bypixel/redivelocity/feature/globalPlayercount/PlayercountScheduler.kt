@@ -28,7 +28,9 @@ object PlayercountScheduler {
 
             val playerMap = RediVelocity.instance.proxy.allPlayers.associate { it.uniqueId.toString() to it.username }
 
-            RediVelocity.instance.lettuceClient.commands.hset("redivelocity:proxy:players", playerMap)
+            if (playerMap.isNotEmpty()) {
+                RediVelocity.instance.lettuceClient.commands.hset("redivelocity:proxy:players", playerMap)
+            }
 
             delay(5000L)
         }
