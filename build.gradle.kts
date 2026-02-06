@@ -79,15 +79,6 @@ group = "dev.bypixel"
 version = versionString
 
 repositories {
-    maven {
-        name = "bypixelRepoReleases"
-        url = uri("https://repo.bypixel.dev/releases")
-    }
-    maven {
-        name = "bypixelRepoSnapshots"
-        url = uri("https://repo.bypixel.dev/snapshots")
-    }
-
     // maven central releases
     mavenCentral()
 
@@ -99,6 +90,7 @@ repositories {
 
     // vulpescloud
     maven("https://repo.vulpescloud.de/snapshots")
+    maven("https://jitpack.io")
 
     // simplecloud
     maven("https://repo.simplecloud.app/snapshots")
@@ -116,7 +108,13 @@ dependencies {
 
     quark("com.squareup.okhttp3:okhttp:5.3.2")
 
-    implementation("dev.bypixel:LettuceWrapper:0.4.0+8ae7011")
+    implementation("com.github.bypixeltv:LettuceWrapper:nightly-SNAPSHOT") {
+        exclude(group = "io.lettuce", module = "lettuce-core")
+        exclude(group = "org.json", module = "json")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-reactive")
+    }
+
     quark("io.lettuce:lettuce-core:7.2.1.RELEASE") {
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-reactive")
