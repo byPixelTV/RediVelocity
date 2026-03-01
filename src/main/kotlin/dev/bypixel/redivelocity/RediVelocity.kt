@@ -133,6 +133,7 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
             proxy.eventManager.register(this, DisconnectListener)
             proxy.eventManager.register(this, ServerRegisteredListener)
             proxy.eventManager.register(this, ServerUnregisteredListener)
+            proxy.eventManager.register(this, PreLoginListener)
 
             val registeredServers =
                 proxy.allServers.associate { it.serverInfo.name to it.serverInfo.address.toString() }

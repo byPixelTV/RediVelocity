@@ -55,6 +55,12 @@ object PlayerCache {
 
                         players[uuid] = username
                     }
+                    "PRE_LOGIN" -> {
+                        val uuid = UUID.fromString(jMsg.getString("uuid"))
+                        val username = jMsg.getString("username")
+
+                        players[uuid] = username
+                    }
                     "DISCONNECT" -> {
                         val uuid = UUID.fromString(jMsg.getString("uuid"))
 

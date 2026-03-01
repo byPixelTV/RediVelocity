@@ -1,4 +1,4 @@
-config-version: 2
+config-version: 3
 
 debug-mode: false # enable to log additional debug information to the console
 
@@ -40,6 +40,14 @@ playerversion-check:
   enabled: false # enable to restrict player versions
   allowed-versions: # array of allowed Minecraft versions (protocol versions)
     - 773 # Minecraft 1.21.10
+
+# This restores normal Velocity behavior where a player can only be connected to the network one time and not multiple
+# For example if you have a Lobby and a SMP, players won't be able to be connected to the lobby and the SMP at the same time, when they have
+# 2 instances of Minecraft running. This is recommended to prevent issues with plugins that rely on unique player connections, but it can be disabled if you want to allow players to be connected to multiple proxies at the same time (for example if you have a BungeeCord and a Velocity proxy running at the same time and want players to be able to connect to both with the same Minecraft instance)
+# It is recommended to keep this on false unless you have a specific use case for allowing players to be connected to multiple proxies at the same time, as it can cause issues with plugins that rely on unique player connections and can also cause issues with player data management and other features that rely on unique player connections.
+# Note that if you set this to true, players can be on your network multiple times at the same time if they have 2 instances of Minecraft running and they are lucky enough to connect to different proxies with each instance and one instance is on your lobby and the other on the SMP
+# And most important: THIS IS NOT 100% SAFE! When you have PERFECT timing, you can still have 2 instances online, but the chance of this happening is very low and it requires a lot of luck, so it's not something you should worry about, but it's still worth mentioning that this is not a perfect solution to allow players to be connected to multiple proxies at the same time, but it's the best solution we have for now without implementing a more complex system to track player connections across proxies and prevent duplicates in a more reliable way.
+allow-same-player-on-multiple-proxies: false # Recommended: false
 
 commands: # enable or disable specific commands
   find: true # find players across all proxies and display some information about them

@@ -4,6 +4,8 @@ prefix: "<dark_grey>[<gradient:#08a8f8:#00e1ff:#08a8f8>RediVelocity</gradient>]<
 
 playerversion_unsupported: "<white>Your client version <#dc2626>is not supported</#dc2626> on this server.</white>"
 
+player_already_connected_to_network: "<red>You are already connected to the network on proxy <#4bfb00><proxy></#4bfb00>! Please disconnect from that proxy before connecting to another one.</red>"
+
 commands:
   find:
     player_not_found: "<prefix> <white>The player <#dc2626><player></#dc2626> was not found on the network!</white>"
