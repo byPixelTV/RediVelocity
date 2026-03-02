@@ -115,7 +115,7 @@ dependencies {
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-reactive")
     }
 
-    quark("io.lettuce:lettuce-core:7.4.0.RELEASE") {
+    quark("io.lettuce:lettuce-core:7.5.0.RELEASE") {
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-reactive")
     }
