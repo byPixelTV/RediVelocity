@@ -127,7 +127,7 @@ dependencies {
 
     compileOnly("app.simplecloud.api.platform:velocity:0.0.5-dev.1745077021664-28517d8")
 
-    val vulpesCloudVersion = "3.0.0-beta2"
+    val vulpesCloudVersion = "3.0.0-beta3"
     compileOnly("de.vulpescloud", "bridge", vulpesCloudVersion)
     compileOnly("de.vulpescloud", "api", vulpesCloudVersion)
 
