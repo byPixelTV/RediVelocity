@@ -63,7 +63,7 @@ class FindCommand {
                     }
 
                     val currentProxy = RediVelocity.instance.lettuceClient.withCoroutines {
-                        it.hget("redivelocity:proxy:players", playerUuid)
+                        it.hget("redivelocity:player:proxies", playerUuid)
                     }
                         ?: run {
                             sender.sendMessage(

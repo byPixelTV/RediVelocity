@@ -68,7 +68,7 @@ object PlayerInfoCommand {
                         it.hget("redivelocity:player:servers", playerUuid)
                     }
                     val playerProxy = RediVelocity.instance.lettuceClient.withCoroutines {
-                        it.hget("redivelocity:proxy:players", playerUuid)
+                        it.hget("redivelocity:player:proxies", playerUuid)
                     }
 
                     sender.sendMessage(

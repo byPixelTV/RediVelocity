@@ -134,7 +134,7 @@ object HeartbeatScheduler {
                     cnx.hdel("redivelocity:votes", proxyId)
                     cnx.hdel("redivelocity:proxy:player-counts", proxyId)
                     RediVelocity.instance.lettuceClient.deleteHashFieldByValueAsync(
-                        "redivelocity:proxy:players", proxyId
+                        "redivelocity:player:proxies", proxyId
                     )
                     cnx.srem("redivelocity:existing-proxy-ids", proxyId)
                 } catch (e: Throwable) {

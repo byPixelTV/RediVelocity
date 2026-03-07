@@ -52,15 +52,14 @@ object DisconnectListener {
                 it.hdel(
                     "redivelocity:proxy:players", player.uniqueId.toString()
                 )
-            }
-            RediVelocity.instance.lettuceClient.withCoroutines {
                 it.hdel(
                     "redivelocity:player:servers", player.uniqueId.toString()
                 )
-            }
-            RediVelocity.instance.lettuceClient.withCoroutines {
                 it.hdel(
                     "redivelocity:player:names", player.uniqueId.toString()
+                )
+                it.hdel(
+                    "redivelocity:player:proxies", player.uniqueId.toString()
                 )
             }
         }

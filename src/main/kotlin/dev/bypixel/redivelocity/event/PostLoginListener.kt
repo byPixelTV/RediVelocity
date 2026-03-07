@@ -80,7 +80,7 @@ object PostLoginListener {
         RediVelocityCoroutineScope.launch(Dispatchers.IO) {
             RediVelocity.instance.lettuceClient.withCoroutines {
                 it.hset(
-                    "redivelocity:proxy:players", player.uniqueId.toString(),
+                    "redivelocity:player:proxies", player.uniqueId.toString(),
                     RediVelocity.instance.proxyId
                 )
             }
