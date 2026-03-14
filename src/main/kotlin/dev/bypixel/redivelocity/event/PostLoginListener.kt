@@ -33,6 +33,7 @@ import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.json.JSONObject
@@ -101,27 +102,22 @@ object PostLoginListener {
                 val ipBlacklist = AntiVPNManager.getAllBlacklistedIps()
 
                 if (ipBlacklist.contains(ip)) {
-                    val message = RediVelocity.instance.messageConfig.getString(Route.fromString("antivpn_blocked_ip"))
-
-                    player.disconnect(MiniMessage.miniMessage().deserialize(message, Placeholder.unparsed(
-                        "ip", ip
-                    ), Placeholder.unparsed(
-                        "asn", IpQueryUtil.getIpAsn(data)
-                    ), Placeholder.unparsed(
-                        "isp", IpQueryUtil.getIpIsp(data)
-                    )))
+                    player.disconnect(
+                        createBlacklistMessage(
+                            "asn", ip, IpQueryUtil.getIpAsn(data), IpQueryUtil.getIpIsp(data),
+                            IpQueryUtil.getFlaggedRisks(data)
+                        )
+                    )
                     return@launch
                 }
 
                 if (asnBlacklist.contains(IpQueryUtil.getIpAsn(data))) {
-                    val message = RediVelocity.instance.messageConfig.getString(Route.fromString("antivpn_blocked_asn"))
-                    player.disconnect(MiniMessage.miniMessage().deserialize(message, Placeholder.unparsed(
-                        "ip", ip
-                    ), Placeholder.unparsed(
-                        "asn", IpQueryUtil.getIpAsn(data)
-                    ), Placeholder.unparsed(
-                        "isp", IpQueryUtil.getIpIsp(data)
-                    )))
+                    player.disconnect(
+                        createBlacklistMessage(
+                            "asn", ip, IpQueryUtil.getIpAsn(data), IpQueryUtil.getIpIsp(data),
+                            IpQueryUtil.getFlaggedRisks(data)
+                        )
+                    )
                     return@launch
                 }
 
@@ -129,59 +125,27 @@ object PostLoginListener {
                 val asn = IpQueryUtil.getIpAsn(cachedIpData)
 
                 if (asnBlacklist.contains(asn)) {
-                    val message = RediVelocity.instance.messageConfig.getString(Route.fromString("antivpn_blocked_asn"))
-
-                    player.disconnect(MiniMessage.miniMessage().deserialize(message, Placeholder.unparsed(
-                        "asn", asn
-                    ), Placeholder.unparsed(
-                        "ip", ip
-                    ), Placeholder.unparsed(
-                        "isp", IpQueryUtil.getIpIsp(cachedIpData)
-                    )))
+                    player.disconnect(
+                        createBlacklistMessage(
+                            "asn", ip, asn, IpQueryUtil.getIpIsp(cachedIpData),
+                            IpQueryUtil.getFlaggedRisks(cachedIpData)
+                        )
+                    )
                     return@launch
                 }
 
                 if (!asnWhitelist.contains(asn) && !ipWhitelist.contains(ip)) {
                     if (IpQueryUtil.isIpRisky(cachedIpData)) {
-                        val message = RediVelocity.instance.messageConfig.getString(Route.fromString("antivpn_blocked_vpn"))
-
-                        player.disconnect(MiniMessage.miniMessage().deserialize(message, Placeholder.unparsed(
-                            "asn", asn
-                        ), Placeholder.unparsed(
-                            "ip", ip
-                        ), Placeholder.unparsed(
-                            "isp", IpQueryUtil.getIpIsp(cachedIpData)
-                        ), Placeholder.unparsed(
-                            "flags", IpQueryUtil.getFlaggedRisks(cachedIpData).joinToString(", ")
-                        )))
+                        player.disconnect(
+                            createBlacklistMessage(
+                                "vpn", ip, asn, IpQueryUtil.getIpIsp(cachedIpData),
+                                IpQueryUtil.getFlaggedRisks(cachedIpData)
+                            )
+                        )
 
                         val webhookUrl = RediVelocity.instance.config.getString(Route.fromString("anti-vpn.webhook"))
                         if (webhookUrl != null) {
-                            val embed = DiscordWebhookUtil.EmbedBuilder()
-                                .setTitle("RediVelocity AntiVPN")
-                                .setDescription(
-                                    """
-                                    **Name:** ${player.username}
-                                    **UUID:** ${player.uniqueId}
-                                    **IP:** $ip
-                                    **ASN:** $asn
-                                    **ISP:** ${IpQueryUtil.getIpIsp(cachedIpData)}
-                                    **Flagged Risks:**
-                                    - ${IpQueryUtil.getFlaggedRisks(cachedIpData).joinToString("\n- ")}
-                                    """.trimIndent()
-                                )
-                                .setTimestamp()
-                                .setThumbnailUrl("https://mineskin.eu/helm/${player.uniqueId}")
-                                .setColor("#ff0000")
-                                .build()
-
-                            if (RediVelocity.instance.config.getString(Route.fromString("anti-vpn.webhook")) != null || RediVelocity.instance.config.getString(Route.fromString("anti-vpn.webhook")) != "") {
-                                if (RediVelocity.instance.config.getBoolean(Route.fromString("anti-vpn.send-in-thread")) && RediVelocity.instance.config.getString(Route.fromString("anti-vpn.thread-id")) != null && RediVelocity.instance.config.getString(Route.fromString("anti-vpn.thread-id")) != "") {
-                                    DiscordWebhookUtil.sendEmbed(webhookUrl, embed, RediVelocity.instance.config.getLong(Route.fromString("anti-vpn.thread-id")))
-                                } else {
-                                    DiscordWebhookUtil.sendEmbed(webhookUrl, embed)
-                                }
-                            }
+                            sendWebhook(player, ip, asn, cachedIpData)
                         }
                     }
                 }
@@ -218,6 +182,56 @@ object PostLoginListener {
         }
         RediVelocity.instance.lettuceClient.withCoroutines {
             it.hset("redivelocity:player:names", player.uniqueId.toString(), player.username)
+        }
+    }
+
+    private fun createBlacklistMessage(type: String = "ip", ip: String, asn: String, isp: String, flags: List<String>): Component {
+        return when (type) {
+            "ip" -> RediVelocity.instance.messageConfig.getString(Route.fromString("antivpn_blocked_ip")) ?: "Your IP has been blocked."
+            "asn" -> RediVelocity.instance.messageConfig.getString(Route.fromString("antivpn_blocked_asn")) ?: "Your ASN has been blocked."
+            "vpn" -> RediVelocity.instance.messageConfig.getString(Route.fromString("antivpn_blocked_vpn")) ?: "VPNs are not allowed."
+            else -> "Connection blocked."
+        }.let { message ->
+            MiniMessage.miniMessage().deserialize(message, Placeholder.unparsed(
+                "ip", ip
+            ), Placeholder.unparsed(
+                "asn", asn
+            ), Placeholder.unparsed(
+                "isp", isp
+            ), Placeholder.unparsed(
+                "flags", flags.joinToString(", ")
+            ))
+        }
+    }
+
+    private fun sendWebhook(player: Player, ip: String, asn: String, cachedIpData: JSONObject) {
+        val webhookUrl = RediVelocity.instance.config.getString(Route.fromString("anti-vpn.webhook"))
+        if (webhookUrl != null) {
+            val embed = DiscordWebhookUtil.EmbedBuilder()
+                .setTitle("RediVelocity AntiVPN")
+                .setDescription(
+                    """
+                    **Name:** ${player.username}
+                    **UUID:** ${player.uniqueId}
+                    **IP:** $ip
+                    **ASN:** $asn
+                    **ISP:** ${IpQueryUtil.getIpIsp(cachedIpData)}
+                    **Flagged Risks:**
+                    - ${IpQueryUtil.getFlaggedRisks(cachedIpData).joinToString("\n- ")}
+                    """.trimIndent()
+                )
+                .setTimestamp()
+                .setThumbnailUrl("https://mineskin.eu/helm/${player.uniqueId}")
+                .setColor("#ff0000")
+                .build()
+
+            if (RediVelocity.instance.config.getString(Route.fromString("anti-vpn.webhook")) != null || RediVelocity.instance.config.getString(Route.fromString("anti-vpn.webhook")) != "") {
+                if (RediVelocity.instance.config.getBoolean(Route.fromString("anti-vpn.send-in-thread")) && RediVelocity.instance.config.getString(Route.fromString("anti-vpn.thread-id")) != null && RediVelocity.instance.config.getString(Route.fromString("anti-vpn.thread-id")) != "") {
+                    DiscordWebhookUtil.sendEmbed(webhookUrl, embed, RediVelocity.instance.config.getLong(Route.fromString("anti-vpn.thread-id")))
+                } else {
+                    DiscordWebhookUtil.sendEmbed(webhookUrl, embed)
+                }
+            }
         }
     }
 }
