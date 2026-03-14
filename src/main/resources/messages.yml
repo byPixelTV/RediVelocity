@@ -6,6 +6,10 @@ playerversion_unsupported: "<white>Your client version <#dc2626>is not supported
 
 player_already_connected_to_network: "<red>You are already connected to the network on proxy <#4bfb00><proxy></#4bfb00>! Please disconnect from that proxy before connecting to another one.</red>"
 
+antivpn_blocked_vpn: "<color:#dc2626><b>VPN DETECTED!</b></color><br><br><color:#AAAAAA>It seems like you are using a <color:#dc2626>VPN</color> to hide your IP adress. This is <color:#dc2626>not allowed</color> on our server.</color><br><br><color:#AAAAAA>Please contact our <#08a8f8>support team</#08a8f8> if you think this is a <color:#dc2626>mistake.</color><br><br><u><#08a8f8>ᴅɪꜱᴄᴏʀᴅ.ɢɢ/ʏᴏᴜʀѕᴇʀᴠᴇʀ</#08a8f8></u><br>[IP: <#08a8f8><ip></#08a8f8>, ASN: <#08a8f8><asn></#08a8f8>, ISP: <#08a8f8><isp></#08a8f8>, Flags: <#08a8f8><flags></#08a8f8>]</color>"
+antivpn_blocked_asn: "<color:#dc2626><b>YOUR ASN IS BLACKLISTED!</b></color><br><br><color:#AAAAAA>It seems like you're asn is <color:#dc2626>BLACKLISTED</color> on this server.</color><br><br><color:#AAAAAA>Please contact our <#08a8f8>support team</#08a8f8> if you think this is a <color:#dc2626>mistake.</color><br><br><u><#08a8f8>ᴅɪꜱᴄᴏʀᴅ.ɢɢ/ʏᴏᴜʀѕᴇʀᴠᴇʀ</#08a8f8></u><br>[IP: <#08a8f8><ip></#08a8f8>, ASN: <#08a8f8><asn></#08a8f8>, ISP: <#08a8f8><isp></#08a8f8>]</color>"
+antivpn_blocked_ip: "<color:#dc2626><b>YOUR IP IS BLACKLISTED!</b></color><br><br><color:#AAAAAA>It seems like you're ip is <color:#dc2626>BLACKLISTED</color> on this server.</color><br><br><color:#AAAAAA>Please contact our <#08a8f8>support team</#08a8f8> if you think this is a <color:#dc2626>mistake.</color><br><br><u><#08a8f8>ᴅɪꜱᴄᴏʀᴅ.ɢɢ/ʏᴏᴜʀѕᴇʀᴠᴇʀ</#08a8f8></u><br>[IP: <#08a8f8><ip></#08a8f8>, ASN: <#08a8f8><asn></#08a8f8>, ISP: <#08a8f8><isp></#08a8f8>]</color>"
+
 commands:
   find:
     player_not_found: "<prefix> <white>The player <#dc2626><player></#dc2626> was not found on the network!</white>"

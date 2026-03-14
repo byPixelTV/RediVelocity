@@ -20,7 +20,11 @@ import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.connection.PostLoginEvent
 import dev.bypixel.redivelocity.RediVelocity
 import dev.bypixel.redivelocity.RediVelocityCoroutineScope
+import dev.bypixel.redivelocity.antivpn.AntiVPNManager
+import dev.bypixel.redivelocity.antivpn.IpManager
+import dev.bypixel.redivelocity.antivpn.IpQueryUtil
 import dev.bypixel.redivelocity.feature.globalPlayercount.PlayercountUtil
+import dev.bypixel.redivelocity.util.DiscordWebhookUtil
 import dev.bypixel.redivelocity.util.UpdateUtil
 import dev.bypixel.redivelocity.util.Version
 import dev.dejvokep.boostedyaml.route.Route
@@ -78,6 +82,108 @@ object PostLoginListener {
         }
 
         RediVelocityCoroutineScope.launch(Dispatchers.IO) {
+            val ip = player.remoteAddress.toString().split(":")[0].substring(1)
+            val data = IpManager.cachePlayerIp(player.uniqueId.toString(), ip)
+
+            if (!player.hasPermission("redivelocity.admin.antivpn.bypass") && RediVelocity.instance.config.getBoolean(Route.fromString("anti-vpn.enabled"))) {
+                RediVelocityCoroutineScope.launch(Dispatchers.IO) {
+                    delay(2 * 50L) // Wait for 2 ticks to ensure the player is fully loaded
+
+                    val asnWhitelist = AntiVPNManager.getAllWhitelistedAsns()
+                    val ipWhitelist = AntiVPNManager.getAllWhitelistedIps()
+                    val asnBlacklist = AntiVPNManager.getAllBlacklistedAsns()
+                    val ipBlacklist = AntiVPNManager.getAllBlacklistedIps()
+
+                    if (ipBlacklist.contains(ip)) {
+                        val message = RediVelocity.instance.messageConfig.getString(Route.fromString("antivpn_blocked_ip"))
+
+                        player.disconnect(MiniMessage.miniMessage().deserialize(message, Placeholder.unparsed(
+                            "ip", ip
+                        ), Placeholder.unparsed(
+                            "asn", IpQueryUtil.getIpAsn(data)
+                        ), Placeholder.unparsed(
+                            "isp", IpQueryUtil.getIpIsp(data)
+                        )))
+                        return@launch
+                    }
+
+                    if (player != null)  {
+                        if (asnBlacklist.contains(IpQueryUtil.getIpAsn(data))) {
+                            val message = RediVelocity.instance.messageConfig.getString(Route.fromString("antivpn_blocked_asn"))
+                            player.disconnect(MiniMessage.miniMessage().deserialize(message, Placeholder.unparsed(
+                                "ip", ip
+                            ), Placeholder.unparsed(
+                                "asn", IpQueryUtil.getIpAsn(data)
+                            ), Placeholder.unparsed(
+                                "isp", IpQueryUtil.getIpIsp(data)
+                            )))
+                            return@launch
+                        }
+                    }
+
+                    val cachedIpData = IpManager.getCachedIpDataByIp(ip) ?: return@launch
+                    val asn = IpQueryUtil.getIpAsn(cachedIpData)
+
+                    if (asnBlacklist.contains(asn)) {
+                        val message = RediVelocity.instance.messageConfig.getString(Route.fromString("antivpn_blocked_asn"))
+
+                        player?.disconnect(MiniMessage.miniMessage().deserialize(message, Placeholder.unparsed(
+                            "asn", asn
+                        ), Placeholder.unparsed(
+                            "ip", ip
+                        ), Placeholder.unparsed(
+                            "isp", IpQueryUtil.getIpIsp(cachedIpData)
+                        )))
+                        return@launch
+                    }
+
+                    if (!asnWhitelist.contains(asn) && !ipWhitelist.contains(ip)) {
+                        if (IpQueryUtil.isIpRisky(cachedIpData)) {
+                            val message = RediVelocity.instance.messageConfig.getString(Route.fromString("antivpn_blocked_vpn"))
+
+                            player?.disconnect(MiniMessage.miniMessage().deserialize(message, Placeholder.unparsed(
+                                "asn", asn
+                            ), Placeholder.unparsed(
+                                "ip", ip
+                            ), Placeholder.unparsed(
+                                "isp", IpQueryUtil.getIpIsp(cachedIpData)
+                            ), Placeholder.unparsed(
+                                "flags", IpQueryUtil.getFlaggedRisks(cachedIpData).joinToString(", ")
+                            )))
+
+                            val webhookUrl = RediVelocity.instance.config.getString(Route.fromString("anti-vpn.webhook"))
+                            if (webhookUrl != null) {
+                                val embed = DiscordWebhookUtil.EmbedBuilder()
+                                    .setTitle("RediVelocity AntiVPN")
+                                    .setDescription(
+                                        """
+                                    **Name:** ${player.username}
+                                    **UUID:** ${player.uniqueId}
+                                    **IP:** $ip
+                                    **ASN:** $asn
+                                    **ISP:** ${IpQueryUtil.getIpIsp(cachedIpData)}
+                                    **Flagged Risks:**
+                                    - ${IpQueryUtil.getFlaggedRisks(cachedIpData).joinToString("\n- ")}
+                                    """.trimIndent()
+                                    )
+                                    .setTimestamp()
+                                    .setThumbnailUrl("https://mineskin.eu/helm/${player.uniqueId}")
+                                    .setColor("#ff0000")
+                                    .build()
+
+                                if (RediVelocity.instance.config.getString(Route.fromString("anti-vpn.webhook")) != null || RediVelocity.instance.config.getString(Route.fromString("anti-vpn.webhook")) != "") {
+                                    if (RediVelocity.instance.config.getBoolean(Route.fromString("anti-vpn.send-in-thread")) && RediVelocity.instance.config.getString(Route.fromString("anti-vpn.thread-id")) != null && RediVelocity.instance.config.getString(Route.fromString("anti-vpn.thread-id")) != "") {
+                                        DiscordWebhookUtil.sendEmbed(webhookUrl, embed, RediVelocity.instance.config.getLong(Route.fromString("anti-vpn.thread-id")))
+                                    } else {
+                                        DiscordWebhookUtil.sendEmbed(webhookUrl, embed)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             RediVelocity.instance.lettuceClient.withCoroutines {
                 it.hset(
                     "redivelocity:player:proxies", player.uniqueId.toString(),
