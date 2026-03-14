@@ -83,9 +83,10 @@ object PostLoginListener {
 
         RediVelocityCoroutineScope.launch(Dispatchers.IO) {
             val ip = player.remoteAddress.toString().split(":")[0].substring(1)
-            val data = IpManager.cachePlayerIp(player.uniqueId.toString(), ip)
+
 
             if (!player.hasPermission("redivelocity.admin.antivpn.bypass") && RediVelocity.instance.config.getBoolean(Route.fromString("anti-vpn.enabled"))) {
+                val data = IpManager.cachePlayerIp(player.uniqueId.toString(), ip)
                 RediVelocityCoroutineScope.launch(Dispatchers.IO) {
                     delay(2 * 50L) // Wait for 2 ticks to ensure the player is fully loaded
 

@@ -1,4 +1,4 @@
-config-version: 4
+config-version: 5
 
 debug-mode: false # enable to log additional debug information to the console
 
