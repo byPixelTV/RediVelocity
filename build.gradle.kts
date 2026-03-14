@@ -101,10 +101,13 @@ dependencies {
     compileOnly("com.velocitypowered:velocity-api:3.5.0-SNAPSHOT")
 
     implementation("dev.jorel:commandapi-velocity-shade:11.1.0")
+    quark("dev.jorel:commandapi-kotlin-velocity:11.1.0")
 
     implementation("dev.dejvokep:boosted-yaml:1.3.7")
 
     quark("org.json:json:20250517")
+    quark("com.github.ben-manes.caffeine:caffeine:3.2.3")
+    quark("club.minnced:discord-webhooks:0.8.4")
 
     quark("com.squareup.okhttp3:okhttp:5.3.2")
 

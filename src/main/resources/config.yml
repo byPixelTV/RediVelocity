@@ -1,4 +1,4 @@
-config-version: 3
+config-version: 5
 
 debug-mode: false # enable to log additional debug information to the console
 
@@ -19,6 +19,12 @@ redis:
   allowSelfSignedCertificates: false # set to true if you want to allow self-signed SSL certificates
   trustStorePath: "" # path to your trust store file, leave blank to use the default Java trust store
   trustStorePassword: "" # password for your trust store, leave blank if not applicable
+
+anti-vpn:
+  enabled: false # enable to block VPN connections. This will use the https://ipquery.io/ to check if a player's IP is a known VPN or proxy. Note that this is not 100% accurate and can sometimes block legitimate players, so use with caution and make sure to whitelist any false positives.
+  webhook: "https://discord.com/api/webhooks/" # discord webhook url, leave blank to disable webhook notifications for blocked VPN connections
+  send-in-thread: false # whether to send the webhook message in a thread or not
+  thread-id: "" # if send-in-thread is true, the id of the thread to send the message in. leave blank to send in the main channel
 
 cloud-support:
   enabled: false # this will enable support for cloud systems like CloudNet, SimpleCloud or VulpesCloud. It will replace the proxy-id with the cloud system's server id automatically

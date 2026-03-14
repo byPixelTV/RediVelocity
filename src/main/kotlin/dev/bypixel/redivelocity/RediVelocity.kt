@@ -8,8 +8,10 @@ import com.velocitypowered.api.proxy.ProxyServer
 import dev.bypixel.lettucewrapper.LettuceRedisClient
 import dev.bypixel.lettucewrapper.RedisCredentials
 import dev.bypixel.lettucewrapper.listener.RedisListener
+import dev.bypixel.redivelocity.antivpn.IpManager
 import dev.bypixel.redivelocity.cache.PlayerCache
 import dev.bypixel.redivelocity.cache.ProxyCache
+import dev.bypixel.redivelocity.command.AntiVPNCommand
 import dev.bypixel.redivelocity.command.FindCommand
 import dev.bypixel.redivelocity.command.RediVelocityCommand
 import dev.bypixel.redivelocity.connection.RedisConnectionTask
@@ -120,7 +122,10 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
             PlayercountListener
 
             RediVelocityCommand().register()
-            FindCommand().register()
+
+            if (config.getBoolean(Route.fromString("commands.find"))) {
+                FindCommand().register()
+            }
 
             PlayerCache.register()
             ProxyCache.register()
@@ -128,6 +133,15 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
             if (config.getBoolean(Route.fromString("playercount-sync.enabled"))) {
                 proxy.eventManager.register(this, ProxyPingListener)
             }
+
+            if (config.getBoolean(Route.fromString("anti-vpn.enabled"))) {
+                AntiVPNCommand
+
+                RediVelocityCoroutineScope.launch(Dispatchers.IO) {
+                    IpManager.preloadAllIpCachesToCaffeine()
+                }
+            }
+
             proxy.eventManager.register(this, PostLoginListener)
             proxy.eventManager.register(this, ServerSwitchListener)
             proxy.eventManager.register(this, DisconnectListener)
