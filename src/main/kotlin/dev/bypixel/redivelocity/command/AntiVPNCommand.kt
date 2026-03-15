@@ -6,9 +6,9 @@ import dev.bypixel.redivelocity.antivpn.AntiVPNManager
 import dev.bypixel.redivelocity.antivpn.IpManager
 import dev.dejvokep.boostedyaml.route.Route
 import dev.jorel.commandapi.arguments.ArgumentSuggestions
+import dev.jorel.commandapi.kotlindsl.anyExecutor
 import dev.jorel.commandapi.kotlindsl.commandTree
 import dev.jorel.commandapi.kotlindsl.literalArgument
-import dev.jorel.commandapi.kotlindsl.playerExecutor
 import dev.jorel.commandapi.kotlindsl.stringArgument
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -34,7 +34,7 @@ object AntiVPNCommand {
                     literalArgument("ip") {
                         withPermission("redivelocity.antivpn.command.whitelist.add.ip")
                         stringArgument("ip") {
-                            playerExecutor { player, arguments ->
+                            anyExecutor { player, arguments ->
                                 RediVelocityCoroutineScope.launch(Dispatchers.IO) {
                                     val ip = (arguments[0] as String).trim()
 
@@ -58,7 +58,7 @@ object AntiVPNCommand {
                     literalArgument("asn") {
                         withPermission("redivelocity.antivpn.command.whitelist.add.asn")
                         stringArgument("asn") {
-                            playerExecutor { player, arguments ->
+                            anyExecutor { player, arguments ->
                                 RediVelocityCoroutineScope.launch(Dispatchers.IO) {
                                     val asn = (arguments[0] as String).trim()
 
@@ -91,7 +91,7 @@ object AntiVPNCommand {
                                     AntiVPNManager.getAllWhitelistedIps()
                                 }
                             })
-                            playerExecutor { player, arguments ->
+                            anyExecutor { player, arguments ->
                                 RediVelocityCoroutineScope.launch(Dispatchers.IO) {
                                     val ip = (arguments[0] as String).trim()
 
@@ -120,7 +120,7 @@ object AntiVPNCommand {
                                     AntiVPNManager.getAllWhitelistedAsns()
                                 }
                             })
-                            playerExecutor { player, arguments ->
+                            anyExecutor { player, arguments ->
                                 RediVelocityCoroutineScope.launch(Dispatchers.IO) {
                                     val asn = (arguments[0] as String).trim()
 
@@ -152,7 +152,7 @@ object AntiVPNCommand {
                     literalArgument("ip") {
                         withPermission("redivelocity.antivpn.command.blacklist.add.ip")
                         stringArgument("ip") {
-                            playerExecutor { player, arguments ->
+                            anyExecutor { player, arguments ->
                                 RediVelocityCoroutineScope.launch(Dispatchers.IO) {
                                     val ip = (arguments[0] as String).trim()
 
@@ -176,7 +176,7 @@ object AntiVPNCommand {
                     literalArgument("asn") {
                         withPermission("redivelocity.antivpn.command.blacklist.add.asn")
                         stringArgument("asn") {
-                            playerExecutor { player, arguments ->
+                            anyExecutor { player, arguments ->
                                 RediVelocityCoroutineScope.launch(Dispatchers.IO) {
                                     val asn = (arguments[0] as String).trim()
 
@@ -209,7 +209,7 @@ object AntiVPNCommand {
                                     AntiVPNManager.getAllBlacklistedIps()
                                 }
                             })
-                            playerExecutor { player, arguments ->
+                            anyExecutor { player, arguments ->
                                 RediVelocityCoroutineScope.launch(Dispatchers.IO) {
                                     val ip = (arguments[0] as String).trim()
 
@@ -238,7 +238,7 @@ object AntiVPNCommand {
                                     AntiVPNManager.getAllBlacklistedAsns()
                                 }
                             })
-                            playerExecutor { player, arguments ->
+                            anyExecutor { player, arguments ->
                                 RediVelocityCoroutineScope.launch(Dispatchers.IO) {
                                     val asn = (arguments[0] as String).trim()
 
