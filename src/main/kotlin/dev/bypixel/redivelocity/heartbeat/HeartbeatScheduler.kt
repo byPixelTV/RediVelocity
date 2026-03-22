@@ -44,7 +44,7 @@ object HeartbeatScheduler {
                 // atomic heartbeat lease
                 RediVelocity.instance.lettuceClient.withCoroutines {
                     it.hset("redivelocity:heartbeats", proxyId, now.toString())
-                    it.pexpire("redivelocity:heartbeats", CLEANUP_THRESHOLD_MS)
+                    it.hexpire("redivelocity:heartbeats", CLEANUP_THRESHOLD_MS, proxyId)
                 }
 
             } catch (t: Throwable) {
