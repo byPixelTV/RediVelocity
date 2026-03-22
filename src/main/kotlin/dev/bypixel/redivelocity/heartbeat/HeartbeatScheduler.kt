@@ -26,7 +26,7 @@ import kotlin.random.Random
 
 object HeartbeatScheduler {
     private const val HEARTBEAT_INTERVAL_MS = 10_000L
-    private const val CLEANUP_THRESHOLD_MS = 90_000L
+    private const val CLEANUP_THRESHOLD_MS = 90L
     private const val CLEANUP_LOCK_KEY = "redivelocity:cleanup-lock"
 
     private fun jitterMs(): Long = Random.nextLong(0, 800L)
