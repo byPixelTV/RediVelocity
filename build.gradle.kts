@@ -104,6 +104,7 @@ dependencies {
     quark("dev.jorel:commandapi-kotlin-velocity:11.1.0")
 
     implementation("dev.dejvokep:boosted-yaml:1.3.7")
+    implementation("org.bstats:bstats-velocity:3.2.1")
 
     quark("org.json:json:20250517")
     quark("com.github.ben-manes.caffeine:caffeine:3.2.3")
@@ -153,6 +154,7 @@ quark {
     relocate("dev.dejvokep.boostedyaml", "dev.bypixel.redivelocity.libs.boostedyaml")
     relocate("com.squareup.okhttp3", "dev.bypixel.redivelocity.libs.okhttp3")
     relocate("io.lettuce", "dev.bypixel.redivelocity.libs.lettuce")
+    relocate("org.bstats", "dev.bypixel.redivelocity.libs.bstats")
 }
 
 sourceSets {

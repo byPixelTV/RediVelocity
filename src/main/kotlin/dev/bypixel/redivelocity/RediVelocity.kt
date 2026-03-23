@@ -43,6 +43,8 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
+import org.bstats.charts.SimplePie
+import org.bstats.velocity.Metrics
 import org.bxteam.quark.velocity.VelocityLibraryManager
 import org.json.JSONObject
 import org.slf4j.LoggerFactory
@@ -50,7 +52,7 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.Path
 
-class RediVelocity @Inject constructor(val proxy: ProxyServer) {
+class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metricsFactory: Metrics.Factory) {
     lateinit var libraryManager: VelocityLibraryManager<RediVelocity>
 
     lateinit var lettuceClient: LettuceRedisClient
@@ -82,6 +84,21 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer) {
     fun onProxyInitialize(event: ProxyInitializeEvent) {
         instance = this
         server = proxy
+
+        val pluginId = 22365
+
+        val metrics = metricsFactory.make(this, pluginId)
+
+        // add chart of how many proxies are behind a cloud system
+        metrics.addCustomChart(
+            SimplePie("cloud_system_usage") {
+                if (config.getBoolean(Route.fromString("cloud-support.enabled"))) {
+                    config.getString(Route.fromString("cloud-support.cloud-system")) ?: "unknown"
+                } else {
+                    "none"
+                }
+            }
+        )
 
         CommandAPI.onEnable()
 
