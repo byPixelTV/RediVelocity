@@ -26,20 +26,26 @@ object CloudUtil {
         return when (cloud.lowercase()) {
             "simplecloud" -> {
                 val controllerApi = ControllerApi.createFutureApi()
-                val group = controllerApi.getServers().getServerById(System.getenv("SIMPLECLOUD_UNIQUE_ID")).join().group
-                val serverId = controllerApi.getServers().getServerById(System.getenv("SIMPLECLOUD_UNIQUE_ID")).join().numericalId
+                val group =
+                    controllerApi.getServers().getServerById(System.getenv("SIMPLECLOUD_UNIQUE_ID")).join().group
+                val serverId =
+                    controllerApi.getServers().getServerById(System.getenv("SIMPLECLOUD_UNIQUE_ID")).join().numericalId
                 "$group-$serverId"
             }
+
             "vulpescloud" -> {
-                val service = BridgeAPI.getFutureAPI().getServicesAPI().getLocalService().join()
+                val service = BridgeAPI.createFutureAPI().getServicesAPI().getLocalService().join()
                     ?: throw IllegalStateException("VulpesCloud service is null! Please report this to the VulpesCloud team. https://github.com/VulpesCloud/VulpesCloud/issues")
-                return "${service.task.name}-${service.orderedId}"
+                service.name()
             }
+
             "cloudnet" -> {
                 val wrapperConfiguration = InjectionLayer.ext().instance(WrapperConfiguration::class.java)
 
                 return wrapperConfiguration.serviceInfoSnapshot().name()
-            } else -> {
+            }
+
+            else -> {
                 throw IllegalArgumentException("Unsupported cloud system: $cloud")
             }
         }
