@@ -18,10 +18,10 @@ import org.apache.tools.ant.filters.ReplaceTokens
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    kotlin("jvm") version "2.3.20"
+    kotlin("jvm") version "2.3.21"
     id("com.gradleup.shadow") version "9.4.1"
     id("org.bxteam.quark") version "1.3.0"
-    kotlin("plugin.serialization") version "2.3.20"
+    kotlin("plugin.serialization") version "2.3.21"
 }
 
 fun getLatestTag(): String {
@@ -131,7 +131,7 @@ dependencies {
 
     compileOnly("app.simplecloud.api.platform:velocity:0.0.5-dev.1745077021664-28517d8")
 
-    val vulpesCloudVersion = "3.0.0-beta4"
+    val vulpesCloudVersion = "3.0.0-beta5"
     compileOnly("de.vulpescloud", "bridge", vulpesCloudVersion)
     compileOnly("de.vulpescloud", "api", vulpesCloudVersion)
 
