@@ -28,7 +28,10 @@ object PlayercountUtil {
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
     suspend fun calcGlobalPlayercount() : Long = withContext(Dispatchers.IO) {
 
-        val playercount = RediVelocity.instance.lettuceClient.commands.hvals("redivelocity:proxy:players").toList().size.toLong()
+        val playercount = RediVelocity.instance.lettuceClient.commands.hvals("redivelocity:proxy:player-counts")
+            .toList()
+            .mapNotNull { it.toLongOrNull() }
+            .sum()
 
         globalPlayercountCache = 0L
 

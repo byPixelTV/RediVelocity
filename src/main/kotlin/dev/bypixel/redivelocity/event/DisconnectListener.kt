@@ -50,9 +50,6 @@ object DisconnectListener {
             }, "redivelocity:players")
             RediVelocity.instance.lettuceClient.withCoroutines {
                 it.hdel(
-                    "redivelocity:proxy:players", player.uniqueId.toString()
-                )
-                it.hdel(
                     "redivelocity:player:servers", player.uniqueId.toString()
                 )
                 it.hdel(
