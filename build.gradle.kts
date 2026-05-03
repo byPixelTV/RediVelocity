@@ -107,7 +107,7 @@ dependencies {
     implementation("org.bstats:bstats-velocity:3.2.1")
 
     quark("org.json:json:20250517")
-    quark("com.github.ben-manes.caffeine:caffeine:3.2.3")
+    quark("com.github.ben-manes.caffeine:caffeine:3.2.4")
     quark("club.minnced:discord-webhooks:0.8.4")
 
     quark("com.squareup.okhttp3:okhttp:5.3.2")
