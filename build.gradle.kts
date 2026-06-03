@@ -18,10 +18,10 @@ import org.apache.tools.ant.filters.ReplaceTokens
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    kotlin("jvm") version "2.3.21"
+    kotlin("jvm") version "2.4.0"
     id("com.gradleup.shadow") version "9.4.2"
     id("org.bxteam.quark") version "1.3.0"
-    kotlin("plugin.serialization") version "2.3.21"
+    kotlin("plugin.serialization") version "2.4.0"
 }
 
 fun getLatestTag(): String {
