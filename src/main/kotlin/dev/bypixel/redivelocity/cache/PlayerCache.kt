@@ -24,6 +24,7 @@ import kotlinx.coroutines.*
 import org.json.JSONObject
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalLettuceCoroutinesApi::class)
 object PlayerCache {
@@ -44,7 +45,7 @@ object PlayerCache {
                 }
             }
 
-            delay(5 * 60 * 1000L) // Refresh every 5 minutes
+            delay((5 * 60 * 1000L).milliseconds) // Refresh every 5 minutes
         }
     }
 

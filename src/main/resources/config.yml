@@ -1,4 +1,4 @@
-config-version: 5
+config-version: 6
 
 debug-mode: false # enable to log additional debug information to the console
 
@@ -54,6 +54,7 @@ playerversion-check:
 # Note that if you set this to true, players can be on your network multiple times at the same time if they have 2 instances of Minecraft running and they are lucky enough to connect to different proxies with each instance and one instance is on your lobby and the other on the SMP
 # And most important: THIS IS NOT 100% SAFE! When you have PERFECT timing, you can still have 2 instances online, but the chance of this happening is very low and it requires a lot of luck, so it's not something you should worry about, but it's still worth mentioning that this is not a perfect solution to allow players to be connected to multiple proxies at the same time, but it's the best solution we have for now without implementing a more complex system to track player connections across proxies and prevent duplicates in a more reliable way.
 allow-same-player-on-multiple-proxies: false # Recommended: false
+ignore-same-players-when-transfer: false # if true, any incomming transfers will bypass the check described above. could be useful if you have a eu region and a us region, but could be unsafe if you have a lobby and a smp, as players could be on both at the same time. Recommended: false, please only enable this if you know what you are doing and have a specific use case for it.
 
 commands: # enable or disable specific commands
   find: true # find players across all proxies and display some information about them
