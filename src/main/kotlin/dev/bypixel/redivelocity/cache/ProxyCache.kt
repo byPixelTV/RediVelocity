@@ -22,6 +22,7 @@ import dev.bypixel.redivelocity.RediVelocityCoroutineScope
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.*
 import org.json.JSONObject
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalLettuceCoroutinesApi::class)
 object ProxyCache {
@@ -39,7 +40,7 @@ object ProxyCache {
                 }
             }
 
-            delay(5 * 60 * 1000L) // Refresh every 5 minutes
+            delay((5 * 60 * 1000L).milliseconds) // Refresh every 5 minutes
         }
     }
 

@@ -27,8 +27,10 @@
         "patch"
       ],
       "matchPackageNames": [
-        "*",
-        "!gradle"
+        "*"
+      ],
+      "excludePackageNames": [
+        "gradle"
       ],
       "groupName": "all dependencies with patch changes"
     }

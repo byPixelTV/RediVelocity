@@ -209,7 +209,7 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
                         "redivelocity:proxy:heartbeats",
                         "redivelocity:player:servers",
                         "redivelocity:proxies",
-                        "redivelocity:global:playercount",
+                        "redivelocity:-r:playercount",
                         "redivelocity:player:names",
                         "redivelocity:leader",
                         "redivelocity:registered-servers:*"

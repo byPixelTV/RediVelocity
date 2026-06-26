@@ -28,14 +28,19 @@ import java.util.concurrent.ConcurrentHashMap
 @OptIn(ExperimentalLettuceCoroutinesApi::class)
 object PlayerCache {
     private val players = ConcurrentHashMap<UUID, String>()
+    private val playerProxies = ConcurrentHashMap<UUID, String>()
 
     private val job = CoroutineScope(Dispatchers.IO).launch {
         while (isActive) {
             players.clear()
+            playerProxies.clear()
 
             RediVelocity.instance.lettuceClient.withCoroutines {
                 it.hgetall("redivelocity:player:names").collect { kv ->
                     players[UUID.fromString(kv.key)] = kv.value
+                }
+                it.hgetall("redivelocity:player:proxies").collect { kv ->
+                    playerProxies[UUID.fromString(kv.key)] = kv.value
                 }
             }
 
@@ -52,18 +57,23 @@ object PlayerCache {
                     "POST_LOGIN" -> {
                         val uuid = UUID.fromString(jMsg.getString("uuid"))
                         val username = jMsg.getString("username")
+                        val proxy = jMsg.getString("proxyId")
 
+                        playerProxies[uuid] = proxy
                         players[uuid] = username
                     }
                     "PRE_LOGIN" -> {
                         val uuid = UUID.fromString(jMsg.getString("uuid"))
                         val username = jMsg.getString("username")
+                        val proxy = jMsg.getString("proxyId")
 
+                        playerProxies[uuid] = proxy
                         players[uuid] = username
                     }
                     "DISCONNECT" -> {
                         val uuid = UUID.fromString(jMsg.getString("uuid"))
 
+                        playerProxies.remove(uuid)
                         players.remove(uuid)
                     }
                 }
@@ -78,6 +88,9 @@ object PlayerCache {
                 it.hgetall("redivelocity:player:names").collect { kv ->
                     players[UUID.fromString(kv.key)] = kv.value
                 }
+                it.hgetall("redivelocity:player:proxies").collect { kv ->
+                    playerProxies[UUID.fromString(kv.key)] = kv.value
+                }
             }
         }
         job.start()
@@ -89,4 +102,5 @@ object PlayerCache {
     }
 
     fun getPlayers(): ConcurrentHashMap<UUID, String> = players
+    fun getPlayerProxies(): ConcurrentHashMap<UUID, String> = playerProxies
 }
