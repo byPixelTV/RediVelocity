@@ -18,10 +18,10 @@ import org.apache.tools.ant.filters.ReplaceTokens
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    kotlin("jvm") version "2.4.0"
+    kotlin("jvm") version "2.4.10"
     id("com.gradleup.shadow") version "9.4.3"
     id("org.bxteam.quark") version "1.3.0"
-    kotlin("plugin.serialization") version "2.4.0"
+    kotlin("plugin.serialization") version "2.4.10"
 }
 
 fun getLatestTag(): String {
@@ -98,7 +98,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("com.velocitypowered:velocity-api:3.5.0-SNAPSHOT")
+    compileOnly("com.velocitypowered:velocity-api:3.5.1")
 
     implementation("dev.jorel:commandapi-velocity-shade:11.2.0")
     quark("dev.jorel:commandapi-kotlin-velocity:11.2.0")
@@ -135,7 +135,7 @@ dependencies {
     compileOnly("de.vulpescloud", "bridge", vulpesCloudVersion)
     compileOnly("de.vulpescloud", "api", vulpesCloudVersion)
 
-    val cloudnetVersion = "4.0.0-RC17-SNAPSHOT"
+    val cloudnetVersion = "4.0.0-RC18-SNAPSHOT"
     compileOnly("eu.cloudnetservice.cloudnet", "bridge-api", cloudnetVersion)
     compileOnly("eu.cloudnetservice.cloudnet", "driver-api", cloudnetVersion)
     compileOnly("eu.cloudnetservice.cloudnet", "wrapper-jvm-api", cloudnetVersion)
