@@ -132,13 +132,13 @@ dependencies {
     compileOnly("app.simplecloud.api.platform:velocity:0.0.5-dev.1745077021664-28517d8")
 
     val vulpesCloudVersion = "3.0.0-beta6"
-    compileOnly("de.vulpescloud", "bridge", vulpesCloudVersion)
-    compileOnly("de.vulpescloud", "api", vulpesCloudVersion)
+    compileOnly("de.vulpescloud:bridge:$vulpesCloudVersion")
+    compileOnly("de.vulpescloud:api:$vulpesCloudVersion")
 
     val cloudnetVersion = "4.0.0-RC18-SNAPSHOT"
-    compileOnly("eu.cloudnetservice.cloudnet", "bridge-api", cloudnetVersion)
-    compileOnly("eu.cloudnetservice.cloudnet", "driver-api", cloudnetVersion)
-    compileOnly("eu.cloudnetservice.cloudnet", "wrapper-jvm-api", cloudnetVersion)
+    compileOnly("eu.cloudnetservice.cloudnet:bridge-api:$cloudnetVersion")
+    compileOnly("eu.cloudnetservice.cloudnet:driver-api:$cloudnetVersion")
+    compileOnly("eu.cloudnetservice.cloudnet:wrapper-jvm-api:$cloudnetVersion")
 }
 
 quark {
@@ -169,18 +169,18 @@ sourceSets {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 }
 
 tasks {
     compileJava {
         options.encoding = "UTF-8"
-        options.release.set(21)
+        options.release.set(25)
     }
     compileKotlin {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_21)
+            jvmTarget.set(JvmTarget.JVM_25)
         }
     }
 
