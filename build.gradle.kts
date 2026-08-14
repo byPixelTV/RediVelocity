@@ -98,7 +98,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("com.velocitypowered:velocity-api:3.5.1")
+    compileOnly("com.velocitypowered:velocity-api:4.0.0")
 
     implementation("dev.jorel:commandapi-velocity-shade:12.0.0")
     quark("dev.jorel:commandapi-kotlin-velocity:11.2.0")
