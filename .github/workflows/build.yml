@@ -109,8 +109,8 @@ jobs:
           echo "- **Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${CURR_TAG}" >> RELEASE_NOTES.md
           echo "" >> RELEASE_NOTES.md
           echo "> # 📝 Velocity & Java Support 📑:" >> RELEASE_NOTES.md
-          echo "> - This version requires Velocity 3.5.0+ to correctly run on your proxy" >> RELEASE_NOTES.md
-          echo "> - You have to use Java 21+ to run this plugin" >> RELEASE_NOTES.md
+          echo "> - This version requires the latest version of Velocity to correctly run on your proxy" >> RELEASE_NOTES.md
+          echo "> - You have to use Java 25+ to run this plugin" >> RELEASE_NOTES.md
           echo "" >> RELEASE_NOTES.md
           echo "> # 🔥 Other stuff 🎉:" >> RELEASE_NOTES.md
           echo "> - If you find any bugs tell me on [Discord](https://dsc.gg/byPixelTV) or use the GitHub issue tracker." >> RELEASE_NOTES.md
