@@ -47,21 +47,29 @@ object PostLoginListener {
 
         val playerCount = PlayerCache.getPlayers().size
 
-        if (RediVelocity.instance.config.getBoolean(Route.fromString("login-configuration.enabled")) && RediVelocity.instance.config.getBoolean(Route.fromString("login-configuration.enforce-max-players"))) {
-            if (player.hasPermission(RediVelocity.instance.config.getString(Route.fromString("login-configuration.max-players-bypass-permission")))) {
-                return
-            }
-
-            val maxPlayers = RediVelocity.instance.maxPlayers
-            if (playerCount >= maxPlayers) {
-                val kickMessage = RediVelocity.instance.messageConfig.getString(
-                    Route.fromString("kick-network-full")
+        if (
+            RediVelocity.instance.config.getBoolean(Route.fromString("login-configuration.enabled")) &&
+            RediVelocity.instance.config.getBoolean(Route.fromString("login-configuration.enforce-max-players"))
+        ) {
+            val hasMaxPlayersBypass = player.hasPermission(
+                RediVelocity.instance.config.getString(
+                    Route.fromString("login-configuration.max-players-bypass-permission")
                 )
+            )
 
-                player.disconnect(
-                    MiniMessage.miniMessage().deserialize(kickMessage)
-                )
-                return
+            if (!hasMaxPlayersBypass) {
+                val maxPlayers = RediVelocity.instance.maxPlayers
+
+                if (playerCount >= maxPlayers) {
+                    val kickMessage = RediVelocity.instance.messageConfig.getString(
+                        Route.fromString("kick-network-full")
+                    )
+
+                    player.disconnect(
+                        MiniMessage.miniMessage().deserialize(kickMessage)
+                    )
+                    return
+                }
             }
         }
 
@@ -69,6 +77,7 @@ object PostLoginListener {
             if (player.hasPermission(RediVelocity.instance.config.getString(Route.fromString("login-configuration.maintenance.bypass-permission")))) {
                 return
             }
+
             val kickMessage = RediVelocity.instance.messageConfig.getString(
                 Route.fromString("kick-maintenance-mode")
             )

@@ -189,6 +189,7 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
     @Subscribe
     fun onProxyShutdown(event: ProxyShutdownEvent) {
+        RediVelocityLogger.info("Shutting down RediVelocity...")
         RediVelocityCoroutineScope.launch(Dispatchers.IO) {
             lettuceClient.sendMessage(
                 JSONObject().apply {
