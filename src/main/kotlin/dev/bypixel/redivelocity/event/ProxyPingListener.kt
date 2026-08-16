@@ -169,6 +169,10 @@ object ProxyPingListener {
                             "%max_players%",
                             maxPlayerCount?.toString() ?: "Unknown"
                         )
+                        .replace(
+                            "%proxy_id%",
+                            RediVelocity.instance.proxyId
+                        )
                 )
             )
         }
@@ -183,6 +187,10 @@ object ProxyPingListener {
                     .replace(
                         "%max_players%",
                         maxPlayerCount?.toString() ?: "Unknown"
+                    )
+                    .replace(
+                        "%proxy_id%",
+                        RediVelocity.instance.proxyId
                     )
             )
 
@@ -213,6 +221,10 @@ object ProxyPingListener {
                     .replace(
                         "%max_players%",
                         maxPlayerCount?.toString() ?: "Unknown"
+                    )
+                    .replace(
+                        "%proxy_id%",
+                        RediVelocity.instance.proxyId
                     )
             )
 
