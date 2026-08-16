@@ -6,14 +6,12 @@ import com.velocitypowered.api.network.HandshakeIntent
 import dev.bypixel.redivelocity.RediVelocity
 import dev.bypixel.redivelocity.cache.PlayerCache
 import dev.dejvokep.boostedyaml.route.Route
-import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.json.JSONObject
 import java.net.InetSocketAddress
 
 object PreLoginListener {
-    @OptIn(ExperimentalLettuceCoroutinesApi::class)
     @Subscribe
     fun onPreLogin(event: PreLoginEvent) {
         val uuid = event.uniqueId ?: return

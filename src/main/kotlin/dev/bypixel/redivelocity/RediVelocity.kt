@@ -19,10 +19,7 @@ import dev.bypixel.redivelocity.election.ElectionScheduler
 import dev.bypixel.redivelocity.event.*
 import dev.bypixel.redivelocity.feature.globalPlayercount.PlayercountScheduler
 import dev.bypixel.redivelocity.heartbeat.HeartbeatScheduler
-import dev.bypixel.redivelocity.pubsub.ConnectListener
-import dev.bypixel.redivelocity.pubsub.KickListener
-import dev.bypixel.redivelocity.pubsub.LeaderElectionListener
-import dev.bypixel.redivelocity.pubsub.PlayercountListener
+import dev.bypixel.redivelocity.pubsub.*
 import dev.bypixel.redivelocity.registration.ProxyRegistrationScheduler
 import dev.bypixel.redivelocity.util.CloudUtil
 import dev.bypixel.redivelocity.util.ProxyIdGenerator
@@ -51,6 +48,7 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.Path
+import kotlin.time.Duration.Companion.milliseconds
 
 class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metricsFactory: Metrics.Factory) {
     lateinit var libraryManager: VelocityLibraryManager<RediVelocity>
@@ -58,7 +56,13 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
     lateinit var lettuceClient: LettuceRedisClient
     lateinit var config: YamlDocument
     lateinit var messageConfig: YamlDocument
+    lateinit var rawConfig: YamlDocument
     lateinit var proxyId: String
+
+    var maxPlayers = 0
+    lateinit var forceMotd: String
+    lateinit var forceMaintenanceMotd: String
+    var maintenance: Boolean = false
 
     private val logger = LoggerFactory.getLogger(RediVelocity::class.java)
 
@@ -116,8 +120,10 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
         }
 
         RediVelocityCoroutineScope.launch(Dispatchers.IO) {
+            syncLoginConfig()
+
             determineProxyId()
-            delay(500)
+            delay(500.milliseconds)
             registerProxyInRedis()
             handleFirstProxyCleanupIfNeeded()
             sendAddProxyEvent()
@@ -137,6 +143,8 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
             ConnectListener
             LeaderElectionListener
             PlayercountListener
+            ConfigListener
+            LoginConfigListener
 
             RediVelocityCommand().register()
 
@@ -223,6 +231,8 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
             RedisListener.unregisterListener(ConnectListener)
             RedisListener.unregisterListener(LeaderElectionListener)
             RedisListener.unregisterListener(PlayercountListener)
+            RedisListener.unregisterListener(ConfigListener)
+            RedisListener.unregisterListener(LoginConfigListener)
             ElectionScheduler.job.cancelAndJoin()
             ProxyRegistrationScheduler.job.cancelAndJoin()
             HeartbeatScheduler.job.cancelAndJoin()
@@ -250,17 +260,118 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
     }
 
     private fun loadConfigs() {
+        val configFile = File("plugins/redivelocity/config.yml")
+
         val configInputStream = object {}.javaClass.getResourceAsStream("/config.yml")
         val messagesInputStream = object {}.javaClass.getResourceAsStream("/messages.yml")
 
-        config = YamlDocument.create(File("plugins/redivelocity/config.yml"), configInputStream!!, GeneralSettings.builder().setKeyFormat(
-            GeneralSettings.KeyFormat.OBJECT).build(), LoaderSettings.builder().setAutoUpdate(true).build(), DumperSettings.DEFAULT, UpdaterSettings.builder().setVersioning(
-            BasicVersioning("config-version")
-        ).build())
-        messageConfig = YamlDocument.create(File("plugins/redivelocity/messages.yml"), messagesInputStream!!, GeneralSettings.builder().setKeyFormat(
-            GeneralSettings.KeyFormat.OBJECT).build(), LoaderSettings.builder().setAutoUpdate(true).build(), DumperSettings.DEFAULT, UpdaterSettings.builder().setVersioning(
-            BasicVersioning("config-version")
-        ).build())
+        config = YamlDocument.create(
+            configFile,
+            configInputStream!!,
+            GeneralSettings.builder()
+                .setKeyFormat(GeneralSettings.KeyFormat.OBJECT)
+                .build(),
+            LoaderSettings.builder()
+                .setAutoUpdate(true)
+                .build(),
+            DumperSettings.DEFAULT,
+            UpdaterSettings.builder()
+                .setVersioning(
+                    BasicVersioning("config-version")
+                )
+                .build()
+        )
+
+        rawConfig = YamlDocument.create(
+            configFile,
+            GeneralSettings.builder()
+                .setKeyFormat(GeneralSettings.KeyFormat.OBJECT)
+                .build(),
+            LoaderSettings.DEFAULT,
+            DumperSettings.DEFAULT
+        )
+
+        messageConfig = YamlDocument.create(
+            File("plugins/redivelocity/messages.yml"),
+            messagesInputStream!!,
+            GeneralSettings.builder()
+                .setKeyFormat(GeneralSettings.KeyFormat.OBJECT)
+                .build(),
+            LoaderSettings.builder()
+                .setAutoUpdate(true)
+                .build(),
+            DumperSettings.DEFAULT,
+            UpdaterSettings.builder()
+                .setVersioning(
+                    BasicVersioning("config-version")
+                )
+                .build()
+        )
+    }
+
+    @OptIn(ExperimentalLettuceCoroutinesApi::class)
+    private suspend fun syncLoginConfig() {
+        maxPlayers = lettuceClient.withCoroutines {
+            it.get("redivelocity:login-config:max-players")?.toIntOrNull() ?: config.getInt(Route.fromString("login-configuration.max-players")) ?: 0
+        }
+
+        forceMotd = lettuceClient.withCoroutines {
+            it.get("redivelocity:login-config:forced-motd") ?: config.getString(Route.fromString("login-configuration.forced-motd")) ?: ""
+        }
+
+        forceMaintenanceMotd = lettuceClient.withCoroutines {
+            it.get("redivelocity:login-config:forced-maintenance-motd") ?: config.getString(Route.fromString("login-configuration.maintenance.forced-motd")) ?: ""
+        }
+
+        maintenance = lettuceClient.withCoroutines {
+            it.get("redivelocity:login-config:maintenance-enabled")?.toBoolean() ?: config.getBoolean(Route.fromString("login-configuration.maintenance.enabled")) ?: false
+        }
+    }
+
+    @OptIn(ExperimentalLettuceCoroutinesApi::class)
+    suspend fun setMaxPlayers(maxPlayers: Int) {
+        this.maxPlayers = maxPlayers
+        lettuceClient.withCoroutines {
+            it.set("redivelocity:login-config:max-players", maxPlayers.toString())
+        }
+    }
+
+    @OptIn(ExperimentalLettuceCoroutinesApi::class)
+    suspend fun setForceMotd(motd: String) {
+        this.forceMotd = motd
+        lettuceClient.withCoroutines {
+            it.set("redivelocity:login-config:forced-motd", motd)
+        }
+    }
+
+    @OptIn(ExperimentalLettuceCoroutinesApi::class)
+    suspend fun setForceMaintenanceMotd(motd: String) {
+        this.forceMaintenanceMotd = motd
+        lettuceClient.withCoroutines {
+            it.set("redivelocity:login-config:forced-maintenance-motd", motd)
+        }
+    }
+
+    @OptIn(ExperimentalLettuceCoroutinesApi::class)
+    suspend fun setMaintenance(enabled: Boolean) {
+        this.maintenance = enabled
+        lettuceClient.withCoroutines {
+            it.set("redivelocity:login-config:maintenance-enabled", enabled.toString())
+        }
+    }
+
+    fun reloadConfigs() {
+        config.reload()
+        messageConfig.reload()
+        rawConfig.reload()
+        RediVelocityLogger.success("Reloaded configuration files.")
+    }
+
+    fun saveConfigs() {
+        config.save()
+        messageConfig.save()
+        rawConfig.reload()
+        RediVelocityLogger.success("Saved configuration files.")
     }
 
     private fun initLettuceClientFromConfig() {

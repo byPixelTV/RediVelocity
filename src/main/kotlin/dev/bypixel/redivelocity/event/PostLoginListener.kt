@@ -24,6 +24,7 @@ import dev.bypixel.redivelocity.RediVelocityCoroutineScope
 import dev.bypixel.redivelocity.antivpn.AntiVPNManager
 import dev.bypixel.redivelocity.antivpn.IpManager
 import dev.bypixel.redivelocity.antivpn.IpQueryUtil
+import dev.bypixel.redivelocity.cache.PlayerCache
 import dev.bypixel.redivelocity.feature.globalPlayercount.PlayercountUtil
 import dev.bypixel.redivelocity.util.DiscordWebhookUtil
 import dev.bypixel.redivelocity.util.UpdateUtil
@@ -37,17 +38,51 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.json.JSONObject
+import kotlin.time.Duration.Companion.milliseconds
 
 object PostLoginListener {
-    @OptIn(ExperimentalLettuceCoroutinesApi::class)
     @Subscribe
     fun onPostLogin(event: PostLoginEvent) {
         val player = event.player
 
+        val playerCount = PlayerCache.getPlayers().size
+
+        if (RediVelocity.instance.config.getBoolean(Route.fromString("login-configuration.enabled")) && RediVelocity.instance.config.getBoolean(Route.fromString("login-configuration.enforce-max-players"))) {
+            if (player.hasPermission(RediVelocity.instance.config.getString(Route.fromString("login-configuration.max-players-bypass-permission")))) {
+                return
+            }
+
+            val maxPlayers = RediVelocity.instance.maxPlayers
+            if (playerCount >= maxPlayers) {
+                val kickMessage = RediVelocity.instance.messageConfig.getString(
+                    Route.fromString("kick-network-full")
+                )
+
+                player.disconnect(
+                    MiniMessage.miniMessage().deserialize(kickMessage)
+                )
+                return
+            }
+        }
+
+        if (RediVelocity.instance.config.getBoolean(Route.fromString("login-configuration.enabled")) && RediVelocity.instance.maintenance) {
+            if (player.hasPermission(RediVelocity.instance.config.getString(Route.fromString("login-configuration.maintenance.bypass-permission")))) {
+                return
+            }
+            val kickMessage = RediVelocity.instance.messageConfig.getString(
+                Route.fromString("kick-maintenance-mode")
+            )
+
+            player.disconnect(
+                MiniMessage.miniMessage().deserialize(kickMessage)
+            )
+            return
+        }
+
         if (RediVelocity.instance.config.getBoolean(Route.fromString("playerversion-check.enabled"))) {
             val allowedVersions = RediVelocity.instance.config.getIntList(Route.fromString("playerversion-check.allowed-versions"))
 
-            if (!allowedVersions.contains(player.protocolVersion.protocol) && !player.hasPermission("redivelocity.admin.versionbypass")) {
+            if (!allowedVersions.contains(player.protocolVersion.protocol) && !player.hasPermission(RediVelocity.instance.config.getString(Route.fromString("playerversion-check.bypass-permission")))) {
                 player.disconnect(MiniMessage.miniMessage().deserialize(RediVelocity.instance.messageConfig.getString(Route.fromString("playerversion_unsupported"))))
                 return
             }
@@ -68,7 +103,7 @@ object PostLoginListener {
                         }
 
                         if (compare > 0) {
-                            delay(2000L) // Delay to ensure the player has fully logged in
+                            delay(2000L.milliseconds) // Delay to ensure the player has fully logged in
                             player.sendMessage(
                                 MiniMessage.miniMessage().deserialize(
                                     "<prefix> An <#08a8f8>update</#08a8f8> is available! You are running version <#dc2626><current_version></#dc2626>, latest version is <#4bfb00><latest_version></#4bfb00>. Download it on <click:open_url:'https://www.github.com/byPixelTV/RediVelocity/releases'><u><#08a8f8>GitHub (click)</#08a8f8></u></click>.",
@@ -94,7 +129,7 @@ object PostLoginListener {
         if (!player.hasPermission("redivelocity.admin.antivpn.bypass") && RediVelocity.instance.config.getBoolean(Route.fromString("anti-vpn.enabled"))) {
             val data = IpManager.cachePlayerIp(player.uniqueId.toString(), ip)
             RediVelocityCoroutineScope.launch(Dispatchers.IO) {
-                delay(2 * 50L) // Wait for 2 ticks to ensure the player is fully loaded
+                delay((2 * 50L).milliseconds) // Wait for 2 ticks to ensure the player is fully loaded
 
                 val asnWhitelist = AntiVPNManager.getAllWhitelistedAsns()
                 val ipWhitelist = AntiVPNManager.getAllWhitelistedIps()

@@ -1,32 +1,115 @@
-/*
- * Copyright (c) 2024-present byPixelTV & contributors.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- *  along with this program. If not, see <https://www.gnu.org/licenses/>.
- */
-
 package dev.bypixel.redivelocity.event
 
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.proxy.ProxyPingEvent
+import com.velocitypowered.api.proxy.server.ServerPing
 import dev.bypixel.redivelocity.RediVelocity
 import dev.bypixel.redivelocity.feature.globalPlayercount.PlayercountUtil
+import dev.bypixel.redivelocity.model.MotdEntry
+import dev.bypixel.redivelocity.util.SerializationHelpers
 import dev.dejvokep.boostedyaml.route.Route
+import net.kyori.adventure.text.minimessage.MiniMessage
+import java.util.*
 
 object ProxyPingListener {
     @Subscribe
     fun onProxyPing(event: ProxyPingEvent) {
-        if (RediVelocity.instance.config.getBoolean(Route.fromString("playercount-sync.use-backend-server-count"))) {
-            val includedBackendServers = RediVelocity.instance.config.getStringList(
+        val config = RediVelocity.instance.config
+        val rawConfig = RediVelocity.instance.rawConfig
+
+        val maxPlayerCount = if (
+            config.getBoolean(Route.fromString("login-configuration.enabled"))
+        ) {
+            RediVelocity.instance.maxPlayers
+        } else {
+            null
+        }
+
+        var motd: String? = null
+        var protocolText: String? = null
+        var playerInfo: String? = null
+
+        if (
+            config.getBoolean(Route.fromString("login-configuration.enabled")) &&
+            config.getBoolean(Route.fromString("login-configuration.use-motd"))
+        ) {
+            val motdsSection = rawConfig.getSection(
+                Route.fromString("login-configuration.motds")
+            )
+
+            val motds = motdsSection
+                ?.getRoutesAsStrings(false)
+                ?.mapNotNull { id ->
+                    val basePath = "login-configuration.motds.$id"
+
+                    val content = rawConfig.getString(
+                        Route.fromString("$basePath.content")
+                    ) ?: return@mapNotNull null
+
+                    MotdEntry(
+                        id = id,
+                        content = content,
+                        playerInfo = rawConfig.getString(
+                            Route.fromString("$basePath.playerInfo")
+                        ),
+                        protocolText = rawConfig.getString(
+                            Route.fromString("$basePath.protocolText")
+                        ),
+                        maintenance = rawConfig.getBoolean(
+                            Route.fromString("$basePath.maintenance")
+                        )
+                    )
+                }
+                ?: emptyList()
+
+            val normalMotds = motds.filter {
+                !it.maintenance
+            }
+
+            val maintenanceMotds = motds.filter {
+                it.maintenance
+            }
+
+            val selectedMotd: MotdEntry? =
+                if (RediVelocity.instance.maintenance) {
+                    if (RediVelocity.instance.forceMaintenanceMotd.isNotBlank()) {
+                        maintenanceMotds.firstOrNull {
+                            it.id == RediVelocity.instance.forceMaintenanceMotd
+                        }
+                    } else {
+                        maintenanceMotds.randomOrNull()
+                    }
+                } else {
+                    if (RediVelocity.instance.forceMotd.isNotBlank()) {
+                        normalMotds.firstOrNull {
+                            it.id == RediVelocity.instance.forceMotd
+                        }
+                    } else {
+                        normalMotds.randomOrNull()
+                    }
+                }
+
+            if (selectedMotd != null) {
+                motd = SerializationHelpers.convertToMinimessage(
+                    selectedMotd.content
+                )
+
+                protocolText = selectedMotd.protocolText
+                    ?.takeIf { it.isNotBlank() }
+
+                playerInfo = selectedMotd.playerInfo
+                    ?.takeIf { it.isNotBlank() }
+            }
+        }
+
+        val playerCount: Int
+
+        if (
+            config.getBoolean(
+                Route.fromString("playercount-sync.use-backend-server-count")
+            )
+        ) {
+            val includedBackendServers = config.getStringList(
                 Route.fromString("playercount-sync.backend-server-names")
             )
 
@@ -34,32 +117,124 @@ object ProxyPingListener {
 
             var totalPlayers = 0
 
-            val patterns = includedBackendServers.map { it.toRegex() }
+            val patterns = includedBackendServers.mapNotNull {
+                runCatching {
+                    it.toRegex()
+                }.getOrNull()
+            }
+
             val globPatterns = includedBackendServers.map {
-                Regex("^" + Regex.escape(it).replace("\\*", ".*") + "$")
+                Regex(
+                    "^" +
+                            Regex.escape(it)
+                                .replace("\\*", ".*") +
+                            "$"
+                )
             }
 
             allServers.forEach { server ->
                 val name = server.serverInfo.name
 
-                if (patterns.any { it.matches(name) }) {
+                val matches =
+                    patterns.any { it.matches(name) } ||
+                            globPatterns.any { it.matches(name) }
+
+                if (matches) {
                     totalPlayers += server.playersConnected.size
                 }
-
-                if (globPatterns.any { it.matches(name) }) { totalPlayers += server.playersConnected.size }
             }
 
-            val ping = event.ping.asBuilder()
-
-            ping.onlinePlayers(totalPlayers)
-
-            event.ping = ping.build()
+            playerCount = totalPlayers
         } else {
-            val ping = event.ping.asBuilder()
-
-            ping.onlinePlayers(PlayercountUtil.globalPlayercountCache.toInt())
-
-            event.ping = ping.build()
+            playerCount = PlayercountUtil.globalPlayercountCache.toInt()
         }
+
+        val ping = event.ping.asBuilder()
+
+        ping.onlinePlayers(playerCount)
+
+        if (maxPlayerCount != null) {
+            ping.maximumPlayers(maxPlayerCount)
+        }
+
+        if (motd != null) {
+            ping.description(
+                MiniMessage.miniMessage().deserialize(
+                    motd
+                        .replace(
+                            "%player_count%",
+                            playerCount.toString()
+                        )
+                        .replace(
+                            "%max_players%",
+                            maxPlayerCount?.toString() ?: "Unknown"
+                        )
+                )
+            )
+        }
+
+        if (protocolText != null) {
+            val protocolComponent = MiniMessage.miniMessage().deserialize(
+                protocolText
+                    .replace(
+                        "%player_count%",
+                        playerCount.toString()
+                    )
+                    .replace(
+                        "%max_players%",
+                        maxPlayerCount?.toString() ?: "Unknown"
+                    )
+            )
+
+            val legacyProtocol =
+                SerializationHelpers.convertToLegacyParagraphs(
+                    protocolComponent
+                )
+
+            ping.version(
+                ServerPing.Version(
+                    if (RediVelocity.instance.maintenance) {
+                        1
+                    } else {
+                        event.ping.version.protocol
+                    },
+                    legacyProtocol
+                )
+            )
+        }
+
+        if (playerInfo != null) {
+            val infoComponent = MiniMessage.miniMessage().deserialize(
+                playerInfo
+                    .replace(
+                        "%player_count%",
+                        playerCount.toString()
+                    )
+                    .replace(
+                        "%max_players%",
+                        maxPlayerCount?.toString() ?: "Unknown"
+                    )
+            )
+
+            val infoString =
+                SerializationHelpers.convertToLegacyParagraphs(
+                    infoComponent
+                )
+
+            val samplePlayers = infoString
+                .split("\n")
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+                .map {
+                    ServerPing.SamplePlayer(
+                        it,
+                        UUID.randomUUID()
+                    )
+                }
+
+            ping.samplePlayers(samplePlayers)
+        }
+
+        event.ping = ping.build()
     }
 }

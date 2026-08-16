@@ -16,6 +16,10 @@
 
 package dev.bypixel.redivelocity.command
 
+import dev.bypixel.redivelocity.command.sub.MaintenanceCommand
+import dev.bypixel.redivelocity.command.sub.MaxplayersCommand
+import dev.bypixel.redivelocity.command.sub.ReloadCommand
+import dev.bypixel.redivelocity.command.sub.motd.MotdCommand
 import dev.bypixel.redivelocity.command.sub.player.PlayerCommand
 import dev.bypixel.redivelocity.command.sub.proxy.ProxyCommand
 import dev.jorel.commandapi.CommandAPICommand
@@ -26,7 +30,11 @@ class RediVelocityCommand {
             .withAliases("rv", "rediv")
             .withSubcommands(
                 PlayerCommand.playerCommand(),
-                ProxyCommand.proxyCommand()
+                ProxyCommand.proxyCommand(),
+                ReloadCommand.reloadCommand(),
+                MaintenanceCommand.maintenanceCommand(),
+                MaxplayersCommand.maxplayersCommand(),
+                MotdCommand.motdCommand()
             ).register()
     }
 }
