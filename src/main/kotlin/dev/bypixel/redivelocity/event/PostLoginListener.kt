@@ -24,7 +24,6 @@ import dev.bypixel.redivelocity.RediVelocityCoroutineScope
 import dev.bypixel.redivelocity.antivpn.AntiVPNManager
 import dev.bypixel.redivelocity.antivpn.IpManager
 import dev.bypixel.redivelocity.antivpn.IpQueryUtil
-import dev.bypixel.redivelocity.cache.PlayerCache
 import dev.bypixel.redivelocity.feature.globalPlayercount.PlayercountUtil
 import dev.bypixel.redivelocity.util.DiscordWebhookUtil
 import dev.bypixel.redivelocity.util.UpdateUtil
@@ -44,58 +43,6 @@ object PostLoginListener {
     @Subscribe
     fun onPostLogin(event: PostLoginEvent) {
         val player = event.player
-
-        val playerCount = PlayerCache.getPlayers().size
-
-        if (
-            RediVelocity.instance.config.getBoolean(Route.fromString("login-configuration.enabled")) &&
-            RediVelocity.instance.config.getBoolean(Route.fromString("login-configuration.enforce-max-players"))
-        ) {
-            val hasMaxPlayersBypass = player.hasPermission(
-                RediVelocity.instance.config.getString(
-                    Route.fromString("login-configuration.max-players-bypass-permission")
-                )
-            )
-
-            if (!hasMaxPlayersBypass) {
-                val maxPlayers = RediVelocity.instance.maxPlayers
-
-                if (playerCount >= maxPlayers) {
-                    val kickMessage = RediVelocity.instance.messageConfig.getString(
-                        Route.fromString("kick-network-full")
-                    )
-
-                    player.disconnect(
-                        MiniMessage.miniMessage().deserialize(kickMessage)
-                    )
-                    return
-                }
-            }
-        }
-
-        if (RediVelocity.instance.config.getBoolean(Route.fromString("login-configuration.enabled")) && RediVelocity.instance.maintenance) {
-            if (player.hasPermission(RediVelocity.instance.config.getString(Route.fromString("login-configuration.maintenance.bypass-permission")))) {
-                return
-            }
-
-            val kickMessage = RediVelocity.instance.messageConfig.getString(
-                Route.fromString("kick-maintenance-mode")
-            )
-
-            player.disconnect(
-                MiniMessage.miniMessage().deserialize(kickMessage)
-            )
-            return
-        }
-
-        if (RediVelocity.instance.config.getBoolean(Route.fromString("playerversion-check.enabled"))) {
-            val allowedVersions = RediVelocity.instance.config.getIntList(Route.fromString("playerversion-check.allowed-versions"))
-
-            if (!allowedVersions.contains(player.protocolVersion.protocol) && !player.hasPermission(RediVelocity.instance.config.getString(Route.fromString("playerversion-check.bypass-permission")))) {
-                player.disconnect(MiniMessage.miniMessage().deserialize(RediVelocity.instance.messageConfig.getString(Route.fromString("playerversion_unsupported"))))
-                return
-            }
-        }
 
         if (RediVelocity.instance.config.getBoolean(Route.fromString("update-check.enabled")) && RediVelocity.instance.config.getBoolean(Route.fromString("update-check.notify-admins"))) {
             if (player.hasPermission("redivelocity.admin.updatecheck")) {

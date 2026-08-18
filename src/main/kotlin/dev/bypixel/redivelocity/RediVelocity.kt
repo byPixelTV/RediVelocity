@@ -173,6 +173,8 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
             proxy.eventManager.register(this, ServerRegisteredListener)
             proxy.eventManager.register(this, ServerUnregisteredListener)
             proxy.eventManager.register(this, PreLoginListener)
+            proxy.eventManager.register(this, LoginListener)
+            proxy.eventManager.register(this, ServerPreConnectListener)
 
             val registeredServers =
                 proxy.allServers.associate { it.serverInfo.name to it.serverInfo.address.toString() }
