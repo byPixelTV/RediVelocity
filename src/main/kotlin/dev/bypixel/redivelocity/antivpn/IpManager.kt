@@ -5,6 +5,7 @@ import dev.bypixel.redivelocity.RediVelocity
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.ScanArgs
 import io.lettuce.core.ScanCursor
+import io.lettuce.core.SetArgs
 import org.json.JSONObject
 import java.time.Duration
 
@@ -97,8 +98,8 @@ object IpManager {
         val jsonString = data.toString()
 
         // Redis TTL 6h
-        redis.setex(uuidKey, 1 * 60 * 60, jsonString)
-        redis.setex(ipKey, 6 * 60 * 60, jsonString)
+        redis.set(uuidKey, jsonString, SetArgs.Builder.ex(1 * 60 * 60))
+        redis.set(ipKey, jsonString, SetArgs.Builder.ex(6 * 60 * 60))
 
         // Caffeine
         caffeineCache.put(uuidKey, data)
@@ -110,7 +111,6 @@ object IpManager {
     /**
      * Read by UUID (no API call)
      */
-    @OptIn(ExperimentalLettuceCoroutinesApi::class)
     suspend fun getCachedIpData(uuid: String): JSONObject? {
         val key = uuidKey(uuid)
 
