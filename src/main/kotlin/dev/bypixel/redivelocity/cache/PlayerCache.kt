@@ -11,7 +11,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- *  along with this program. If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package dev.bypixel.redivelocity.cache
@@ -19,89 +19,280 @@ package dev.bypixel.redivelocity.cache
 import dev.bypixel.lettucewrapper.listener.RedisListener
 import dev.bypixel.redivelocity.RediVelocity
 import dev.bypixel.redivelocity.RediVelocityCoroutineScope
+import dev.bypixel.redivelocity.util.RediVelocityLogger
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import org.json.JSONObject
-import java.util.*
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalLettuceCoroutinesApi::class)
 object PlayerCache {
+    private const val HEARTBEAT_TIMEOUT_MS = 90_000L
+
     private val players = ConcurrentHashMap<UUID, String>()
     private val playerProxies = ConcurrentHashMap<UUID, String>()
+    private val playerSessions = ConcurrentHashMap<UUID, String>()
 
-    private val job = CoroutineScope(Dispatchers.IO).launch {
-        while (isActive) {
-            players.clear()
-            playerProxies.clear()
+    private var refreshJob: Job? = null
 
-            RediVelocity.instance.lettuceClient.withCoroutines {
-                it.hgetall("redivelocity:player:names").collect { kv ->
-                    players[UUID.fromString(kv.key)] = kv.value
-                }
-                it.hgetall("redivelocity:player:proxies").collect { kv ->
-                    playerProxies[UUID.fromString(kv.key)] = kv.value
-                }
-            }
+    private object GlobalPlayerCacheListener :
+        RedisListener("redivelocity:players") {
 
-            delay((5 * 60 * 1000L).milliseconds) // Refresh every 5 minutes
-        }
-    }
-
-    private object GlobalPlayerCacheListener : RedisListener("redivelocity:players") {
         override fun onMessage(message: String) {
-            val jMsg = JSONObject(message)
+            try {
+                val json = JSONObject(message)
 
-            if (jMsg.has("action") && jMsg.has("uuid") && jMsg.has("username")) {
-                when (jMsg.getString("action")) {
+                if (!json.has("action") || !json.has("uuid")) {
+                    return
+                }
+
+                val uuid = try {
+                    UUID.fromString(json.getString("uuid"))
+                } catch (_: IllegalArgumentException) {
+                    return
+                }
+
+                when (json.getString("action")) {
                     "POST_LOGIN" -> {
-                        val uuid = UUID.fromString(jMsg.getString("uuid"))
-                        val username = jMsg.getString("username")
-                        val proxy = jMsg.getString("proxyId")
+                        if (
+                            !json.has("username") ||
+                            !json.has("proxyId")
+                        ) {
+                            return
+                        }
 
-                        playerProxies[uuid] = proxy
+                        val username = json.getString("username")
+                        val proxyId = json.getString("proxyId")
+
+                        playerProxies[uuid] = proxyId
+
+                        if (
+                            json.has("sessionId") &&
+                            !json.isNull("sessionId")
+                        ) {
+                            playerSessions[uuid] =
+                                json.getString("sessionId")
+                        } else {
+                            playerSessions.remove(uuid)
+                        }
+
                         players[uuid] = username
                     }
-                    "PRE_LOGIN" -> {
-                        val uuid = UUID.fromString(jMsg.getString("uuid"))
-                        val username = jMsg.getString("username")
-                        val proxy = jMsg.getString("proxyId")
 
-                        playerProxies[uuid] = proxy
-                        players[uuid] = username
-                    }
                     "DISCONNECT" -> {
-                        val uuid = UUID.fromString(jMsg.getString("uuid"))
+                        val incomingSession =
+                            if (
+                                json.has("sessionId") &&
+                                !json.isNull("sessionId")
+                            ) {
+                                json.getString("sessionId")
+                            } else {
+                                null
+                            }
 
-                        playerProxies.remove(uuid)
-                        players.remove(uuid)
+                        val cachedSession =
+                            playerSessions[uuid]
+
+                        if (
+                            incomingSession != null &&
+                            cachedSession != null &&
+                            incomingSession != cachedSession
+                        ) {
+                            return
+                        }
+
+                        remove(uuid)
                     }
                 }
+            } catch (t: Throwable) {
+                RediVelocityLogger.warn(
+                    "Failed to process player cache message: ${t.message}"
+                )
             }
         }
     }
 
     fun register() {
         GlobalPlayerCacheListener
-        RediVelocityCoroutineScope.launch(Dispatchers.IO) {
-            RediVelocity.instance.lettuceClient.withCoroutines {
-                it.hgetall("redivelocity:player:names").collect { kv ->
-                    players[UUID.fromString(kv.key)] = kv.value
-                }
-                it.hgetall("redivelocity:player:proxies").collect { kv ->
-                    playerProxies[UUID.fromString(kv.key)] = kv.value
+
+        refreshJob = RediVelocityCoroutineScope.launch(Dispatchers.IO) {
+            refresh()
+
+            while (isActive) {
+                delay(5.minutes)
+
+                try {
+                    refresh()
+                } catch (t: Throwable) {
+                    RediVelocityLogger.warn(
+                        "Failed to refresh PlayerCache: ${t.message}"
+                    )
                 }
             }
         }
-        job.start()
+    }
+
+    private suspend fun refresh() {
+        val now = System.currentTimeMillis()
+
+        val snapshot = RediVelocity.instance.lettuceClient.withCoroutines { redis ->
+            val registeredProxies = redis
+                .hkeys("redivelocity:proxies")
+                .toList()
+                .toSet()
+
+            val heartbeats = redis
+                .hgetall("redivelocity:heartbeats")
+                .toList()
+                .associate { it.key to it.value }
+
+            val aliveProxies = registeredProxies.filterTo(HashSet()) { proxyId ->
+                val lastSeen = heartbeats[proxyId]
+                    ?.toLongOrNull()
+                    ?: return@filterTo false
+
+                now - lastSeen <= HEARTBEAT_TIMEOUT_MS
+            }
+
+            val redisPlayerProxies = redis
+                .hgetall("redivelocity:player:proxies")
+                .toList()
+
+            val validPlayerProxies =
+                HashMap<UUID, String>()
+
+            for (entry in redisPlayerProxies) {
+                val uuid = try {
+                    UUID.fromString(entry.key)
+                } catch (_: IllegalArgumentException) {
+                    continue
+                }
+
+                val proxyId = entry.value
+
+                if (proxyId !in aliveProxies) {
+                    continue
+                }
+
+                validPlayerProxies[uuid] = proxyId
+            }
+
+            val validUuids =
+                validPlayerProxies.keys
+
+            val redisNames = redis
+                .hgetall("redivelocity:player:names")
+                .toList()
+
+            val validPlayers =
+                HashMap<UUID, String>()
+
+            for (entry in redisNames) {
+                val uuid = try {
+                    UUID.fromString(entry.key)
+                } catch (_: IllegalArgumentException) {
+                    continue
+                }
+
+                if (uuid !in validUuids) {
+                    continue
+                }
+
+                validPlayers[uuid] = entry.value
+            }
+
+            val redisSessions = redis
+                .hgetall("redivelocity:player:sessions")
+                .toList()
+
+            val validSessions =
+                HashMap<UUID, String>()
+
+            for (entry in redisSessions) {
+                val uuid = try {
+                    UUID.fromString(entry.key)
+                } catch (_: IllegalArgumentException) {
+                    continue
+                }
+
+                if (uuid !in validUuids) {
+                    continue
+                }
+
+                validSessions[uuid] = entry.value
+            }
+
+            PlayerCacheSnapshot(
+                players = validPlayers,
+                proxies = validPlayerProxies,
+                sessions = validSessions
+            )
+        }
+
+        playerProxies.keys.removeIf {
+            it !in snapshot.proxies
+        }
+
+        playerProxies.putAll(
+            snapshot.proxies
+        )
+
+        playerSessions.keys.removeIf {
+            it !in snapshot.sessions
+        }
+
+        playerSessions.putAll(
+            snapshot.sessions
+        )
+
+        players.keys.removeIf {
+            it !in snapshot.players
+        }
+
+        players.putAll(
+            snapshot.players
+        )
     }
 
     suspend fun unregister() {
-        RedisListener.unregisterListener(GlobalPlayerCacheListener)
-        job.cancelAndJoin()
+        RedisListener.unregisterListener(
+            GlobalPlayerCacheListener
+        )
+
+        refreshJob?.cancel()
+        refreshJob?.join()
+        refreshJob = null
+
+        players.clear()
+        playerProxies.clear()
+        playerSessions.clear()
     }
 
-    fun getPlayers(): ConcurrentHashMap<UUID, String> = players
-    fun getPlayerProxies(): ConcurrentHashMap<UUID, String> = playerProxies
+    fun remove(uuid: UUID) {
+        players.remove(uuid)
+        playerProxies.remove(uuid)
+        playerSessions.remove(uuid)
+    }
+
+    fun getPlayers(): ConcurrentHashMap<UUID, String> =
+        players
+
+    fun getPlayerProxies(): ConcurrentHashMap<UUID, String> =
+        playerProxies
+
+    fun getPlayerSessions(): ConcurrentHashMap<UUID, String> =
+        playerSessions
+
+    private data class PlayerCacheSnapshot(
+        val players: Map<UUID, String>,
+        val proxies: Map<UUID, String>,
+        val sessions: Map<UUID, String>
+    )
 }

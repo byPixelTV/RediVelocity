@@ -1,6 +1,7 @@
 package dev.bypixel.redivelocity
 
 import com.google.inject.Inject
+import com.velocitypowered.api.event.EventTask
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
@@ -40,6 +41,7 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.bstats.charts.SimplePie
 import org.bstats.velocity.Metrics
 import org.bxteam.quark.velocity.VelocityLibraryManager
@@ -190,65 +192,218 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
     @Subscribe
-    fun onProxyShutdown(event: ProxyShutdownEvent) {
+    fun onProxyShutdown(event: ProxyShutdownEvent): EventTask {
         RediVelocityLogger.info("Shutting down RediVelocity...")
-        RediVelocityCoroutineScope.launch(Dispatchers.IO) {
-            lettuceClient.sendMessage(
-                JSONObject().apply {
-                    put("action", "REMOVE")
-                    put("id", proxyId)
-                }, "redivelocity:proxy-events"
-            )
 
-            lettuceClient.withCoroutines {
-                it.hdel("redivelocity:proxies", proxyId)
-                it.hdel("redivelocity:heartbeats", proxyId)
-                it.hdel("redivelocity:proxy:player-counts", proxyId)
-                it.del("redivelocity:registered-servers:$proxyId")
-                if (it.get("redivelocity:leader") == proxyId) {
-                    it.del("redivelocity:leader")
-                }
-            }
-            lettuceClient.deleteHashFieldByValueAsync("redivelocity:proxy:players", proxyId)
+        return EventTask.async {
+            runBlocking {
+                try {
+                    lettuceClient.sendMessage(
+                        JSONObject().apply {
+                            put("action", "REMOVE")
+                            put("id", proxyId)
+                        },
+                        "redivelocity:proxy-events"
+                    )
 
-            if (lettuceClient.withCoroutines { it.hvals("redivelocity:proxies").toList().isEmpty() }) {
-                RediVelocityLogger.info("Last proxy shutting down, clearing all RediVelocity data...")
-                lettuceClient.withCoroutines {
-                    it.del(
-                        "redivelocity:proxy:players",
-                        "redivelocity:proxy:player-counts",
-                        "redivelocity:proxy:heartbeats",
-                        "redivelocity:player:servers",
-                        "redivelocity:proxies",
-                        "redivelocity:-r:playercount",
-                        "redivelocity:player:names",
-                        "redivelocity:leader",
-                        "redivelocity:registered-servers:*"
+                    lettuceClient.withCoroutines { redis ->
+                        val playerUuids = redis
+                            .hgetall("redivelocity:player:proxies")
+                            .toList()
+                            .filter { it.value == proxyId }
+                            .map { it.key }
+
+                        for (uuid in playerUuids) {
+                            val currentProxy = redis.hget(
+                                "redivelocity:player:proxies",
+                                uuid
+                            )
+
+                            if (currentProxy != proxyId) {
+                                continue
+                            }
+
+                            val username = redis.hget(
+                                "redivelocity:player:names",
+                                uuid
+                            )
+
+                            val sessionId = redis.hget(
+                                "redivelocity:player:sessions",
+                                uuid
+                            )
+
+                            val ip = redis.hget(
+                                "redivelocity:player:ips",
+                                uuid
+                            )
+
+                            redis.hdel(
+                                "redivelocity:player:servers",
+                                uuid
+                            )
+
+                            redis.hdel(
+                                "redivelocity:player:names",
+                                uuid
+                            )
+
+                            redis.hdel(
+                                "redivelocity:player:proxies",
+                                uuid
+                            )
+
+                            redis.hdel(
+                                "redivelocity:player:sessions",
+                                uuid
+                            )
+
+                            redis.hdel(
+                                "redivelocity:player:ips",
+                                uuid
+                            )
+
+                            if (username != null) {
+                                lettuceClient.sendMessage(
+                                    JSONObject().apply {
+                                        put("action", "DISCONNECT")
+                                        put("uuid", uuid)
+                                        put("username", username)
+                                        put("proxyId", proxyId)
+                                        put("timestamp", System.currentTimeMillis())
+
+                                        if (sessionId != null) {
+                                            put("sessionId", sessionId)
+                                        }
+
+                                        if (ip != null) {
+                                            put("ip", ip)
+                                        }
+                                    },
+                                    "redivelocity:players"
+                                )
+                            }
+                        }
+
+                        redis.hdel(
+                            "redivelocity:proxies",
+                            proxyId
+                        )
+
+                        redis.hdel(
+                            "redivelocity:heartbeats",
+                            proxyId
+                        )
+
+                        redis.hdel(
+                            "redivelocity:votes",
+                            proxyId
+                        )
+
+                        redis.hdel(
+                            "redivelocity:proxy:player-counts",
+                            proxyId
+                        )
+
+                        redis.del(
+                            "redivelocity:registered-servers:$proxyId"
+                        )
+
+                        redis.srem(
+                            "redivelocity:existing-proxy-ids",
+                            proxyId
+                        )
+
+                        val leaderId = redis.hget(
+                            "redivelocity:leader",
+                            "leader-id"
+                        )
+
+                        if (leaderId == proxyId) {
+                            redis.hdel(
+                                "redivelocity:leader",
+                                "leader-id"
+                            )
+                        }
+                    }
+
+                    val noProxiesLeft = lettuceClient.withCoroutines {
+                        it.hvals("redivelocity:proxies")
+                            .toList()
+                            .isEmpty()
+                    }
+
+                    if (noProxiesLeft) {
+                        RediVelocityLogger.info(
+                            "Last proxy shutting down, clearing all RediVelocity data..."
+                        )
+
+                        lettuceClient.withCoroutines { redis ->
+                            redis.del(
+                                "redivelocity:proxy:player-counts",
+                                "redivelocity:player:servers",
+                                "redivelocity:global:playercount",
+                                "redivelocity:player:names",
+                                "redivelocity:player:proxies",
+                                "redivelocity:player:sessions",
+                                "redivelocity:player:ips",
+                                "redivelocity:heartbeats",
+                                "redivelocity:proxies",
+                                "redivelocity:votes",
+                                "redivelocity:leader",
+                                "redivelocity:existing-proxy-ids"
+                            )
+                        }
+                    }
+                } catch (t: Throwable) {
+                    RediVelocityLogger.warn(
+                        "Failed to cleanly unregister proxy $proxyId: ${t.message}"
                     )
                 }
+
+                try {
+                    ElectionScheduler.job.cancelAndJoin()
+                    ProxyRegistrationScheduler.job.cancelAndJoin()
+                    HeartbeatScheduler.job.cancelAndJoin()
+                    RedisConnectionTask.job.cancelAndJoin()
+
+                    if (
+                        config.getBoolean(
+                            Route.fromString("update-check.enabled")
+                        )
+                    ) {
+                        UpdateUtil.updateJob.cancelAndJoin()
+                    }
+
+                    PlayercountScheduler
+                        .proxyPlayerCountUpdateScheduler
+                        .cancelAndJoin()
+
+                    PlayercountScheduler
+                        .globalPlayerCountCalcScheduler
+                        .cancelAndJoin()
+
+                    PlayerCache.unregister()
+                    ProxyCache.unregister()
+                } catch (t: Throwable) {
+                    RediVelocityLogger.warn(
+                        "Failed to stop RediVelocity background tasks: ${t.message}"
+                    )
+                }
+
+                RedisListener.unregisterListener(KickListener)
+                RedisListener.unregisterListener(ConnectListener)
+                RedisListener.unregisterListener(LeaderElectionListener)
+                RedisListener.unregisterListener(PlayercountListener)
+                RedisListener.unregisterListener(ConfigListener)
+                RedisListener.unregisterListener(LoginConfigListener)
+
+                CommandAPI.onDisable()
+
+                lettuceClient.close()
+
+                RediVelocityLogger.info("RediVelocity shutdown completed.")
             }
-
-            CommandAPI.onDisable()
-
-            RedisListener.unregisterListener(KickListener)
-            RedisListener.unregisterListener(ConnectListener)
-            RedisListener.unregisterListener(LeaderElectionListener)
-            RedisListener.unregisterListener(PlayercountListener)
-            RedisListener.unregisterListener(ConfigListener)
-            RedisListener.unregisterListener(LoginConfigListener)
-            ElectionScheduler.job.cancelAndJoin()
-            ProxyRegistrationScheduler.job.cancelAndJoin()
-            HeartbeatScheduler.job.cancelAndJoin()
-            RedisConnectionTask.job.cancelAndJoin()
-            if (config.getBoolean(Route.fromString("update-check.enabled"))) {
-                UpdateUtil.updateJob.cancelAndJoin()
-            }
-            PlayercountScheduler.proxyPlayerCountUpdateScheduler.cancelAndJoin()
-            PlayercountScheduler.globalPlayerCountCalcScheduler.cancelAndJoin()
-            PlayerCache.unregister()
-            ProxyCache.unregister()
-
-            lettuceClient.close()
         }
     }
 
@@ -473,29 +628,46 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
     private suspend fun handleFirstProxyCleanupIfNeeded() {
         val proxyIdsSize = ProxyIdGenerator.getExistingIds().size
-        wasFirstProxy = proxyIdsSize == 1 || proxyIdsSize == 0
 
-        if (wasFirstProxy) {
-            RediVelocityLogger.info("This proxy is the first one to connect to Redis, clearing old data...")
-            lettuceClient.withCoroutines {
-                it.set("redivelocity:leader", proxyId)
-            }
-            lettuceClient.withCoroutines {
-                it.del(
-                    "redivelocity:proxy:players",
-                    "redivelocity:proxy:player-counts",
-                    "redivelocity:proxy:heartbeats",
-                    "redivelocity:player:servers",
-                    "redivelocity:proxies",
-                    "redivelocity:global:playercount",
-                    "redivelocity:player:names",
-                    "redivelocity:leader",
-                    "redivelocity:registered-servers:*"
-                )
-            }
-            lettuceClient.withCoroutines {
-                it.hset("redivelocity:proxies", proxyId, proxyId)
-            }
+        wasFirstProxy = proxyIdsSize <= 1
+
+        if (!wasFirstProxy) {
+            return
+        }
+
+        RediVelocityLogger.info(
+            "This proxy is the first one to connect to Redis, clearing old data..."
+        )
+
+        lettuceClient.withCoroutines { redis ->
+            redis.del(
+                "redivelocity:proxy:player-counts",
+                "redivelocity:player:servers",
+                "redivelocity:player:names",
+                "redivelocity:player:proxies",
+                "redivelocity:player:sessions",
+                "redivelocity:player:ips",
+                "redivelocity:heartbeats",
+                "redivelocity:global:playercount",
+                "redivelocity:votes",
+                "redivelocity:leader"
+            )
+
+            redis.del(
+                "redivelocity:proxies"
+            )
+
+            redis.hset(
+                "redivelocity:proxies",
+                proxyId,
+                proxyId
+            )
+
+            redis.hset(
+                "redivelocity:leader",
+                "leader-id",
+                proxyId
+            )
         }
     }
 

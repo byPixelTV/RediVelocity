@@ -1,25 +1,10 @@
-/*
- * Copyright (c) 2024-present byPixelTV & contributors.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- *  along with this program. If not, see <https://www.gnu.org/licenses/>.
- */
-
 package dev.bypixel.redivelocity.event
 
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.connection.DisconnectEvent
 import dev.bypixel.redivelocity.RediVelocity
 import dev.bypixel.redivelocity.RediVelocityCoroutineScope
+import dev.bypixel.redivelocity.cache.PlayerSessionCache
 import dev.bypixel.redivelocity.feature.globalPlayercount.PlayercountUtil
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -27,38 +12,85 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 object DisconnectListener {
+
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
     @Subscribe
     fun onDisconnect(event: DisconnectEvent) {
         val player = event.player
+        val uuid = player.uniqueId.toString()
+
+        val sessionId = PlayerSessionCache.remove(player.uniqueId)
 
         RediVelocityCoroutineScope.launch(Dispatchers.IO) {
-            PlayercountUtil.setProxyPlayercount()
-            PlayercountUtil.calcGlobalPlayercount()
-            RediVelocity.instance.lettuceClient.sendMessage(JSONObject().apply {
-                put("action", "UPDATE")
-            }, "redivelocity:global-player-updates")
-            RediVelocity.instance.lettuceClient.sendMessage(JSONObject().apply {
-                put("action", "DISCONNECT")
-                put("uuid", player.uniqueId.toString())
-                put("username", player.username)
-                put("ip", player.remoteAddress.toString().split(":")[0].substring(1))
-                put("proxyId", RediVelocity.instance.proxyId)
-                put("protocolVersion", player.protocolVersion.protocol)
-                put("clientBrand", player.clientBrand)
-                put("timestamp", System.currentTimeMillis())
-            }, "redivelocity:players")
-            RediVelocity.instance.lettuceClient.withCoroutines {
-                it.hdel(
-                    "redivelocity:player:servers", player.uniqueId.toString()
-                )
-                it.hdel(
-                    "redivelocity:player:names", player.uniqueId.toString()
-                )
-                it.hdel(
-                    "redivelocity:player:proxies", player.uniqueId.toString()
+            var removed = false
+
+            if (sessionId != null) {
+                RediVelocity.instance.lettuceClient.withCoroutines { redis ->
+                    val currentProxy = redis.hget(
+                        "redivelocity:player:proxies",
+                        uuid
+                    )
+
+                    val currentSession = redis.hget(
+                        "redivelocity:player:sessions",
+                        uuid
+                    )
+
+                    if (
+                        currentProxy == RediVelocity.instance.proxyId &&
+                        currentSession == sessionId
+                    ) {
+                        redis.hdel(
+                            "redivelocity:player:servers",
+                            uuid
+                        )
+
+                        redis.hdel(
+                            "redivelocity:player:names",
+                            uuid
+                        )
+
+                        redis.hdel(
+                            "redivelocity:player:proxies",
+                            uuid
+                        )
+
+                        redis.hdel(
+                            "redivelocity:player:sessions",
+                            uuid
+                        )
+
+                        removed = true
+                    }
+                }
+            }
+
+            if (removed) {
+                RediVelocity.instance.lettuceClient.sendMessage(
+                    JSONObject().apply {
+                        put("action", "DISCONNECT")
+                        put("uuid", uuid)
+                        put("username", player.username)
+                        put("ip", player.remoteAddress.address.hostAddress)
+                        put("proxyId", RediVelocity.instance.proxyId)
+                        put("sessionId", sessionId)
+                        put("protocolVersion", player.protocolVersion.protocol)
+                        put("clientBrand", player.clientBrand)
+                        put("timestamp", System.currentTimeMillis())
+                    },
+                    "redivelocity:players"
                 )
             }
+
+            PlayercountUtil.setProxyPlayercount()
+            PlayercountUtil.calcGlobalPlayercount()
+
+            RediVelocity.instance.lettuceClient.sendMessage(
+                JSONObject().apply {
+                    put("action", "UPDATE")
+                },
+                "redivelocity:global-player-updates"
+            )
         }
     }
 }
