@@ -91,6 +91,9 @@ repositories {
     // vulpescloud
     maven("https://repo.vulpescloud.de/snapshots")
     maven("https://jitpack.io")
+    maven("https://repo.bypixel.dev/snapshots")
+    maven("https://repo.bypixel.dev/releases")
+
 
     // simplecloud
     maven("https://repo.simplecloud.app/snapshots")
@@ -112,7 +115,7 @@ dependencies {
 
     quark("com.squareup.okhttp3:okhttp:5.5.0")
 
-    implementation("com.github.bypixeltv:LettuceWrapper:nightly-SNAPSHOT") {
+    implementation("dev.bypixel:LettuceWrapper:0.5.2-dev.97") {
         exclude(group = "io.lettuce", module = "lettuce-core")
         exclude(group = "org.json", module = "json")
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")

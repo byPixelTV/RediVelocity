@@ -92,7 +92,6 @@ object PreLoginListener {
                         event,
                         onlineState.proxyId
                             ?: cachedProxy
-                            ?: "Unknown"
                     )
 
                     return
