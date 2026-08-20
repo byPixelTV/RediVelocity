@@ -27,6 +27,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.security.SecureRandom
+import kotlin.time.Duration.Companion.milliseconds
 
 object LeaderElectionListener : RedisListener("redivelocity:leader-election") {
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
@@ -60,7 +61,7 @@ object LeaderElectionListener : RedisListener("redivelocity:leader-election") {
                             val rnd = SecureRandom()
                             val randomProxy = allProxies[rnd.nextInt(allProxies.size)]
                             val delayMs = 50L + rnd.nextInt(201) // 50..250 ms
-                            delay(delayMs)
+                            delay(delayMs.milliseconds)
 
                             val votesForProxy = cnx
                                 .hget("redivelocity:votes", randomProxy)

@@ -5,6 +5,7 @@ import dev.bypixel.redivelocity.util.RediVelocityLogger
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.toList
+import kotlin.time.Duration.Companion.milliseconds
 
 object ProxyRegistrationScheduler {
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
@@ -16,7 +17,7 @@ object ProxyRegistrationScheduler {
                 RediVelocityLogger.error("Proxy ID ${RediVelocity.instance.proxyId} was not registered. Registering now.")
             }
 
-            delay(5000L)
+            delay(5000L.milliseconds)
         }
     }
 }

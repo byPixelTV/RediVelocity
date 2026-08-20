@@ -48,6 +48,7 @@ import org.bxteam.quark.velocity.VelocityLibraryManager
 import org.json.JSONObject
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.lang.Runnable
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.Path
 import kotlin.time.Duration.Companion.milliseconds
@@ -125,10 +126,15 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
             syncLoginConfig()
 
             determineProxyId()
+
             delay(500.milliseconds)
-            registerProxyInRedis()
+
             handleFirstProxyCleanupIfNeeded()
+
+            registerProxyInRedis()
+
             sendAddProxyEvent()
+
             startBackgroundJobs()
         }
 
@@ -620,16 +626,35 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
     private suspend fun registerProxyInRedis() {
-        lettuceClient.withCoroutines {
-            it.hset("redivelocity:proxies", proxyId, proxyId)
+        val now = System.currentTimeMillis()
+
+        lettuceClient.withCoroutines { redis ->
+            redis.hset(
+                "redivelocity:heartbeats",
+                proxyId,
+                now.toString()
+            )
+
+            redis.hexpire(
+                "redivelocity:heartbeats",
+                90L,
+                proxyId
+            )
+
+            redis.hset(
+                "redivelocity:proxies",
+                proxyId,
+                proxyId
+            )
         }
     }
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
     private suspend fun handleFirstProxyCleanupIfNeeded() {
-        val proxyIdsSize = ProxyIdGenerator.getExistingIds().size
+        val proxyIdsSize =
+            ProxyIdGenerator.getExistingIds().size
 
-        wasFirstProxy = proxyIdsSize <= 1
+        wasFirstProxy = proxyIdsSize == 0
 
         if (!wasFirstProxy) {
             return
@@ -650,23 +675,8 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
                 "redivelocity:heartbeats",
                 "redivelocity:global:playercount",
                 "redivelocity:votes",
-                "redivelocity:leader"
-            )
-
-            redis.del(
-                "redivelocity:proxies"
-            )
-
-            redis.hset(
-                "redivelocity:proxies",
-                proxyId,
-                proxyId
-            )
-
-            redis.hset(
                 "redivelocity:leader",
-                "leader-id",
-                proxyId
+                "redivelocity:proxies"
             )
         }
     }

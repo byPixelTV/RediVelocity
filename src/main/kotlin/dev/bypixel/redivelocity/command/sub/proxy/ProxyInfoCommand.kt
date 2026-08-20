@@ -54,7 +54,10 @@ object ProxyInfoCommand {
                     }
 
                     val leaderProxy = RediVelocity.instance.lettuceClient.withCoroutines {
-                        it.get("redivelocity:leader")
+                        it.hget(
+                            "redivelocity:leader",
+                            "leader-id"
+                        )
                     }
                         ?: throw IllegalStateException("Leader proxy is not set in Redis.")
 
