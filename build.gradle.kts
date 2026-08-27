@@ -101,7 +101,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("com.velocitypowered:velocity-api:4.1.0-SNAPSHOT")
+    compileOnly("com.velocitypowered:velocity-api:4.1.1")
 
     implementation("dev.jorel:commandapi-velocity-shade:12.0.0")
     quark("dev.jorel:commandapi-kotlin-velocity:12.0.0")
@@ -134,7 +134,7 @@ dependencies {
 
     compileOnly("app.simplecloud.api.platform:velocity:0.0.5-dev.1745077021664-28517d8")
 
-    val vulpesCloudVersion = "3.0.0-beta6"
+    val vulpesCloudVersion = "3.0.0-beta7"
     compileOnly("de.vulpescloud:bridge:$vulpesCloudVersion")
     compileOnly("de.vulpescloud:api:$vulpesCloudVersion")
 
