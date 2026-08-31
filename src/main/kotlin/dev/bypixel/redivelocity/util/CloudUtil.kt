@@ -17,7 +17,7 @@
 package dev.bypixel.redivelocity.util
 
 import app.simplecloud.controller.api.ControllerApi
-import de.vulpescloud.bridge.BridgeAPI
+import org.vulpesstudios.vulpescloud.bridge.BridgeAPI
 import eu.cloudnetservice.driver.inject.InjectionLayer
 import eu.cloudnetservice.wrapper.configuration.WrapperConfiguration
 
