@@ -89,7 +89,7 @@ repositories {
     }
 
     // vulpescloud
-    maven("https://repo.vulpescloud.de/snapshots")
+    maven("https://repo.vulpesstudios.org/snapshots")
     maven("https://jitpack.io")
     maven("https://repo.bypixel.dev/snapshots")
     maven("https://repo.bypixel.dev/releases")
@@ -135,8 +135,8 @@ dependencies {
     compileOnly("app.simplecloud.api.platform:velocity:0.0.5-dev.1745077021664-28517d8")
 
     val vulpesCloudVersion = "3.0.0-beta7"
-    compileOnly("de.vulpescloud:bridge:$vulpesCloudVersion")
-    compileOnly("de.vulpescloud:api:$vulpesCloudVersion")
+    compileOnly("org.vulpesstudios.vulpescloud:bridge:$vulpesCloudVersion")
+    compileOnly("org.vulpesstudios.vulpescloud:api:$vulpesCloudVersion")
 
     val cloudnetVersion = "4.0.0-RC18-SNAPSHOT"
     compileOnly("eu.cloudnetservice.cloudnet:bridge-api:$cloudnetVersion")
