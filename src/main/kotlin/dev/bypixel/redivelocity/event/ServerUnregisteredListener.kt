@@ -3,6 +3,7 @@ package dev.bypixel.redivelocity.event
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.proxy.server.ServerUnregisteredEvent
 import dev.bypixel.redivelocity.RediVelocity
+import dev.bypixel.redivelocity.redis.RedisLifecycle
 import dev.bypixel.redivelocity.RediVelocityCoroutineScope
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -22,11 +23,7 @@ object ServerUnregisteredListener {
                 put("timestamp", System.currentTimeMillis())
             }
 
-            RediVelocity.instance.lettuceClient.withCoroutines {
-                it.hdel(
-                    "redivelocity:registered-servers:${RediVelocity.instance.proxyId}",
-                    event.unregisteredServer.serverInfo.name
-                )
+            if (RedisLifecycle.update("server-remove", RediVelocity.instance.proxyId, event.unregisteredServer.serverInfo.name)) {
                 RediVelocity.instance.lettuceClient.sendMessage(json, "redivelocity:server-events")
             }
         }

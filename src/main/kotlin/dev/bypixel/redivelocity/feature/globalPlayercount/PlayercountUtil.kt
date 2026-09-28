@@ -16,6 +16,7 @@
 
 package dev.bypixel.redivelocity.feature.globalPlayercount
 
+import dev.bypixel.redivelocity.redis.RedisLifecycle
 import dev.bypixel.redivelocity.RediVelocity
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -42,6 +43,6 @@ object PlayercountUtil {
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
     suspend fun setProxyPlayercount() = withContext(Dispatchers.IO) {
-        RediVelocity.instance.lettuceClient.commands.hset("redivelocity:proxy:player-counts", RediVelocity.instance.proxyId, RediVelocity.instance.proxy.allPlayers.size.toString())
+        RedisLifecycle.update("count", RediVelocity.instance.proxyId, RediVelocity.instance.proxy.allPlayers.size.toString())
     }
 }

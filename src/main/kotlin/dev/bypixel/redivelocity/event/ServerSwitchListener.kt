@@ -20,6 +20,8 @@ import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.player.ServerConnectedEvent
 import dev.bypixel.redivelocity.RediVelocity
 import dev.bypixel.redivelocity.RediVelocityCoroutineScope
+import dev.bypixel.redivelocity.cache.PlayerSessionCache
+import dev.bypixel.redivelocity.redis.RedisPlayerState
 import dev.bypixel.redivelocity.feature.globalPlayercount.PlayercountUtil
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -35,8 +37,13 @@ object ServerSwitchListener {
         val previousServer =
             event.previousServer.map { server -> server.serverInfo.name }.orElse("null")
         val newServer = event.server
+        val session = PlayerSessionCache.get(player) ?: return
 
         RediVelocityCoroutineScope.launch(Dispatchers.IO) {
+            val updated = PlayerSessionCache.withLock(player.uniqueId) {
+                RedisPlayerState.update("switch", player.uniqueId.toString(), session, newServer.serverInfo.name)
+            }
+            if (!updated) return@launch
             PlayercountUtil.setProxyPlayercount()
             RediVelocity.instance.lettuceClient.sendMessage(JSONObject().apply {
                 put("action", "UPDATE")
@@ -53,10 +60,6 @@ object ServerSwitchListener {
                 put("fromServer", previousServer)
                 put("toServer", newServer.serverInfo.name)
             }, "redivelocity:players")
-
-            RediVelocity.instance.lettuceClient.withCoroutines {
-                it.hset("redivelocity:player:servers", player.uniqueId.toString(), newServer.serverInfo.name)
-            }
         }
     }
 }

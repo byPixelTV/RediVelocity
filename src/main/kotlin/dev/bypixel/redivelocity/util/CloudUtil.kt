@@ -17,9 +17,9 @@
 package dev.bypixel.redivelocity.util
 
 import app.simplecloud.controller.api.ControllerApi
-import org.vulpesstudios.vulpescloud.bridge.BridgeAPI
 import eu.cloudnetservice.driver.inject.InjectionLayer
 import eu.cloudnetservice.wrapper.configuration.WrapperConfiguration
+import org.vulpesstudios.vulpescloud.bridge.BridgeAPI
 
 object CloudUtil {
     fun getServiceName(cloud: String): String {
@@ -42,7 +42,7 @@ object CloudUtil {
             "cloudnet" -> {
                 val wrapperConfiguration = InjectionLayer.ext().instance(WrapperConfiguration::class.java)
 
-                return wrapperConfiguration.serviceInfoSnapshot().name()
+                wrapperConfiguration.serviceInfoSnapshot().name()
             }
 
             else -> {

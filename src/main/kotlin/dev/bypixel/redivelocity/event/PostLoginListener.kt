@@ -16,6 +16,7 @@
 
 package dev.bypixel.redivelocity.event
 
+import com.velocitypowered.api.event.EventTask
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.connection.PostLoginEvent
 import com.velocitypowered.api.proxy.Player
@@ -25,6 +26,7 @@ import dev.bypixel.redivelocity.antivpn.AntiVPNManager
 import dev.bypixel.redivelocity.antivpn.IpManager
 import dev.bypixel.redivelocity.antivpn.IpQueryUtil
 import dev.bypixel.redivelocity.cache.PlayerSessionCache
+import dev.bypixel.redivelocity.redis.RedisPlayerState
 import dev.bypixel.redivelocity.feature.globalPlayercount.PlayercountUtil
 import dev.bypixel.redivelocity.util.DiscordWebhookUtil
 import dev.bypixel.redivelocity.util.RediVelocityLogger
@@ -35,6 +37,7 @@ import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
@@ -45,71 +48,56 @@ object PostLoginListener {
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
     @Subscribe
-    fun onPostLogin(event: PostLoginEvent) {
+    fun onPostLogin(event: PostLoginEvent): EventTask {
         val player = event.player
         val uuid = player.uniqueId.toString()
         val ip = player.remoteAddress.address.hostAddress
 
-        val sessionId = PlayerSessionCache.create(player.uniqueId)
+        val sessionId = PlayerSessionCache.create(player)
 
-        RediVelocityCoroutineScope.launch(Dispatchers.IO) {
-            try {
-                RediVelocity.instance.lettuceClient.withCoroutines { redis ->
-                    redis.hset(
-                        "redivelocity:player:proxies",
-                        uuid,
-                        RediVelocity.instance.proxyId
+        val registration = EventTask.async {
+            runBlocking {
+                try {
+                    val registered = PlayerSessionCache.withLock(player.uniqueId) {
+                        if (RediVelocity.instance.stopping || !player.isActive || PlayerSessionCache.get(player) != sessionId) {
+                            false
+                        } else {
+                            RedisPlayerState.update("login", uuid, sessionId, player.username, ip)
+                        }
+                    }
+                    if (!registered) return@runBlocking
+
+                    RediVelocity.instance.lettuceClient.sendMessage(
+                        JSONObject().apply {
+                            put("action", "POST_LOGIN")
+                            put("uuid", uuid)
+                            put("username", player.username)
+                            put("ip", ip)
+                            put("proxyId", RediVelocity.instance.proxyId)
+                            put("sessionId", sessionId)
+                            put("protocolVersion", player.protocolVersion.protocol)
+                            put("clientBrand", player.clientBrand)
+                            put("timestamp", System.currentTimeMillis())
+                        },
+                        "redivelocity:players"
                     )
 
-                    redis.hset(
-                        "redivelocity:player:sessions",
-                        uuid,
-                        sessionId
-                    )
+                    PlayercountUtil.setProxyPlayercount()
+                    PlayercountUtil.calcGlobalPlayercount()
 
-                    redis.hset(
-                        "redivelocity:player:names",
-                        uuid,
-                        player.username
+                    RediVelocity.instance.lettuceClient.sendMessage(
+                        JSONObject().apply {
+                            put("action", "UPDATE")
+                        },
+                        "redivelocity:global-player-updates"
                     )
-
-                    redis.hset(
-                        "redivelocity:player:ips",
-                        uuid,
-                        ip
+                } catch (t: Throwable) {
+                    // Retain the token: Redis may have committed before a timeout or notification failure.
+                    // Disconnect can still remove that exact session.
+                    RediVelocityLogger.error(
+                        "Failed to register player ${player.username} ($uuid) in Redis: ${t.message}"
                     )
                 }
-
-                RediVelocity.instance.lettuceClient.sendMessage(
-                    JSONObject().apply {
-                        put("action", "POST_LOGIN")
-                        put("uuid", uuid)
-                        put("username", player.username)
-                        put("ip", ip)
-                        put("proxyId", RediVelocity.instance.proxyId)
-                        put("sessionId", sessionId)
-                        put("protocolVersion", player.protocolVersion.protocol)
-                        put("clientBrand", player.clientBrand)
-                        put("timestamp", System.currentTimeMillis())
-                    },
-                    "redivelocity:players"
-                )
-
-                PlayercountUtil.setProxyPlayercount()
-                PlayercountUtil.calcGlobalPlayercount()
-
-                RediVelocity.instance.lettuceClient.sendMessage(
-                    JSONObject().apply {
-                        put("action", "UPDATE")
-                    },
-                    "redivelocity:global-player-updates"
-                )
-            } catch (t: Throwable) {
-                PlayerSessionCache.remove(player.uniqueId)
-
-                RediVelocityLogger.error(
-                    "Failed to register player ${player.username} ($uuid) in Redis: ${t.message}"
-                )
             }
         }
 
@@ -118,6 +106,7 @@ object PostLoginListener {
         RediVelocityCoroutineScope.launch(Dispatchers.IO) {
             checkAntiVPN(player, ip)
         }
+        return registration
     }
 
     private fun handleUpdateNotification(player: Player) {

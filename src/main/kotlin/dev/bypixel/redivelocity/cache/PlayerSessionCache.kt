@@ -1,23 +1,21 @@
 package dev.bypixel.redivelocity.cache
 
-import java.util.*
-import java.util.concurrent.ConcurrentHashMap
+import com.velocitypowered.api.proxy.Player
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.util.UUID
+import java.util.Collections
+import java.util.IdentityHashMap
 
 object PlayerSessionCache {
+    // Bind sessions to connections: a late disconnect must not remove a newer login's token.
+    private val sessions = Collections.synchronizedMap(IdentityHashMap<Player, String>())
+    private val locks = Array(256) { Mutex() }
 
-    private val sessions = ConcurrentHashMap<UUID, String>()
+    fun create(player: Player): String = UUID.randomUUID().toString().also { sessions[player] = it }
+    fun get(player: Player): String? = sessions[player]
+    fun remove(player: Player): String? = sessions.remove(player)
 
-    fun create(uuid: UUID): String {
-        val sessionId = UUID.randomUUID().toString()
-        sessions[uuid] = sessionId
-        return sessionId
-    }
-
-    fun get(uuid: UUID): String? {
-        return sessions[uuid]
-    }
-
-    fun remove(uuid: UUID): String? {
-        return sessions.remove(uuid)
-    }
+    suspend fun <T> withLock(uuid: UUID, action: suspend () -> T): T =
+        locks[(uuid.hashCode() and Int.MAX_VALUE) % locks.size].withLock { action() }
 }

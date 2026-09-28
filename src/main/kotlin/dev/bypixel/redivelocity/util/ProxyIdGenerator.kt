@@ -35,10 +35,10 @@ object ProxyIdGenerator {
 
         var id: String
         do {
-            id = generateRandomString()
+            id = "proxy-${generateRandomString()}"
         } while (proxies.contains(id))
 
-        "proxy-$id"
+        id
     }
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)

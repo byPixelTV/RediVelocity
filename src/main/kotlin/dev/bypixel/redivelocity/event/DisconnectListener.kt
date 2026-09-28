@@ -5,6 +5,7 @@ import com.velocitypowered.api.event.connection.DisconnectEvent
 import dev.bypixel.redivelocity.RediVelocity
 import dev.bypixel.redivelocity.RediVelocityCoroutineScope
 import dev.bypixel.redivelocity.cache.PlayerSessionCache
+import dev.bypixel.redivelocity.redis.RedisPlayerState
 import dev.bypixel.redivelocity.feature.globalPlayercount.PlayercountUtil
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -19,50 +20,11 @@ object DisconnectListener {
         val player = event.player
         val uuid = player.uniqueId.toString()
 
-        val sessionId = PlayerSessionCache.remove(player.uniqueId)
+        val sessionId = PlayerSessionCache.remove(player)
 
         RediVelocityCoroutineScope.launch(Dispatchers.IO) {
-            var removed = false
-
-            if (sessionId != null) {
-                RediVelocity.instance.lettuceClient.withCoroutines { redis ->
-                    val currentProxy = redis.hget(
-                        "redivelocity:player:proxies",
-                        uuid
-                    )
-
-                    val currentSession = redis.hget(
-                        "redivelocity:player:sessions",
-                        uuid
-                    )
-
-                    if (
-                        currentProxy == RediVelocity.instance.proxyId &&
-                        currentSession == sessionId
-                    ) {
-                        redis.hdel(
-                            "redivelocity:player:servers",
-                            uuid
-                        )
-
-                        redis.hdel(
-                            "redivelocity:player:names",
-                            uuid
-                        )
-
-                        redis.hdel(
-                            "redivelocity:player:proxies",
-                            uuid
-                        )
-
-                        redis.hdel(
-                            "redivelocity:player:sessions",
-                            uuid
-                        )
-
-                        removed = true
-                    }
-                }
+            val removed = PlayerSessionCache.withLock(player.uniqueId) {
+                sessionId != null && RedisPlayerState.update("disconnect", uuid, sessionId)
             }
 
             if (removed) {

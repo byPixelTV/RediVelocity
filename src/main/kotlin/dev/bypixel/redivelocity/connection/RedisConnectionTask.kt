@@ -25,7 +25,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 object RedisConnectionTask {
-    val job = RediVelocityCoroutineScope.launch(Dispatchers.IO) {
+    val job = RediVelocityCoroutineScope.launch(Dispatchers.IO, start = kotlinx.coroutines.CoroutineStart.LAZY) {
         while (isActive) {
             if (!RediVelocity.instance.lettuceClient.connection.isOpen || RediVelocity.instance.lettuceClient.checkConnectionErrors().isNotEmpty()) {
                 RediVelocityLogger.warn("Redis connection was lost. Attempting to reconnect...")
