@@ -104,7 +104,7 @@ dependencies {
     compileOnly("com.velocitypowered:velocity-api:4.2.0")
 
     implementation("dev.jorel:commandapi-velocity-shade:12.1.0")
-    quark("dev.jorel:commandapi-kotlin-velocity:12.0.0")
+    quark("dev.jorel:commandapi-kotlin-velocity:12.1.0")
 
     implementation("dev.dejvokep:boosted-yaml:1.3.7")
     implementation("org.bstats:bstats-velocity:3.2.1")
