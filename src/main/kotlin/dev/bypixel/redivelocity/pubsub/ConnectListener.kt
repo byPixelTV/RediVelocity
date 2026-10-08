@@ -13,13 +13,11 @@ object ConnectListener : RedisListener("redivelocity-connect") {
             val uuid = UUID.fromString(jMsg.getString("uuid"))
             val server = jMsg.getString("server")
 
-            RediVelocity.instance.proxy.allPlayers.find { it.uniqueId == uuid }?.let { player ->
-                player.createConnectionRequest(
-                    RediVelocity.instance.proxy.getServer(server).orElseThrow {
-                        IllegalArgumentException("Server $server not found")
-                    }
-                ).connectWithIndication()
-            }
+            RediVelocity.instance.proxy.allPlayers.find { it.uniqueId == uuid }?.createConnectionRequest(
+                RediVelocity.instance.proxy.getServer(server).orElseThrow {
+                    IllegalArgumentException("Server $server not found")
+                }
+            )?.connectWithIndication()
         }
     }
 }

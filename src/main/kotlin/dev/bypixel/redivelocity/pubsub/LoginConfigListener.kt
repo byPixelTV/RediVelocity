@@ -11,6 +11,7 @@ import dev.dejvokep.boostedyaml.route.Route
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import net.kyori.adventure.text.minimessage.MiniMessage
 
 object LoginConfigListener : RedisListener("redivelocity:login-config") {
     override fun onLettuceMessage(action: String, raw: String) {
@@ -22,6 +23,26 @@ object LoginConfigListener : RedisListener("redivelocity:login-config") {
                     RediVelocity.instance.setMaintenance(message.state)
                     RediVelocity.instance.config.set(Route.fromString("login-configuration.maintenance.enabled"), message.state)
                     RediVelocity.instance.saveConfigs()
+
+                    RediVelocity.instance.proxy.allPlayers.forEach { player ->
+                        if (message.state) {
+                            val bypassPermission = RediVelocity.instance.config.getString(
+                                Route.fromString(
+                                    "login-configuration.maintenance.bypass-permission"
+                                )
+                            )
+
+                            if (!player.hasPermission(bypassPermission)) {
+                                player.disconnect(
+                                    MiniMessage.miniMessage().deserialize(
+                                        RediVelocity.instance.messageConfig.getString(
+                                            Route.fromString("kick-maintenance-mode")
+                                        )
+                                    )
+                                )
+                            }
+                        }
+                    }
                 }
                 "set-maintenance-motd" -> {
                     val message = Json.decodeFromString<SetMaintenanceMotdMessage>(raw)
