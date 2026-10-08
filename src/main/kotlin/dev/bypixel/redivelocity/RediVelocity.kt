@@ -9,10 +9,8 @@ import com.velocitypowered.api.proxy.ProxyServer
 import dev.bypixel.lettucewrapper.LettuceRedisClient
 import dev.bypixel.lettucewrapper.RedisCredentials
 import dev.bypixel.lettucewrapper.listener.RedisListener
-import dev.bypixel.redivelocity.antivpn.IpManager
 import dev.bypixel.redivelocity.cache.PlayerCache
 import dev.bypixel.redivelocity.cache.ProxyCache
-import dev.bypixel.redivelocity.command.AntiVPNCommand
 import dev.bypixel.redivelocity.command.FindCommand
 import dev.bypixel.redivelocity.command.RediVelocityCommand
 import dev.bypixel.redivelocity.connection.RedisConnectionTask
@@ -36,16 +34,10 @@ import dev.dejvokep.boostedyaml.settings.updater.UpdaterSettings
 import dev.jorel.commandapi.CommandAPI
 import dev.jorel.commandapi.CommandAPIVelocityConfig
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import org.bstats.charts.SimplePie
 import org.bstats.velocity.Metrics
 import org.bxteam.quark.velocity.VelocityLibraryManager
-import org.json.JSONObject
 import org.slf4j.LoggerFactory
 import java.io.File
 import kotlin.io.path.Path
@@ -85,7 +77,6 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
         CommandAPI.onLoad(CommandAPIVelocityConfig(proxy, this).silentLogs(true).verboseOutput(true).setNamespace("redivelocity"))
     }
 
-    @OptIn(ExperimentalLettuceCoroutinesApi::class)
     @Subscribe
     fun onProxyInitialize(event: ProxyInitializeEvent) {
         instance = this
@@ -162,14 +153,6 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
                 proxy.eventManager.register(this, ProxyPingListener)
             }
 
-            if (config.getBoolean(Route.fromString("anti-vpn.enabled"))) {
-                AntiVPNCommand
-
-                RediVelocityCoroutineScope.launch(Dispatchers.IO) {
-                    IpManager.preloadAllIpCachesToCaffeine()
-                }
-            }
-
             proxy.eventManager.register(this, PostLoginListener)
             proxy.eventManager.register(this, ServerSwitchListener)
             proxy.eventManager.register(this, DisconnectListener)
@@ -188,7 +171,6 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
         }
     }
 
-    @OptIn(ExperimentalLettuceCoroutinesApi::class)
     @Subscribe
     fun onProxyShutdown(event: ProxyShutdownEvent): EventTask {
         RediVelocityLogger.info("Shutting down RediVelocity...")
@@ -199,7 +181,7 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
                 proxy.eventManager.unregisterListeners(this@RediVelocity)
                 // Stop and join every writer before removing this instance's data.
                 RediVelocityCoroutineScope.cancel()
-                RediVelocityCoroutineScope.coroutineContext[Job]?.children?.toList()?.forEach { it.join() }
+                RediVelocityCoroutineScope.coroutineContext[Job]?.children?.toList()?.joinAll()
                 PlayercountScheduler.proxyPlayerCountUpdateScheduler.cancelAndJoin()
                 PlayercountScheduler.globalPlayerCountCalcScheduler.cancelAndJoin()
                 if (::config.isInitialized && config.getBoolean(Route.fromString("update-check.enabled"))) {
