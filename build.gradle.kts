@@ -20,7 +20,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     kotlin("jvm") version "2.4.21"
     id("com.gradleup.shadow") version "9.6.1"
-    id("org.bxteam.quark") version "1.3.0"
+    id("org.bxteam.quark") version "2.0.0"
     kotlin("plugin.serialization") version "2.4.21"
 }
 
