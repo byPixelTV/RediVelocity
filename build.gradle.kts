@@ -15,6 +15,8 @@
  */
 
 import org.apache.tools.ant.filters.ReplaceTokens
+import org.bxteam.quark.gradle.QuarkModule
+import org.bxteam.quark.gradle.ServerPlatform
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -145,7 +147,8 @@ dependencies {
 }
 
 quark {
-    platform = "velocity"
+    platform = ServerPlatform.VELOCITY
+    modules(QuarkModule.DEPENDENCY)
 
     repositories {
         includeProjectRepositories()
