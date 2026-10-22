@@ -115,7 +115,7 @@ dependencies {
     quark("com.github.ben-manes.caffeine:caffeine:3.3.1")
     quark("club.minnced:discord-webhooks:0.8.4")
 
-    quark("com.squareup.okhttp3:okhttp:5.5.0")
+    quark("com.squareup.okhttp3:okhttp:5.5.1")
 
     implementation("dev.bypixel:LettuceWrapper:0.5.2-dev.104") {
         exclude(group = "io.lettuce", module = "lettuce-core")
