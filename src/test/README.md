@@ -39,3 +39,21 @@ Deploy this protocol change to all proxies together. Older versions still write
 without ownership checks and use the old voting/cleanup protocol, so mixed-version
 operation cannot provide these guarantees. The scripts target the existing
 standalone Redis database configuration, not Redis Cluster.
+
+## Lowering the player limit
+
+- Successful logins record Redis time (Unix microseconds) in the sorted set
+  `redivelocity:player:joined-at`. Server switches keep this time; reconnects
+  replace it. Disconnect, shutdown, and crash cleanup remove it.
+- Lowering an enforced limit selects the newest players across all proxies.
+  Bypass players count toward the total, as with the login check, but cannot be
+  kicked. If only bypass players remain, the total may exceed the limit.
+- Each command carries a request ID. Redis freezes its selection for five
+  minutes so every proxy uses the same player/session pairs even while selected
+  players disconnect. A stale selection cannot target a replacement session.
+- Bypass status is recorded at login and refreshed every two seconds. The
+  configured permission is checked again immediately before disconnecting.
+  The disconnect reason uses the same `kick-network-full` message as login.
+- Increasing or repeating the limit does not kick players. `-1` disables the
+  limit; zero removes all eligible players. Both login configuration and limit
+  enforcement must be enabled for kicks.

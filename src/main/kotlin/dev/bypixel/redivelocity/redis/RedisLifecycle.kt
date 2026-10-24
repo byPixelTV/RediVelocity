@@ -43,9 +43,10 @@ object RedisLifecycle {
         for (id in ids) update("cleanup", id)
         val playerIds = RediVelocity.instance.lettuceClient.withCoroutines { redis ->
             val candidates = mutableSetOf<String>()
-            for (field in listOf("servers", "names", "sessions", "ips")) {
+            for (field in listOf("servers", "names", "sessions", "ips", "max-players-bypass")) {
                 candidates.addAll(redis.hkeys("redivelocity:player:$field").toList())
             }
+            candidates.addAll(redis.zrange("redivelocity:player:joined-at", 0, -1).toList())
             candidates.removeAll(redis.hkeys("redivelocity:player:proxies").toList().toSet())
             candidates
         }

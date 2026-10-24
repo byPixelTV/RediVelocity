@@ -4,6 +4,7 @@ Run: REDIVELOCITY_TEST_REDIS_PORT=16389 python -m unittest discover -s src/test/
 No Python packages required. See src/test/README.md for Docker setup.
 """
 import concurrent.futures
+import json
 import os
 from pathlib import Path
 import socket
@@ -13,6 +14,7 @@ PORT = os.environ.get('REDIVELOCITY_TEST_REDIS_PORT')
 RESOURCES = Path(__file__).resolve().parents[2] / 'main' / 'resources' / 'redis'
 LIFECYCLE = (RESOURCES / 'lifecycle.lua').read_text()
 PLAYER = (RESOURCES / 'player.lua').read_text()
+MAX_PLAYERS = (RESOURCES / 'max-players.lua').read_text()
 
 
 class Redis:
@@ -222,3 +224,68 @@ class LifecycleTests(unittest.TestCase):
             ])
             self.assertEqual('session-a', self.r.call('HGET', 'redivelocity:player:sessions', 'uuid'))
             self.assertEqual('ip', self.r.call('HGET', 'redivelocity:player:ips', 'uuid'))
+
+    def limit(self, value, request='command', enabled=True):
+        return json.loads(self.r.call('EVAL', MAX_PLAYERS, 0, value, 10,
+                                      str(enabled).lower(), request))
+
+    def populate_limit_players(self):
+        self.r.lifecycle('register')
+        self.r.lifecycle('register', 'b', 'owner-b')
+        self.r.call('SET', 'redivelocity:login-config:max-players', 10)
+        for index in range(5):
+            proxy = 'a' if index % 2 == 0 else 'b'
+            self.r.call('EVAL', PLAYER, 0, 'login', proxy, 'owner-' + proxy,
+                        f'u{index}', f's{index}', 'Name', 'ip', str(index == 4).lower())
+            # Deterministic times for selection assertions, independent of execution speed.
+            self.r.call('ZADD', 'redivelocity:player:joined-at', index, f'u{index}')
+
+    def test_lower_limit_selects_newest_across_proxies_and_skips_bypass(self):
+        self.populate_limit_players()
+        self.assertEqual([['u3', 's3'], ['u2', 's2']], self.limit(3))
+
+    def test_same_command_keeps_selection_after_disconnect_and_reconnect(self):
+        self.populate_limit_players()
+        selected = self.limit(3)
+        self.r.call('EVAL', PLAYER, 0, 'disconnect', 'b', 'owner-b', 'u3', 's3')
+        self.r.call('EVAL', PLAYER, 0, 'login', 'b', 'owner-b', 'u3', 'replacement', 'Name', 'ip')
+        self.assertEqual(selected, self.limit(3))
+        self.assertEqual('replacement', self.r.call('HGET', 'redivelocity:player:sessions', 'u3'))
+        self.assertGreater(self.r.call('TTL', 'redivelocity:max-player-plan:command'), 0)
+
+    def test_concurrent_proxies_share_one_selection(self):
+        self.populate_limit_players()
+        results = self.parallel([
+            lambda r: r.call('EVAL', MAX_PLAYERS, 0, 3, 10, 'true', 'shared')
+            for _ in range(16)
+        ])
+        self.assertEqual(1, len(set(results)))
+        self.assertEqual([['u3', 's3'], ['u2', 's2']], json.loads(results[0]))
+
+    def test_equal_higher_unlimited_and_disabled_limits_do_not_kick(self):
+        for value, enabled in [(10, True), (20, True), (-1, True), (0, False)]:
+            with self.subTest(value=value, enabled=enabled):
+                self.populate_limit_players()
+                self.assertEqual([], self.limit(value, f'{value}-{enabled}', enabled))
+
+    def test_zero_limit_keeps_bypass_players_even_if_still_over_capacity(self):
+        self.populate_limit_players()
+        self.assertEqual([['u3', 's3'], ['u2', 's2'], ['u1', 's1'], ['u0', 's0']], self.limit(0))
+
+    def test_bypass_refresh_is_session_guarded_and_does_not_change_join_time(self):
+        self.r.lifecycle('register')
+        self.login()
+        joined = self.r.call('ZSCORE', 'redivelocity:player:joined-at', 'uuid')
+        self.assertGreater(float(joined), 0)
+        self.assertEqual(1, self.r.player('bypass', 'a', 'owner-a', 'session-a', 'true'))
+        self.assertEqual(0, self.r.player('bypass', 'a', 'owner-a', 'old-session', 'false'))
+        self.assertEqual('true', self.r.call('HGET', 'redivelocity:player:max-players-bypass', 'uuid'))
+        self.r.player('switch', 'a', 'owner-a', 'session-a', 'other-server')
+        self.assertEqual(joined, self.r.call('ZSCORE', 'redivelocity:player:joined-at', 'uuid'))
+
+    def test_cleanup_removes_orphan_join_time_and_bypass(self):
+        self.r.lifecycle('register')
+        self.r.call('ZADD', 'redivelocity:player:joined-at', 1, 'orphan')
+        self.r.call('HSET', 'redivelocity:player:max-players-bypass', 'orphan', 'true')
+        self.assertEqual(1, self.r.lifecycle('orphan-player', 'orphan'))
+        self.assertEqual([], self.r.call('KEYS', 'redivelocity:player:*'))

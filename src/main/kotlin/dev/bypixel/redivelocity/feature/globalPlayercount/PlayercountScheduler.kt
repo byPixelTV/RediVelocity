@@ -17,6 +17,8 @@
 package dev.bypixel.redivelocity.feature.globalPlayercount
 
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import dev.bypixel.redivelocity.redis.RedisPlayerLimit
+import dev.bypixel.redivelocity.util.RediVelocityLogger
 import kotlinx.coroutines.*
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -34,6 +36,13 @@ object PlayercountScheduler {
     val proxyPlayerCountUpdateScheduler = CoroutineScope(Dispatchers.IO).launch {
         while (isActive) {
             PlayercountUtil.setProxyPlayercount()
+            try {
+                RedisPlayerLimit.refreshBypass()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                RediVelocityLogger.warn("Failed to refresh max-player bypass permissions: ${e.message}")
+            }
             delay(2000L.milliseconds)
         }
     }

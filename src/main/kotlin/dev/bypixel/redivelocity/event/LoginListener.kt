@@ -36,7 +36,7 @@ object LoginListener {
                 val playerCount = PlayerCache.getPlayers().size
                 val maxPlayers = RediVelocity.instance.maxPlayers
 
-                if (playerCount >= maxPlayers) {
+                if (maxPlayers >= 0 && playerCount >= maxPlayers) {
                     deny(
                         event,
                         RediVelocity.instance.messageConfig.getString(

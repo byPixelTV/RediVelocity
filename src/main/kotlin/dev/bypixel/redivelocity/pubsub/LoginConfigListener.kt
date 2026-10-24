@@ -71,7 +71,7 @@ object LoginConfigListener : RedisListener("redivelocity:login-config") {
                 "set-max-players" -> {
                     val maxPlayers = Json.decodeFromString<SetMaxPlayersMessage>(raw)
 
-                    RediVelocity.instance.setMaxPlayers(maxPlayers.maxPlayers)
+                    RediVelocity.instance.setMaxPlayers(maxPlayers.maxPlayers, maxPlayers.requestId)
                     RediVelocity.instance.config.set(Route.fromString("login-configuration.max-players"), maxPlayers.maxPlayers)
                     RediVelocity.instance.saveConfigs()
                 }

@@ -55,7 +55,10 @@ object PostLoginListener {
                         if (RediVelocity.instance.stopping || !player.isActive || PlayerSessionCache.get(player) != sessionId) {
                             false
                         } else {
-                            RedisPlayerState.update("login", uuid, sessionId, player.username, ip)
+                            val bypass = player.hasPermission(RediVelocity.instance.config.getString(
+                                Route.fromString("login-configuration.max-players-bypass-permission")
+                            ))
+                            RedisPlayerState.update("login", uuid, sessionId, player.username, ip, bypass.toString())
                         }
                     }
                     if (!registered) return@runBlocking

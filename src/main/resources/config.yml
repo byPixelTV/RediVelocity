@@ -56,7 +56,7 @@ ignore-same-players-when-transfer: false # if true, any incomming transfers will
 login-configuration:
   enabled: true
   max-players: 187 # maximum number of players allowed to connect to the proxy at the same time. if the limit is reached, new players will be denied access and receive a message. can be modified ingame too
-  enforce-max-players: true # if true, the proxy will enforce the max-players limit and deny new connections when the limit is reached. if false, the proxy will allow new connections even if the limit is reached. Recommended: true
+  enforce-max-players: true # deny new connections when full; lowering the limit kicks the newest players without bypass permission first. -1 disables the limit. Recommended: true
   max-players-bypass-permission: "redivelocity.maxplayers.bypass" # permission that allows players to bypass the max-players limit and join the proxy even if the limit is reached. Recommended: redivelocity.maxplayers.bypass
   use-motd: true # if true, redivelocity now handles the motd and will display it to players when they ping the proxy. if false, the proxy will use the default motd from velocity or any other plugin that handles the motd.
   forced-motd: "" # if set, the proxy will always use this motd instead of a random one. can be used to force a specific motd. leave blank to disable. can be set ingame too

@@ -16,9 +16,10 @@ local function remove(proxy)
             message.username = redis.call('HGET', 'redivelocity:player:names', uuid) or nil
             message.sessionId = redis.call('HGET', 'redivelocity:player:sessions', uuid) or nil
             message.ip = redis.call('HGET', 'redivelocity:player:ips', uuid) or nil
-            for _, field in ipairs({'servers', 'names', 'proxies', 'sessions', 'ips'}) do
+            for _, field in ipairs({'servers', 'names', 'proxies', 'sessions', 'ips', 'max-players-bypass'}) do
                 redis.call('HDEL', 'redivelocity:player:' .. field, uuid)
             end
+            redis.call('ZREM', 'redivelocity:player:joined-at', uuid)
             redis.call('PUBLISH', 'redivelocity:players', cjson.encode(message))
         end
     end
@@ -44,7 +45,8 @@ if operation == 'register' then
         if live(proxy, 90000) then anyLive = true; break end
     end
     if not anyLive then
-        for _, field in ipairs({'servers', 'names', 'proxies', 'sessions', 'ips'}) do
+        redis.call('DEL', 'redivelocity:player:joined-at')
+        for _, field in ipairs({'servers', 'names', 'proxies', 'sessions', 'ips', 'max-players-bypass'}) do
             redis.call('DEL', 'redivelocity:player:' .. field)
         end
         for _, key in ipairs({'proxy:player-counts', 'global:playercount', 'votes', 'leader'}) do
@@ -78,9 +80,10 @@ elseif operation == 'count' or operation == 'server-add' or operation == 'server
     return 1
 elseif operation == 'orphan-player' then
     if redis.call('HEXISTS', 'redivelocity:player:proxies', id) == 1 then return 0 end
-    for _, field in ipairs({'servers', 'names', 'sessions', 'ips'}) do
+    for _, field in ipairs({'servers', 'names', 'sessions', 'ips', 'max-players-bypass'}) do
         redis.call('HDEL', 'redivelocity:player:' .. field, id)
     end
+    redis.call('ZREM', 'redivelocity:player:joined-at', id)
     return 1
 elseif operation == 'cleanup' then
     -- Revalidate even when the candidate was discovered from an old SCAN/snapshot.

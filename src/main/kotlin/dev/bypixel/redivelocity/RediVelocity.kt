@@ -20,6 +20,7 @@ import dev.bypixel.redivelocity.feature.globalPlayercount.PlayercountScheduler
 import dev.bypixel.redivelocity.heartbeat.HeartbeatScheduler
 import dev.bypixel.redivelocity.pubsub.*
 import dev.bypixel.redivelocity.redis.RedisLifecycle
+import dev.bypixel.redivelocity.redis.RedisPlayerLimit
 import dev.bypixel.redivelocity.util.CloudUtil
 import dev.bypixel.redivelocity.util.ProxyIdGenerator
 import dev.bypixel.redivelocity.util.RediVelocityLogger
@@ -51,7 +52,7 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
     lateinit var rawConfig: YamlDocument
     lateinit var proxyId: String
 
-    var maxPlayers = 0
+    @Volatile var maxPlayers = 0
     lateinit var forceMotd: String
     lateinit var forceMaintenanceMotd: String
     var maintenance: Boolean = false
@@ -294,11 +295,8 @@ class RediVelocity @Inject constructor(val proxy: ProxyServer, private val metri
     }
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
-    suspend fun setMaxPlayers(maxPlayers: Int) {
-        this.maxPlayers = maxPlayers
-        lettuceClient.withCoroutines {
-            it.set("redivelocity:login-config:max-players", maxPlayers.toString())
-        }
+    suspend fun setMaxPlayers(maxPlayers: Int, requestId: String = java.util.UUID.randomUUID().toString()) {
+        RedisPlayerLimit.apply(maxPlayers, requestId)
     }
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)

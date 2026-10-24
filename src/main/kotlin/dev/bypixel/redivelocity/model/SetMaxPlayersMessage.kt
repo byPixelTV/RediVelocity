@@ -5,5 +5,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class SetMaxPlayersMessage(
-    val maxPlayers: Int
+    val maxPlayers: Int,
+    val requestId: String = java.util.UUID.randomUUID().toString()
 ) : LettuceMessage("set-max-players", "redivelocity:login-config")
