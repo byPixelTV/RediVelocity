@@ -103,12 +103,12 @@ repositories {
 }
 
 dependencies {
-    compileOnly("com.velocitypowered:velocity-api:4.3.0")
+    compileOnly("com.velocitypowered:velocity-api:4.3.1")
 
     implementation("dev.jorel:commandapi-velocity-shade:12.1.0")
     quark("dev.jorel:commandapi-kotlin-velocity:12.1.0")
 
-    implementation("dev.dejvokep:boosted-yaml:1.3.7")
+    implementation("dev.dejvokep:boosted-yaml:1.3.8")
     implementation("org.bstats:bstats-velocity:3.2.1")
 
     quark("org.json:json:20250517")
