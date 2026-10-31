@@ -169,6 +169,16 @@ class LifecycleTests(unittest.TestCase):
         self.assertEqual(0, self.r.player('disconnect'))
         self.assertEqual('new-session', self.r.call('HGET', 'redivelocity:player:sessions', 'uuid'))
 
+    def test_reconcile_removes_stale_session_but_not_replacement(self):
+        self.r.lifecycle('register')
+        self.login()
+        self.login(session='new-session')
+        self.assertEqual(0, self.r.player('reconcile'))
+        self.assertEqual('new-session', self.r.call('HGET', 'redivelocity:player:sessions', 'uuid'))
+        self.assertEqual(0, self.r.player('reconcile', token='old-owner', session='new-session'))
+        self.assertEqual(1, self.r.player('reconcile', session='new-session'))
+        self.assertEqual([], self.r.call('KEYS', 'redivelocity:player:*'))
+
     def test_cleanup_and_reconnect_preserve_new_proxy_session(self):
         self.r.lifecycle('register')
         self.r.lifecycle('register', 'b', 'owner-b')

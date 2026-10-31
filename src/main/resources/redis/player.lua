@@ -13,10 +13,22 @@ if operation == 'login' then
 end
 if redis.call('HGET', 'redivelocity:player:proxies', uuid) ~= proxy or
    redis.call('HGET', 'redivelocity:player:sessions', uuid) ~= session then return 0 end
-if operation == 'disconnect' then
+if operation == 'disconnect' or operation == 'reconcile' then
+    local message
+    if operation == 'reconcile' then
+        local time = redis.call('TIME')
+        message = {action='DISCONNECT', uuid=uuid, proxyId=proxy, sessionId=session,
+                   timestamp=tonumber(time[1]) * 1000 + math.floor(tonumber(time[2]) / 1000)}
+        message.username = redis.call('HGET', 'redivelocity:player:names', uuid) or nil
+        message.ip = redis.call('HGET', 'redivelocity:player:ips', uuid) or nil
+    end
     redis.call('ZREM', 'redivelocity:player:joined-at', uuid)
     for _, field in ipairs({'servers', 'names', 'proxies', 'sessions', 'ips', 'max-players-bypass'}) do
         redis.call('HDEL', 'redivelocity:player:' .. field, uuid)
+    end
+    if message then
+        redis.call('PUBLISH', 'redivelocity:players', cjson.encode(message))
+        redis.call('PUBLISH', 'redivelocity:global-player-updates', '{"action":"UPDATE"}')
     end
     return 1
 elseif operation == 'bypass' then

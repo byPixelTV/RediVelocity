@@ -20,6 +20,9 @@ connection settings are read.
 
 ## Lifecycle behavior
 
+- Each proxy checks its Redis player sessions against its local active connections
+  every five seconds. Stale entries left by failed disconnect cleanup are removed
+  with ownership and session checks and a disconnect notification.
 - Redis time determines liveness. Heartbeats and registration are atomic and do
   not rely on hash-field expiration. Cleanup considers a heartbeat stale after
   90 seconds; election requires a registered proxy seen within 30 seconds.

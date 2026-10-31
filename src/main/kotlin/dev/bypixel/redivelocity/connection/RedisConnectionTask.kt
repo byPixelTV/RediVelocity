@@ -18,20 +18,53 @@ package dev.bypixel.redivelocity.connection
 
 import dev.bypixel.redivelocity.RediVelocity
 import dev.bypixel.redivelocity.RediVelocityCoroutineScope
+import dev.bypixel.redivelocity.cache.PlayerSessionCache
+import dev.bypixel.redivelocity.redis.RedisPlayerState
 import dev.bypixel.redivelocity.util.RediVelocityLogger
+import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.toList
+import java.util.UUID
 
+@OptIn(ExperimentalLettuceCoroutinesApi::class)
 object RedisConnectionTask {
     val job = RediVelocityCoroutineScope.launch(Dispatchers.IO, start = kotlinx.coroutines.CoroutineStart.LAZY) {
         while (isActive) {
-            if (!RediVelocity.instance.lettuceClient.connection.isOpen || RediVelocity.instance.lettuceClient.checkConnectionErrors().isNotEmpty()) {
-                RediVelocityLogger.warn("Redis connection was lost. Attempting to reconnect...")
-                RediVelocity.instance.lettuceClient.reconnectAll()
+            try {
+                if (!RediVelocity.instance.lettuceClient.connection.isOpen || RediVelocity.instance.lettuceClient.checkConnectionErrors().isNotEmpty()) {
+                    RediVelocityLogger.warn("Redis connection was lost. Attempting to reconnect...")
+                    RediVelocity.instance.lettuceClient.reconnectAll()
+                }
+                reconcilePlayers()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                RediVelocityLogger.warn("Failed to reconcile Redis player sessions: ${e.message}")
             }
             delay(5000L)
+        }
+    }
+
+    private suspend fun reconcilePlayers() {
+        val plugin = RediVelocity.instance
+        val candidates = plugin.lettuceClient.withCoroutines { redis ->
+            redis.hgetall("redivelocity:player:proxies").toList()
+                .filter { it.value == plugin.proxyId }
+                .mapNotNull { entry ->
+                    val session = redis.hget("redivelocity:player:sessions", entry.key)
+                    if (session.isNullOrBlank()) null else entry.key to session
+                }
+        }
+        for ((id, session) in candidates) {
+            val uuid = try { UUID.fromString(id) } catch (_: IllegalArgumentException) { continue }
+            PlayerSessionCache.withLock(uuid) {
+                if (!plugin.stopping && !RediVelocity.server.getPlayer(uuid).map { it.isActive }.orElse(false)) {
+                    RedisPlayerState.update("reconcile", id, session)
+                }
+            }
         }
     }
 }
