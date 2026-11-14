@@ -156,10 +156,11 @@ jobs:
           loaders: |
             velocity
           game-versions: |
+            26.x
             1.21.x
             1.20.x
           java: |
-            Java 21
+            Java 25
           retry-attempts: 2
           retry-delay: 10000
           fail-mode: fail
